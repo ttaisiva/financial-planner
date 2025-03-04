@@ -1,0 +1,1 @@
+/* events have similar UI so single component, however pass "type" prop to differentiate between events */

@@ -1,6 +1,6 @@
 import React from "react";
-import ScenarioCard from "./ScenarioCard";
 import "../styles/Dashboard.css";
+/* import display scenarios? how to display the different scenario tabs */
 
 
 const Dashboard = () => {
