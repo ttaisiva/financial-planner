@@ -1,1 +1,21 @@
-/* css style sheet code */
+
+
+.dashboard {
+    padding: 20px;
+  }
+  
+  .scenarios {
+    margin-top: 20px;
+  }
+  
+  .create-scenario-btn {
+    background-color: #4CAF50; /* Green background */
+  }
+  
+  
+  .create-scenario-btn:hover {
+    background-color: #45a049; /* Darker green when hovering */
+  }
+  
+
+  

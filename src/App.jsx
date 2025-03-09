@@ -4,6 +4,9 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 import { Routes, Route, Link } from "react-router-dom";
 import LandingPage from "./pages/LandingPage.jsx";
+import DashboardPage from "./pages/DashboardPage.jsx";
+import NewScenarioPage from "./pages/NewScenarioPage.jsx";
+
 
 function App() {
   const [count, setCount] = useState(0);
@@ -14,6 +17,12 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         {/* <Route path="/login" element={<LoginPage />} /> */}
+
+        <Route path="/DashboardPage" element={<DashboardPage />} />
+        <Route path="/NewScenarioPage" element={<NewScenarioPage />} />
+ 
+        
+        
       </Routes>
     </>
   );

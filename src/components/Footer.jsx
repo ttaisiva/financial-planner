@@ -4,7 +4,7 @@ import "../styles/HeaderFooter.css";
 const Footer = () => {
   return (
     <footer>
-      <p>Resources...</p>
+     
     </footer>
   );
 };
