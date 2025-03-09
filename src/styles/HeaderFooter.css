@@ -6,9 +6,6 @@ header {
     width: 100%; 
   }
 
-  nav {
-
-  }
   
   nav ul {
     list-style-type: none; 
@@ -20,15 +17,5 @@ header {
     margin: 0 15px; /* space out the list */
   }
   
-  nav ul li a {
-    text-decoration: none; /* remove underline from links */
-    color: black; 
-    font-size: 18px; 
-    padding: 5px 10px; /* Add padding around the link */
-    display: block; /* Ensure the links fill the entire list item */
-  }
-  
-  nav ul li a:hover {
-    background-color: darkgreen; 
-  }
+
   
