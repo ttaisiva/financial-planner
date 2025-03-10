@@ -1,6 +1,4 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 import { Routes, Route, Link } from "react-router-dom";
 import LandingPage from "./pages/LandingPage.jsx";
@@ -13,7 +11,6 @@ function App() {
 
   return (
     <>
-     
       <Routes>
         <Route path="/" element={<LandingPage />} />
         {/* <Route path="/login" element={<LoginPage />} /> */}
@@ -21,9 +18,6 @@ function App() {
         <Route path="/DashboardPage" element={<DashboardPage />} />
         <Route path="/NewScenarioPage" element={<NewScenarioPage />} />
         <Route path="/ResourcesPage" element={<ResourcesPage />} />
- 
-        
-        
       </Routes>
     </>
   );

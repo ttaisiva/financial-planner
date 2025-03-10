@@ -3,13 +3,11 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Dashboard from "../components/Dashboard";
 
-
-
 const DashboardPage = () => {
   return (
-    <div className="dashboard-container">
+    <div className="content">
       <Header />
-      <Dashboard/>
+      <Dashboard />
       <Footer />
     </div>
   );
