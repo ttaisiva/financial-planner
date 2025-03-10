@@ -142,7 +142,7 @@ const ScenarioInfo = () => {
           </div>
         )}
 
-        <button type="submit">Submit</button>
+        <button type="submit">Save</button>
       </form>
       
       
