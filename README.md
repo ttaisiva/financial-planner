@@ -25,5 +25,14 @@ We will use this to manage React and the packages needed to run our server. Inst
 
 ## 3. Install Vite
 
-First do `npm install`
-To run the client, do `npm run dev`
+First do:
+
+```
+npm install
+```
+
+To run the client, do:
+
+```
+npm run dev
+```
