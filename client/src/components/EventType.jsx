@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import EventsForm from './EventsForm';
+
 
 
 // 'retirement age' is not part of the definition of a scenario. 
@@ -8,18 +10,14 @@ import React, { useState } from 'react';
 
 const EventType = ({ type }) => {
   const [showForm, setShowForm] = useState(false);
-  const [selectedEventType, setSelectedEventType] = useState(null);
+  const [selectedEventType, setSelectedEventType] = useState('null');
   const [formData, setFormData] = useState({ account_type: '', cash_investment_amount: '' , start_year: '', duration: ''}); {/*update these values based on the prop passed -> eg btn clicked */}
 
   const handleChange = (e) => { {/*event hander to update form*/}
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // sent to server or somethign
-    
-  };
+  
 
   return (
     <div>
@@ -28,8 +26,8 @@ const EventType = ({ type }) => {
       {/* Toggle form visibility based on showForm */}
       <button 
         onClick={() => {
-          setShowForm(!showForm); // toggle
           setSelectedEventType('income');
+          setShowForm(!showForm); // toggle
         }}
       >
         {showForm && selectedEventType=='income' ? 'Cancel' : 'Add Income Event'}
@@ -37,8 +35,8 @@ const EventType = ({ type }) => {
 
       <button 
         onClick={() => {
-          setShowForm(!showForm); // toggle
           setSelectedEventType('expense');
+          setShowForm(!showForm); // toggle
         }}
       >
         {showForm && selectedEventType=='expense' ? 'Cancel': 'Add Expense Event'}
@@ -46,8 +44,8 @@ const EventType = ({ type }) => {
 
       <button 
         onClick={() => {
-          setShowForm(!showForm); // toggle
           setSelectedEventType('invest');
+          setShowForm(!showForm); // toggle
         }}
       >
         {showForm && selectedEventType=='invest' ? 'Cancel' : 'Add Invest Event'} {/* FIX THIS */}
@@ -55,25 +53,15 @@ const EventType = ({ type }) => {
 
       <button 
         onClick={() => {
-          setShowForm(!showForm); // toggle
           setSelectedEventType('rebalance');
+          setShowForm(!showForm); // toggle
         }}
       >
         {showForm && selectedEventType=='rebalance' ? 'Cancel' : 'Add Rebalance Event'} {/* FIX THIS */}
       </button>
 
-      {showForm && (
-        <form onSubmit={handleSubmit}>
-          <input
-            type='text'
-            name='name'
-            placeholder='Name'
-            onChange={handleChange}
-            required
-          />
-          <button type='submit'>Submit</button>
-        </form>
-      )}
+      {showForm && <EventsForm type={selectedEventType} />}
+
     </div>
   );
 };
