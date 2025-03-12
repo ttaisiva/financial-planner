@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
+
+//TODO: send stuff to database, validate inputs, fix expense ratio, view, edit
 const InvestmentType = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -13,13 +15,28 @@ const InvestmentType = () => {
     taxability: "taxable",
   });
 
+  const navigate = useNavigate()
   const handleChange = (e) => {
+    // check if inputs are valid 
+
+    if (e.target.name === "returnValue" && formData.returnValueType === "percentage") {
+        {/*need to have some kind of percentage flag or so , where exactly to do error testing  */}
+        if (e.target.value < 0 || e.target.value > 1) {
+            window.alert("Please enter a valid input"); //not working for some reason
+            return; 
+        }
+    }
+
+
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Investment Type Submitted:", formData);
+    console.log("Investment Type Submitted:", formData); 
+    //need to send stuff to database
+    
+    navigate("/NewScenarioPage") //close form
   };
 
   return (
@@ -43,17 +60,21 @@ const InvestmentType = () => {
         <div>
           <label>Expected Annual Return:</label>
           <select name="returnType" value={formData.returnType} onChange={handleChange}>
-            <option value="fixed">Fixed </option> {/* if fixed the user needs to provide it? has option for number and percentage */}
+            <option value="fixed">Fixed </option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="gbm">Geometric Brownian Motion</option>
           </select>
+          < select>
+            <option value="percentage"> Amount </option>
+            <option value="percentage"> Percentage </option>
+          </select>
           <input type="text" name="returnValue" placeholder="Enter value or %" value={formData.returnValue} onChange={handleChange} required />
-        </div>
+        </div> 
 
-        {/* Expense Ratio */}
+        
         <div>
-          <label>Expense Ratio (%):</label>
-          <input type="number" step="0.01" name="expenseRatio" value={formData.expenseRatio} onChange={handleChange} required />
+          <label>Expense Ratio Percentage :</label>
+          <input type="text" name="expenseRatio" value={formData.expenseRatio} onChange={handleChange} required />
         </div>
 
         {/* Expected Annual Income */}
@@ -63,6 +84,10 @@ const InvestmentType = () => {
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
             <option value="gbm">Geometric Brownian Motion</option>
+          </select>
+          < select>
+            <option value="percentage"> Amount </option>
+            <option value="percentage"> Percentage </option>
           </select>
           <input type="text" name="incomeValue" placeholder="Enter value or %" value={formData.incomeValue} onChange={handleChange} required />
         </div>

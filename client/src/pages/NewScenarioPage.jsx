@@ -17,6 +17,9 @@ const  NewScenarioPage = () => {
       <Link to="/AddNewInvestmentPage">
           <button>Create New Investment Type</button>
         </Link>
+        <Link to="/InvestmentPage">
+          <button>Create Investment</button>
+        </Link>
       <button> Run Simulation </button>
       <Footer />
     </div>
