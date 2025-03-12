@@ -1,19 +1,21 @@
 import React from "react";
 import "../styles/HeaderFooter.css";
-
+// import LandingPage from "../pages/LandingPage";
 import { Link } from "react-router-dom";
 
 const Header = () => {
   return (
     <header>
-      <Link to="/DashboardPage">Dashboard</Link>
+      <Link to="/" className="logo">
+        ManateePlanner
+      </Link>
       <nav>
         <ul>
           <li>
-            <Link to="/ResourcesPage">Resources</Link>
+            <Link to="/DashboardPage">Sign Up</Link>
           </li>
           <li>
-            <Link to="/ProfilePage">Profile</Link>
+            <Link to="/ResourcesPage">Login</Link>
           </li>
         </ul>
       </nav>
