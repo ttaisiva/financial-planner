@@ -17,7 +17,6 @@ const EventType = ({ type }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  
 
   return (
     <div>
@@ -28,15 +27,21 @@ const EventType = ({ type }) => {
         onClick={() => {
           setSelectedEventType('income');
           setShowForm(!showForm); // toggle
+          // if another type was opened, close and switch over
+          {showForm && selectedEventType!='income' && setShowForm(true)} 
         }}
       >
         {showForm && selectedEventType=='income' ? 'Cancel' : 'Add Income Event'}
+
       </button>
 
       <button 
         onClick={() => {
           setSelectedEventType('expense');
           setShowForm(!showForm); // toggle
+          // if another type was opened, close and switch over
+          {showForm && selectedEventType!='expense' && setShowForm(true)}
+
         }}
       >
         {showForm && selectedEventType=='expense' ? 'Cancel': 'Add Expense Event'}
@@ -46,6 +51,9 @@ const EventType = ({ type }) => {
         onClick={() => {
           setSelectedEventType('invest');
           setShowForm(!showForm); // toggle
+          // if another type was opened, close and switch over
+          {showForm && selectedEventType!='invest' && setShowForm(true)}
+
         }}
       >
         {showForm && selectedEventType=='invest' ? 'Cancel' : 'Add Invest Event'} {/* FIX THIS */}
@@ -55,12 +63,15 @@ const EventType = ({ type }) => {
         onClick={() => {
           setSelectedEventType('rebalance');
           setShowForm(!showForm); // toggle
+          // if another type was opened, close and switch over
+          {showForm && selectedEventType!='rebalance' && setShowForm(true)}
+
         }}
       >
         {showForm && selectedEventType=='rebalance' ? 'Cancel' : 'Add Rebalance Event'} {/* FIX THIS */}
       </button>
 
-      {showForm && <EventsForm type={selectedEventType} />}
+      {showForm && <EventsForm type={selectedEventType} setShowForm={setShowForm}/>}
 
     </div>
   );
