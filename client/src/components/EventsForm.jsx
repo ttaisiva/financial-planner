@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 
-const EventsForm = ({ type }) => {
+const EventsForm = ({ type, setShowForm }) => {
   const [formData, setFormData] = useState({
     account_type: '',
     cash_investment_amount: '',
@@ -17,6 +17,7 @@ const EventsForm = ({ type }) => {
     console.log('Form submitted for event type', type)
     e.preventDefault();
     // sent to server or somethign
+    setShowForm(false);
   };
 
   return (
