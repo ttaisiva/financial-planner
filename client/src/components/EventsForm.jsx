@@ -49,13 +49,15 @@ const EventsForm = ({ type, setShowForm }) => {
 
         {type === 'invest' && (
         <>
-          <label>Some invest question</label>
-          <input
-            type='text'
-            name='invest question'
-            value={formData.account_type}
+        <label>Account Type: </label>
+        <select
+            name='Account Type'
+            value={formData.accountType}
             onChange={handleChange}
-          />
+            required
+        >
+            <option>Non-retirement</option>
+        </select>
         </>
       )}
 
