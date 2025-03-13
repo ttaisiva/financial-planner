@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 
 
-const EventsForm = ({  }) => {
+const EventsForm = ({ setShowEventsForm }) => {
 
   const [formData, setFormData] = useState({
     name: '',
@@ -34,9 +34,9 @@ const EventsForm = ({  }) => {
     };
 
   const handleSubmit = async (e) => {
-    console.log('Form submitted for event type:', type);
-
+    
     e.preventDefault();
+    setShowEventsForm(false); //hide form 
     
   };
 

@@ -154,7 +154,7 @@ const ScenarioInfo = () => {
 
       <h2> Event Series</h2>
       <button onClick={handleCreateEvent} > Create New Event </button>
-      {showEventsForm && <EventsForm />}
+      {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
       
       
     </div>
