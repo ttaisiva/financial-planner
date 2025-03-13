@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
+import IncomeEvent from './IncomeEvent';
 
 const EventsForm = ({ type }) => {
 
@@ -12,15 +13,25 @@ const EventsForm = ({ type }) => {
     durationValue: '',
     eventType: '',
     eventValue: '',
+    initialAmount: '', //here on out specific to income maybe I should move this?
+    annualChangeType: '',
+    annualChangeValue: '',
+    inflationAdjusted: false,
+    userPercentage: '',
+    spousePercentage: '',
+    isSocialSecurity: false,
+    isWages: false, 
   });
   const navigate = useNavigate();
 
+
   const handleChange = (e) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      [e.target.name]: e.target.value,
-    }));
-  };
+        const { name, value, type, checked } = e.target;
+        setFormData((prevData) => ({
+        ...prevData,
+        [name]: type === "checkbox" ? checked : value,
+        })); //adjust for textbox
+    };
 
   const handleSubmit = async (e) => {
     console.log('Form submitted for event type:', type);
@@ -30,6 +41,7 @@ const EventsForm = ({ type }) => {
   };
 
   return (
+    <div className="content">
     <form onSubmit={handleSubmit}>
       <h3>Customize your {type} event:</h3>
       <Link to="/NewScenarioPage">
@@ -70,19 +82,20 @@ const EventsForm = ({ type }) => {
 
       <div>
         <label>Event Type</label>
-        <select name="eventType" value={formData.eventType} onChange={handleChange}>
+        <select name="eventType" value={formData.eventType} onChange={handleChange} required>
+          <option value="" disabled>Select event type</option>
           <option value="income">Income</option> 
           <option value="invest">Invest</option>
           <option value="rebalance">Rebalance</option>
           <option value="expense">Expense</option>
         </select>
-        <input type="text" name="eventValue" placeholder="Enter value" value={formData.eventValue} onChange={handleChange} required />
       </div>
 
       {formData.eventType === 'income' && (
         <>
           <label>Some income question</label>
           <input type="text" name="incomeQuestion" value={formData.incomeQuestion || ''} onChange={handleChange} />
+          <IncomeEvent formData={formData} handleChange={handleChange} />
         </>
       )}
 
@@ -111,6 +124,7 @@ const EventsForm = ({ type }) => {
         <button type="submit">Save</button>
       </div>
     </form>
+    </div>
   );
 };
 
