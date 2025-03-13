@@ -23,16 +23,22 @@ CSE 416 Spring 2025 - The Manatees that like to play and draw
 
 We will use this to manage React and the packages needed to run our server. Installing Node.js also comes with the npm package manager.
 
-## 3. Install Vite
+## 3. Install and Run
 
-First do:
+Install all dependencies with this command:
 
 ```
 npm install
 ```
 
-To run the client, do:
+To run the client, run this command:
 
 ```
 npm run dev
+```
+
+To run the server, run this command:
+
+```
+nodemon server/server.js
 ```
