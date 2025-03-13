@@ -1,5 +1,6 @@
 import "../styles/NewScenario.css";
 import React, { useState } from "react";
+import EventsForm from "./EventsForm";
 
 
 const ScenarioInfo = () => {
@@ -14,9 +15,14 @@ const ScenarioInfo = () => {
 
 
   const [showSpouseForm, setShowSpouseForm] = useState(false);
+  const [showEventsForm, setShowEventsForm] = useState(false);
 
   const handleAddSpouse = () => {
     setShowSpouseForm(!showSpouseForm);
+  };
+
+  const handleCreateEvent = () => {
+    setShowEventsForm(true); // Show the EventsForm when button is clicked
   };
 
   // Handle input changes 
@@ -144,6 +150,11 @@ const ScenarioInfo = () => {
 
         <button type="submit">Save</button>
       </form>
+
+
+      <h2> Event Series</h2>
+      <button onClick={handleCreateEvent} > Create New Event </button>
+      {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
       
       
     </div>
