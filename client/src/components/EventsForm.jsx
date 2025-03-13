@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from "react-router-dom";
-import IncomeEvent from './IncomeEvent';
 
-const EventsForm = ({ type }) => {
+
+
+const EventsForm = ({  }) => {
 
   const [formData, setFormData] = useState({
     name: '',
@@ -13,7 +13,7 @@ const EventsForm = ({ type }) => {
     durationValue: '',
     eventType: '',
     eventValue: '',
-    initialAmount: '', //here on out specific to income maybe I should move this?
+    initialAmount: '', 
     annualChangeType: '',
     annualChangeValue: '',
     inflationAdjusted: false,
@@ -22,7 +22,7 @@ const EventsForm = ({ type }) => {
     isSocialSecurity: false,
     isWages: false, 
   });
-  const navigate = useNavigate();
+
 
 
   const handleChange = (e) => {
@@ -30,23 +30,21 @@ const EventsForm = ({ type }) => {
         setFormData((prevData) => ({
         ...prevData,
         [name]: type === "checkbox" ? checked : value,
-        })); //adjust for textbox
+        })); 
     };
 
   const handleSubmit = async (e) => {
     console.log('Form submitted for event type:', type);
 
     e.preventDefault();
-    navigate("/NewScenarioPage") //close form
+    
   };
 
   return (
     <div className="content">
     <form onSubmit={handleSubmit}>
-      <h3>Customize your {type} event:</h3>
-      <Link to="/NewScenarioPage">
-              <button>Back</button>
-       </Link>
+      <h3>Customize your event:</h3>
+ 
 
       <div>
         <label>Name:</label>
@@ -93,9 +91,7 @@ const EventsForm = ({ type }) => {
 
       {formData.eventType === 'income' && (
         <>
-          <label>Some income question</label>
-          <input type="text" name="incomeQuestion" value={formData.incomeQuestion || ''} onChange={handleChange} />
-          <IncomeEvent formData={formData} handleChange={handleChange} />
+          <IncomeEvent formData={formData} handleChange={handleChange} /> {/* pass as props */}
         </>
       )}
 
@@ -129,3 +125,55 @@ const EventsForm = ({ type }) => {
 };
 
 export default EventsForm;
+
+
+const IncomeEvent = ({ formData, handleChange }) => {
+    return (
+      <>
+        <div>
+          <label>Initial Amount:</label>
+          <input type="text" name="initialAmount" value={formData.initialAmount} onChange={handleChange} required />
+        </div>
+  
+        <div>
+          <label>Expected Annual Change:</label>
+          <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
+            <option value="fixed">Fixed Amount/Percentage</option>
+            <option value="normal_distribution">Normal Distribution</option>
+            <option value="uniform_distribution">Uniform Distribution</option>
+          </select>
+          <input type="text" name="annualChangeValue" placeholder="Enter value" value={formData.annualChangeValue} onChange={handleChange} required />
+        </div>
+  
+        <div>
+          <label>
+            <input type="checkbox" name="inflationAdjusted" checked={formData.inflationAdjusted} onChange={handleChange} />
+            Inflation Adjusted
+          </label>
+        </div>
+  
+        <div>
+          <label>User Percentage:</label>
+          <input type="text" name="userPercentage" value={formData.userPercentage} onChange={handleChange} required />
+        </div>
+  
+        <div>
+          <label>Spouse Percentage:</label>
+          <input type="text" name="spousePercentage" value={formData.spousePercentage} onChange={handleChange} required />
+        </div>
+  
+        <div>
+          <label>
+            <input type="checkbox" name="isSocialSecurity" checked={formData.isSocialSecurity} onChange={handleChange} />
+            Social Security
+          </label>
+        </div>
+  
+  
+      </>
+    );
+  };
+  
+
+
+

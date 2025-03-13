@@ -7,15 +7,15 @@ import { Link } from "react-router-dom";
 
 
 const  NewScenarioPage = () => {
+  
+
   return (
     <div className="content">
       <Header />
       <button> Upload Scenario </button>
       < ScenarioInfo />
       < Strategy />
-      <Link to="/EventsFormPage">
-              <button>Create New Event</button>
-      </Link>
+      
       <Link to="/AddNewInvestmentPage">
           <button>Create New Investment Type</button>
         </Link>
