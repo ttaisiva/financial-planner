@@ -1,6 +1,8 @@
 import "../styles/NewScenario.css";
 import React, { useState } from "react";
 import EventsForm from "./EventsForm";
+import {InvestmentType, Investment} from "./InvestmentDetails";
+
 
 
 const ScenarioInfo = () => {
@@ -16,6 +18,9 @@ const ScenarioInfo = () => {
 
   const [showSpouseForm, setShowSpouseForm] = useState(false);
   const [showEventsForm, setShowEventsForm] = useState(false);
+  const [showInvestmentTypeForm, setShowInvestmentTypeForm] = useState(false)
+  const [showInvestmentForm, setShowInvestmentForm] = useState(false)
+  
 
   const handleAddSpouse = () => {
     setShowSpouseForm(!showSpouseForm);
@@ -45,6 +50,15 @@ const ScenarioInfo = () => {
 
     console.log("Form Submitted with Data:", formData);
   };
+
+  const handleInvestmentType = () => {
+    setShowInvestmentTypeForm(true);
+  };
+
+  const handleInvestment = () => {
+    setShowInvestmentForm(true);
+  };
+  
 
   return (
     <div className="scenario_info-container">
@@ -151,9 +165,17 @@ const ScenarioInfo = () => {
         <button type="submit">Save</button>
       </form>
 
+      <h2> Investment Types and Investments </h2>
+      <button onClick={handleInvestmentType} >New Investment Type</button>
+      {showInvestmentTypeForm && <InvestmentType setShowInvestmentTypeForm={setShowInvestmentTypeForm} />} 
+   
+
+      <button onClick={handleInvestment}>New Investment</button>
+      {showInvestmentForm && <Investment setShowInvestmentForm={setShowInvestmentForm} />}
+
 
       <h2> Event Series</h2>
-      <button onClick={handleCreateEvent} > Create New Event </button>
+      <button onClick={handleCreateEvent} >New Event</button>
       {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
       
       
