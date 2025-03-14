@@ -3,7 +3,6 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ScenarioInfo from "../components/ScenarioInfo";
 import Strategy from "../components/Strategy";
-import { Link } from "react-router-dom";
 
 
 const  NewScenarioPage = () => {
@@ -14,15 +13,7 @@ const  NewScenarioPage = () => {
       <Header />
       <button> Upload Scenario </button>
       < ScenarioInfo />
-      < Strategy />
-      
-      <Link to="/AddNewInvestmentPage">
-          <button>Create New Investment Type</button>
-        </Link>
-        <Link to="/InvestmentPage">
-          <button>Create Investment</button>
-        </Link>
-      <button> Run Simulation </button>
+      < Strategy /> 
       <Footer />
     </div>
   );

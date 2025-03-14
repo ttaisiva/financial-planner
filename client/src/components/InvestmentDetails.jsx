@@ -1,9 +1,89 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+
+
+export const Investment = ( { setShowInvestmentForm } ) => {
+  const [formData, setFormData] = useState({
+    investment_type: "",
+    dollar_value: "",
+    tax_status: "Pre_Tax",
+  });
+
+
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Investment Submitted:", formData);
+    // send to server
+    setShowInvestmentForm(false);
+  };
+
+  const handleBack = () => {
+    setShowInvestmentForm(false); // Go back
+  };
+
+  return (
+    <div>
+      <h3>Create an Investment</h3>
+
+
+      <form onSubmit={handleSubmit}>
+        {/* Investment Type */}
+        <div>
+          <label>Investment Type:</label>
+          <input
+            type="text"
+            name="investment_type"
+            value={formData.investment_type}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Dollar Amount */}
+        <div>
+          <label>Dollar Amount:</label>
+          <input
+            type="text"
+            name="dollar_value"
+            value={formData.dollar_value}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Tax Status */}
+        <div>
+          <label>Taxability:</label>
+          <select
+            name="tax_status"
+            value={formData.tax_status}
+            onChange={handleChange}
+          >
+            <option value="Pre_Tax">Pre Tax</option>
+            <option value="Non_Retirement">Non Retirement</option>
+            <option value="After_Tax">After Tax</option>
+          </select>
+        </div>
+        <button type="button" onClick={handleBack}>Back</button>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  );
+};
+
+
+
+
+
 
 
 //TODO: send stuff to database, validate inputs, fix expense ratio, view, edit
-const InvestmentType = () => {
+export const InvestmentType = ( { setShowInvestmentTypeForm }  ) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -15,7 +95,7 @@ const InvestmentType = () => {
     taxability: "taxable",
   });
 
-  const navigate = useNavigate()
+
   const handleChange = (e) => {
     // check if inputs are valid 
 
@@ -36,15 +116,17 @@ const InvestmentType = () => {
     console.log("Investment Type Submitted:", formData); 
     //need to send stuff to database
     
-    navigate("/NewScenarioPage") //close form
+    setShowInvestmentTypeForm(false);
+  };
+
+  const handleBack = () => {
+    setShowInvestmentTypeForm(false); // Go back
   };
 
   return (
     <div>
-      <h2>Create a New Investment Type</h2>
-      <Link to="/NewScenarioPage">
-          <button>Back</button>
-        </Link>
+      <h3>Create a New Investment Type</h3>
+
     
       <form onSubmit={handleSubmit}>
         <div>
@@ -102,6 +184,7 @@ const InvestmentType = () => {
         </div>
 
         {/* need to send to server -> on submit should return to new scenario page */}
+        <button type="button" onClick={handleBack}>Back</button>
         <button type="submit">Save</button>
       </form> 
      
@@ -109,6 +192,8 @@ const InvestmentType = () => {
   );
 };
 
-export default InvestmentType;
+
+
+
 
 

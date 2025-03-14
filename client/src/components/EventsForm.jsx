@@ -40,10 +40,15 @@ const EventsForm = ({ setShowEventsForm }) => {
     
   };
 
+  const handleBack = () => {
+    setShowEventsForm(false); // Go back
+  };
+
   return (
     <div className="content">
     <form onSubmit={handleSubmit}>
-      <h3>Customize your event:</h3>
+      <h3>Customize your event:</h3> {/* I should add a delete btn*/}
+      
  
 
       <div>
@@ -117,6 +122,7 @@ const EventsForm = ({ setShowEventsForm }) => {
       )}
 
       <div>
+        <button type="button" onClick={handleBack}>Back</button>
         <button type="submit">Save</button>
       </div>
     </form>
