@@ -5,6 +5,8 @@ import LandingPage from "./pages/LandingPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import NewScenarioPage from "./pages/NewScenarioPage.jsx";
 import ResourcesPage from "./pages/ResourcesPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
+import AddNewInvestmentPage from "./pages/AddNewInvestmentPage.jsx"
 
 function App() {
   const [count, setCount] = useState(0);
@@ -18,6 +20,8 @@ function App() {
         <Route path="/DashboardPage" element={<DashboardPage />} />
         <Route path="/NewScenarioPage" element={<NewScenarioPage />} />
         <Route path="/ResourcesPage" element={<ResourcesPage />} />
+        <Route path="/ProfilePage" element={<ProfilePage />} />
+        <Route path="/AddNewInvestmentPage" element={<AddNewInvestmentPage />} />
       </Routes>
     </>
   );

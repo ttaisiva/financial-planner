@@ -1,16 +1,17 @@
 import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import Dashboard from "../components/Dashboard";
+import { Link } from "react-router-dom";
 
-const DashboardPage = () => {
+const ProfilePage = () => {
   return (
     <div>
       <Header />
-      <Dashboard />
+      <p> this is profile</p>
+      <Link to="/">Log Out</Link>
       <Footer />
     </div>
   );
 };
 
-export default DashboardPage;
+export default ProfilePage;
