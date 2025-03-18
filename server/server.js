@@ -3,6 +3,21 @@ dotenv.config(); // loads environment variables from .env
 import mysql from "mysql2";
 import * as cheerio from "cheerio";
 
+import express from "express";
+import cors from "cors";
+
+const app = express();
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
+app.use(express.json());
+
+app.listen(8000, () => {
+  console.log("Server listening on port 8000...");
+});
+
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -11,6 +26,7 @@ const connection = mysql.createConnection({
   port: process.env.DB_PORT,
 });
 
+console.log("DB Name:", process.env.DB_NAME);
 connection.connect((err) => {
   if (err) {
     console.error("❌ Database connection failed:", err.message);
@@ -19,6 +35,47 @@ connection.connect((err) => {
     console.log("Connected to MySQL!");
   }
 });
+
+
+
+app.post('/api/investments', (req, res) => {
+  const { investment_type, dollar_value, tax_status } = req.body;
+
+  const query = 'INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)';
+  const values = [investment_type, dollar_value, tax_status];
+
+  connection.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Failed to insert investment:', err);
+      res.status(500).send('Failed to save investment');
+    } else {
+      res.status(201).send('Investment saved successfully');
+    }
+  });
+});
+
+
+app.post('/api/investment-types', (req, res) => {
+  const { name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability } = req.body;
+
+  const query = 'INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+  const values = [name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability];
+
+  connection.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Failed to insert investment type:', err);
+      res.status(500).send('Failed to save investment type');
+    } else {
+      res.status(201).send('Investment type saved successfully');
+    }
+  });
+});
+
+const PORT = process.env.SERVER_PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
 
 /**
  * taxBrackets [ {year, filingStatus, taxRate, incomeMin, incomeMax} ]
@@ -275,3 +332,6 @@ scrapeCapitalGainsTax();
 //   const sql = "INSERT INTO tax_brackets (year, filingStatus, incomeMin, incomeMax, taxRate) VALUES ?";
 //   const values =
 // }
+import authRouter from './routers/authentication.js';
+
+app.use("/auth", authRouter);

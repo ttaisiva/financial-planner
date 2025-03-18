@@ -15,10 +15,31 @@ export const Investment = ( { setShowInvestmentForm } ) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit =  async (e) => {
     e.preventDefault();
     console.log("Investment Submitted:", formData);
     // send to server
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/investments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        console.log('Investment saved successfully');
+        setShowInvestmentForm(false);
+      } else {
+        console.error('Failed to save investment');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+
+
     setShowInvestmentForm(false);
   };
 
@@ -83,96 +104,134 @@ export const Investment = ( { setShowInvestmentForm } ) => {
 
 
 //TODO: send stuff to database, validate inputs, fix expense ratio, view, edit
-export const InvestmentType = ( { setShowInvestmentTypeForm }  ) => {
+export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    returnType: "fixed",
-    returnValue: "",
+    expAnnReturnType: "fixed",
+    expAnnReturnValue: "",
     expenseRatio: "",
-    incomeType: "fixed",
-    incomeValue: "",
+    expAnnIncomeType: "fixed",
+    expAnnIncomeValue: "",
     taxability: "taxable",
   });
 
-
   const handleChange = (e) => {
-    // check if inputs are valid 
+    const { name, value } = e.target;
 
-    if (e.target.name === "returnValue" && formData.returnValueType === "percentage") {
-        {/*need to have some kind of percentage flag or so , where exactly to do error testing  */}
-        if (e.target.value < 0 || e.target.value > 1) {
-            window.alert("Please enter a valid input"); //not working for some reason
-            return; 
-        }
+    setFormData({ ...formData, [name]: value });
+
+    // Reset values when switching from "fixed" to another type
+    if (name === "expAnnReturnType" && value !== "fixed") {
+      setFormData((prev) => ({ ...prev, expAnnReturnValue: "" }));
     }
-
-
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (name === "expAnnIncomeType" && value !== "fixed") {
+      setFormData((prev) => ({ ...prev, expAnnIncomeValue: "" }));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Investment Type Submitted:", formData); 
-    //need to send stuff to database
-    
+    console.log("Investment Type Submitted:", formData);
+
+    const jwtToken = localStorage.getItem('jwtToken');  //local storage for now but we can also do session
+
+    try {
+      const response = await fetch('http://localhost:8000/api/investment-type', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        console.log('Investment type saved successfully');
+        setShowInvestmentForm(false);
+      } else {
+        console.error('Failed to save investment type');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  
+  
+
     setShowInvestmentTypeForm(false);
   };
 
   const handleBack = () => {
-    setShowInvestmentTypeForm(false); // Go back
+    setShowInvestmentTypeForm(false);
   };
 
   return (
     <div>
       <h3>Create a New Investment Type</h3>
 
-    
       <form onSubmit={handleSubmit}>
         <div>
           <label>Name:</label>
           <input type="text" name="name" value={formData.name} onChange={handleChange} required />
         </div>
+
         <div>
           <label>Description:</label>
           <textarea name="description" value={formData.description} onChange={handleChange} required />
         </div>
 
-        {/*expected annual return*/ }
+        {/* Expected Annual Return - Only shows if "fixed" is selected */}
         <div>
-          <label>Expected Annual Return:</label>
-          <select name="returnType" value={formData.returnType} onChange={handleChange}>
-            <option value="fixed">Fixed </option> 
-            <option value="normal_distribution">Normal Distribution</option>
-            <option value="gbm">Geometric Brownian Motion</option>
-          </select>
-          < select>
-            <option value="percentage"> Amount </option>
-            <option value="percentage"> Percentage </option>
-          </select>
-          <input type="text" name="returnValue" placeholder="Enter value or %" value={formData.returnValue} onChange={handleChange} required />
-        </div> 
-
-        
-        <div>
-          <label>Expense Ratio Percentage :</label>
-          <input type="text" name="expenseRatio" value={formData.expenseRatio} onChange={handleChange} required />
-        </div>
-
-        {/* Expected Annual Income */}
-        <div>
-          <label>Expected Annual Income:</label>
-          <select name="incomeType" value={formData.incomeType} onChange={handleChange}>
+          <label>Expected Annual Return Type:</label>
+          <select name="expAnnReturnType" value={formData.expAnnReturnType} onChange={handleChange}>
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
             <option value="gbm">Geometric Brownian Motion</option>
           </select>
-          < select>
-            <option value="percentage"> Amount </option>
-            <option value="percentage"> Percentage </option>
-          </select>
-          <input type="text" name="incomeValue" placeholder="Enter value or %" value={formData.incomeValue} onChange={handleChange} required />
         </div>
+
+        {formData.expAnnReturnType === "fixed" && (
+          <div>
+            <label>Expected Annual Return Value:</label>
+            <input
+              type="text"
+              name="expAnnReturnValue"
+              placeholder="Enter value"
+              value={formData.expAnnReturnValue}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        )}
+
+        {/* Expense Ratio */}
+        <div>
+          <label>Expense Ratio Percentage:</label>
+          <input type="text" name="expenseRatio" value={formData.expenseRatio} onChange={handleChange} required />
+        </div>
+
+        {/* Expected Annual Income - Only shows if "fixed" is selected */}
+        <div>
+          <label>Expected Annual Income Type:</label>
+          <select name="expAnnIncomeType" value={formData.expAnnIncomeType} onChange={handleChange}>
+            <option value="fixed">Fixed</option>
+            <option value="normal_distribution">Normal Distribution</option>
+            <option value="gbm">Geometric Brownian Motion</option>
+          </select>
+        </div>
+
+        {formData.expAnnIncomeType === "fixed" && (
+          <div>
+            <label>Expected Annual Income Value:</label>
+            <input
+              type="text"
+              name="expAnnIncomeValue"
+              placeholder="Enter value"
+              value={formData.expAnnIncomeValue}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        )}
 
         {/* Taxability */}
         <div>
@@ -183,17 +242,9 @@ export const InvestmentType = ( { setShowInvestmentTypeForm }  ) => {
           </select>
         </div>
 
-        {/* need to send to server -> on submit should return to new scenario page */}
         <button type="button" onClick={handleBack}>Back</button>
         <button type="submit">Save</button>
-      </form> 
-     
+      </form>
     </div>
   );
 };
-
-
-
-
-
-
