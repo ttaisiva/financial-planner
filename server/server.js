@@ -20,3 +20,42 @@ connection.connect((err) => {
     console.log("Connected to MySQL!");
   }
 });
+
+
+app.post('/api/investments', (req, res) => {
+  const { investment_type, dollar_value, tax_status } = req.body;
+
+  const query = 'INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)';
+  const values = [investment_type, dollar_value, tax_status];
+
+  connection.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Failed to insert investment:', err);
+      res.status(500).send('Failed to save investment');
+    } else {
+      res.status(201).send('Investment saved successfully');
+    }
+  });
+});
+
+
+app.post('/api/investment-types', (req, res) => {
+  const { name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability } = req.body;
+
+  const query = 'INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+  const values = [name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability];
+
+  connection.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Failed to insert investment type:', err);
+      res.status(500).send('Failed to save investment type');
+    } else {
+      res.status(201).send('Investment type saved successfully');
+    }
+  });
+});
+
+const PORT = process.env.SERVER_PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
