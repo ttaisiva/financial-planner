@@ -3,6 +3,23 @@ dotenv.config(); // loads environment variables from .env
 import mysql from "mysql2";
 import * as cheerio from "cheerio";
 
+import express from "express";
+import cors from "cors";
+
+const app = express();
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
+app.use(express.json());
+
+app.listen(8000, () => {
+  console.log("Server listening on port 8000...");
+});
+
+/*
+
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -12,6 +29,7 @@ const connection = mysql.createConnection({
 });
 
 console.log("DB Name:", process.env.DB_NAME);
+
 
 connection.connect((err) => {
   if (err) {
@@ -84,8 +102,12 @@ function percentageToDecimal(text) {
 function removeDollarSign(text) {
   return parseFloat(text.replace(/[$,]/g, ""), 10);
 }
+*/
 
 // const insertTaxBrackets = (year, filingStatus, incomeMin, incomeMax, taxRate) => {
 //   const sql = "INSERT INTO tax_brackets (year, filingStatus, incomeMin, incomeMax, taxRate) VALUES ?";
 //   const values =
 // }
+import authRouter from './routers/authentication.js';
+
+app.use("/auth", authRouter);
