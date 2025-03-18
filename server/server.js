@@ -18,8 +18,6 @@ app.listen(8000, () => {
   console.log("Server listening on port 8000...");
 });
 
-/*
-
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -102,7 +100,6 @@ function percentageToDecimal(text) {
 function removeDollarSign(text) {
   return parseFloat(text.replace(/[$,]/g, ""), 10);
 }
-*/
 
 // const insertTaxBrackets = (year, filingStatus, incomeMin, incomeMax, taxRate) => {
 //   const sql = "INSERT INTO tax_brackets (year, filingStatus, incomeMin, incomeMax, taxRate) VALUES ?";
