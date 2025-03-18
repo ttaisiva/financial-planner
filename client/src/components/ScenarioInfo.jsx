@@ -1,26 +1,83 @@
 import "../styles/NewScenario.css";
 import React, { useState } from "react";
 import EventsForm from "./EventsForm";
-import {InvestmentType, Investment} from "./InvestmentDetails";
+import { InvestmentType, Investment } from "./InvestmentDetails";
 
+
+const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
+  <div>
+    <label> {prefix} Life Expectancy: </label>
+    <select name={`${prefix}LifeExpectancyType`} value={data.lifeExpectancyType} onChange={handleChange}>
+      <option value="" disabled>Select sample life expectancy</option>
+      <option value="fixed">Fixed</option>
+      <option value="dist">Normal Distribution</option>
+    </select>
+
+    {data.lifeExpectancyType === "fixed" ? (
+      <input type="text" name={`${prefix}LifeExpectancyValue`} placeholder="Enter value" value={data.lifeExpectancyValue} onChange={handleChange} required />
+    ) : data.lifeExpectancyType === "dist" ? (
+      <>
+        <input type="text" name={`${prefix}LifeExpectancyMean`} placeholder="Enter mean" value={data.lifeExpectancyMean} onChange={handleChange} required />
+        <input type="text" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
+      </>
+    ) : null}
+  </div>
+);
+
+
+
+const RetirementAgeForm = ({ prefix, data, handleChange }) => (
+  <div>
+    <label> {prefix} Retirement Age: </label>
+    <select name={`${prefix}RetirementAge`} value={data.retirementAge} onChange={handleChange}>
+      <option value="" disabled>Select sample retirement age</option>
+      <option value="fixed">Fixed</option>
+      <option value="dist">Normal Distribution</option>
+    </select>
+
+    {data.retirementAge === "fixed" ? (
+      <input type="text" name={`${prefix}RetirementAgeValue`} placeholder="Enter value" value={data.retirementAgeValue} onChange={handleChange} required />
+    ) : data.retirementAge === "dist" ? (
+      <>
+        <input type="text" name={`${prefix}RetirementAgeMean`} placeholder="Enter mean" value={data.retirementAgeMean} onChange={handleChange} required />
+        <input type="text" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
+      </>
+    ) : null}
+  </div>
+);
 
 
 const ScenarioInfo = () => {
   // State to manage form data
   const [formData, setFormData] = useState({
     financialGoal: "",
-    filingStatus: "single", 
-    userData: { retirementAge: "", lifeExpectancy: "" },
-    spouseData: { retirementAge: "", lifeExpectancy: "" },
-    
+    filingStatus: "single",
+    userData: {
+      lifeExpectancyType: "",
+      lifeExpectancyValue: "",
+      lifeExpectancyMean: "",
+      lifeExpectancyStdDev: "",
+      retirementAge: "",
+      retirementAgeValue: "",
+      retirementAgeMean: "",
+      retirementAgeStdDev: "",
+    },
+    spouseData: {
+      lifeExpectancyType: "",
+      lifeExpectancyValue: "",
+      lifeExpectancyMean: "",
+      lifeExpectancyStdDev: "",
+      retirementAge: "",
+      retirementAgeValue: "",
+      retirementAgeMean: "",
+      retirementAgeStdDev: "",
+    },
   });
-
 
   const [showSpouseForm, setShowSpouseForm] = useState(false);
   const [showEventsForm, setShowEventsForm] = useState(false);
-  const [showInvestmentTypeForm, setShowInvestmentTypeForm] = useState(false)
-  const [showInvestmentForm, setShowInvestmentForm] = useState(false)
-  
+  const [showInvestmentTypeForm, setShowInvestmentTypeForm] = useState(false);
+  const [showInvestmentForm, setShowInvestmentForm] = useState(false);
 
   const handleAddSpouse = () => {
     setShowSpouseForm(!showSpouseForm);
@@ -30,24 +87,48 @@ const ScenarioInfo = () => {
     setShowEventsForm(true); // Show the EventsForm when button is clicked
   };
 
-  // Handle input changes 
+  // Helper function to update nested state objects
+  const updateNestedState = (prefix, key, value) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [prefix]: { ...prevData[prefix], [key]: value },
+    }));
+  };
+
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name in formData) {
+    //specific updates for user and spouse
+    if (name.startsWith("user")) {
+      const key = name.replace("user", "").charAt(0).toLowerCase() + name.replace("user", "").slice(1);
+      updateNestedState("userData", key, value);
+    } else if (name.startsWith("spouse")) {
+      const key = name.replace("spouse", "").charAt(0).toLowerCase() + name.replace("spouse", "").slice(1);
+      updateNestedState("spouseData", key, value);
+    } else { //update all other fields
       setFormData({ ...formData, [name]: value });
-    } else {
-      setFormData({
-        ...formData,
-        spouseData: { ...formData.spouseData, [name]: value },
-      });
+    }
+
+    // Reset values when switching from "fixed" to "distribution"
+    if (name.endsWith("LifeExpectancyType") && value === "fixed") {
+      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "lifeExpectancyMean", "");
+      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "lifeExpectancyStdDev", "");
+    } else if (name.endsWith("LifeExpectancyType") && value === "dist") {
+      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "lifeExpectancyValue", "");
+    }
+    if (name.endsWith("RetirementAge") && value === "fixed") {
+      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "retirementAgeMean", "");
+      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "retirementAgeStdDev", "");
+    } else if (name.endsWith("RetirementAge") && value === "dist") {
+      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "retirementAgeValue", "");
     }
   };
 
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    //need to send stuff to MYSQL
+    
 
     console.log("Form Submitted with Data:", formData);
   };
@@ -59,11 +140,9 @@ const ScenarioInfo = () => {
   const handleInvestment = () => {
     setShowInvestmentForm(true);
   };
-  
 
   return (
     <div className="scenario_info-container">
-
       <h2>Financial Goal</h2>
       <p>Enter your desired wealth goal</p>
       <form onSubmit={handleSubmit}>
@@ -84,7 +163,7 @@ const ScenarioInfo = () => {
         <h2>Tax Information</h2>
         <p>Upload your tax information</p>
         <div>
-        <label>
+          <label>
             Filing Status:
             <select
               name="filingStatus"
@@ -98,32 +177,11 @@ const ScenarioInfo = () => {
           </label>
         </div>
 
-        <h2>Major Life Events </h2>
-        <p>Add some major life events</p>
         <div>
-          <label>
-            My Life Expectancy:
-            <select
-              name="UserLifeExpectancy">
-              value={formData.userLifeExpectancy}
-              onChange={handleChange}
-
-            
-              <option value="fixed">Fixed</option>
-              <option value="dist">Dist</option>
-            </select>
-          </label>
-          <label>
-            Retirement Age:
-            <select
-              name="userRetirementAge"
-              value={formData.userRetirementAge}
-              onChange={handleChange} >
-              <option value="fixed">Fixed</option>
-              <option value="dist">Dist</option>
-
-              </select>
-          </label>
+          <h2>Major Life Events </h2>
+          <p>Add some major life events</p>
+          <LifeExpectancyForm prefix="user" data={formData.userData} handleChange={handleChange} />
+          <RetirementAgeForm prefix="user" data={formData.userData} handleChange={handleChange} />
         </div>
 
         {/* Add Spouse Button */}
@@ -137,33 +195,8 @@ const ScenarioInfo = () => {
         {showSpouseForm && (
           <div>
             <h3>Spouse Information</h3>
-            <div>
-              <label>
-                Spouse's Life Expectancy:
-
-                <select
-                  name="lifeExpectancy">
-                  value={formData.spouseData.lifeExpectancy}
-                  onChange={handleChange}
-                  <option value="fixed">Fixed</option>
-                  <option value="dist">Dist</option>
-                </select>
-                
-
-              </label>
-              <label>
-                Spouse's Retirement Age:
-
-                <select
-                  name="retirementAge"
-                  value={formData.spouseData.retirementAge}
-                  onChange={handleChange} >
-                  <option value="fixed">Fixed</option>
-                  <option value="dist">Dist</option>
-
-                  </select>
-              </label>
-            </div>
+            <LifeExpectancyForm prefix="spouse" data={formData.spouseData} handleChange={handleChange} />
+            <RetirementAgeForm prefix="spouse" data={formData.spouseData} handleChange={handleChange} />
           </div>
         )}
 
@@ -171,19 +204,19 @@ const ScenarioInfo = () => {
       </form>
 
       <h2> Investment Types and Investments </h2>
-      <button onClick={handleInvestmentType} >New Investment Type</button>
-      {showInvestmentTypeForm && <InvestmentType setShowInvestmentTypeForm={setShowInvestmentTypeForm} />} 
-   
+      <button onClick={handleInvestmentType}>New Investment Type</button>
+      {showInvestmentTypeForm && (
+        <InvestmentType setShowInvestmentTypeForm={setShowInvestmentTypeForm} />
+      )}
 
       <button onClick={handleInvestment}>New Investment</button>
-      {showInvestmentForm && <Investment setShowInvestmentForm={setShowInvestmentForm} />}
-
+      {showInvestmentForm && (
+        <Investment setShowInvestmentForm={setShowInvestmentForm} />
+      )}
 
       <h2> Event Series</h2>
-      <button onClick={handleCreateEvent} >New Event</button>
+      <button onClick={handleCreateEvent}>New Event</button>
       {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
-      
-      
     </div>
   );
 };
