@@ -179,7 +179,7 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
           <textarea name="description" value={formData.description} onChange={handleChange} required />
         </div>
 
-        {/* Expected Annual Return - Only shows if "fixed" is selected */}
+        
         <div>
           <label>Expected Annual Return Type:</label>
           <select name="expAnnReturnType" value={formData.expAnnReturnType} onChange={handleChange}>
@@ -187,21 +187,11 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="normal_distribution">Normal Distribution</option>
             <option value="gbm">Geometric Brownian Motion</option>
           </select>
+          {formData.expAnnReturnType === 'fixed' && (
+            <input type="text" name="expAnnReturnValue" placeholder="Enter value" value={formData.expAnnReturnValue} onChange={handleChange} required />
+          )}
         </div>
 
-        {formData.expAnnReturnType === "fixed" && (
-          <div>
-            <label>Expected Annual Return Value:</label>
-            <input
-              type="text"
-              name="expAnnReturnValue"
-              placeholder="Enter value"
-              value={formData.expAnnReturnValue}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        )}
 
         {/* Expense Ratio */}
         <div>
@@ -217,21 +207,11 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="normal_distribution">Normal Distribution</option>
             <option value="gbm">Geometric Brownian Motion</option>
           </select>
+          {formData.expAnnIncomeType === 'fixed' && (
+            <input type="text" name="expAnnIncomeValue" placeholder="Enter value" value={formData.expAnnIncomeValue} onChange={handleChange} required />
+          )}
+          
         </div>
-
-        {formData.expAnnIncomeType === "fixed" && (
-          <div>
-            <label>Expected Annual Income Value:</label>
-            <input
-              type="text"
-              name="expAnnIncomeValue"
-              placeholder="Enter value"
-              value={formData.expAnnIncomeValue}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        )}
 
         {/* Taxability */}
         <div>
