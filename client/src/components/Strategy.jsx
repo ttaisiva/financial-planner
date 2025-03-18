@@ -1,20 +1,95 @@
-
 import React, { useState } from "react";
 
-
-const Strategy = ({ type }) => {
-
-
+const Strategy = () => {
+  // State to manage form data
+  const [formData, setFormData] = useState({
+    optimizer: false,
+    rmd: false,
+  });
 
   return (
     <div>
-        <p> Enter Spending Strategy</p>
-        <p> Enter Expense Withdrawal Strategy </p>
-        <p> Optional Enter Roth Conversion Strategy </p>
-        <p> Optional Enter RMD Strategy </p>
-
+      <SpendingStrategy setFormData={setFormData} />
+      <p> Enter Expense Withdrawal Strategy </p>
+      <RothConversionSettings formData={formData} setFormData={setFormData} />
+      <p> Optional Enter RMD Strategy </p>
     </div>
   );
 };
 
 export default Strategy;
+
+// ordering on discretionary expenses
+const SpendingStrategy = ({ setFormData }) => {
+  return (
+    <div>
+      <p>Enter Spending Strategy</p>
+      {/* TODO: Fetch existing discretionary expenses from server */}
+      {/* Drag and drop mechanism? */}
+    </div>
+  );
+};
+
+const RothConversionSettings = ({ formData, setFormData }) => {
+  const handleOptimizerToggle = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      optimizer: !prevData.optimizer,
+    }));
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  return (
+    <>
+      {/* Optimizer Settings */}
+      <div>
+        <div>
+            <p> Roth Conversion Optimizer</p>
+            <button type="button" onClick={handleOptimizerToggle}>
+              {formData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
+            </button>
+          </div>
+          {formData.optimizer && (
+            <div>
+              <div>
+                <label>Start year:</label>
+                <input
+                  type="number"
+                  name="RothStartYear"
+                  placeholder="Enter year"
+                  value={formData.RothStartYear || ""}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div>
+                <label>End year:</label>
+                <input
+                  type="number"
+                  name="RothEndYear"
+                  placeholder="Enter year"
+                  value={formData.RothEndYear || ""}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+          )}
+      </div>
+      
+      {/* Ordering Strategy */}
+      <div>
+        <p>Choose order of pre-tax retirement accounts below</p>
+        {/* Drag and drop mechanism? */}
+      </div>
+      
+    </>
+  );
+};
