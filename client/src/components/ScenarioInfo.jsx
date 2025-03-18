@@ -33,6 +33,7 @@ const ScenarioInfo = () => {
   // Handle input changes 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     if (name in formData) {
       setFormData({ ...formData, [name]: value });
     } else {
@@ -102,25 +103,26 @@ const ScenarioInfo = () => {
         <div>
           <label>
             My Life Expectancy:
-            <input
-              type="text"
-              name="userLifeExpectancy"
+            <select
+              name="UserLifeExpectancy">
               value={formData.userLifeExpectancy}
               onChange={handleChange}
-              placeholder="Value"
-              required
-            />
+
+            
+              <option value="fixed">Fixed</option>
+              <option value="dist">Dist</option>
+            </select>
           </label>
           <label>
             Retirement Age:
-            <input
-              type="text"
+            <select
               name="userRetirementAge"
               value={formData.userRetirementAge}
-              onChange={handleChange}
-              placeholder="Value"
-              required
-            />
+              onChange={handleChange} >
+              <option value="fixed">Fixed</option>
+              <option value="dist">Dist</option>
+
+              </select>
           </label>
         </div>
 
@@ -138,25 +140,28 @@ const ScenarioInfo = () => {
             <div>
               <label>
                 Spouse's Life Expectancy:
-                <input
-                  type="text"
-                  name="lifeExpectancy"
+
+                <select
+                  name="lifeExpectancy">
                   value={formData.spouseData.lifeExpectancy}
                   onChange={handleChange}
-                  placeholder="Enter spouse's life expectancy"
-                  required
-                />
+                  <option value="fixed">Fixed</option>
+                  <option value="dist">Dist</option>
+                </select>
+                
+
               </label>
               <label>
                 Spouse's Retirement Age:
-                <input
-                  type="text"
+
+                <select
                   name="retirementAge"
                   value={formData.spouseData.retirementAge}
-                  onChange={handleChange}
-                  placeholder="Enter spouse's retirement age"
-                  required
-                />
+                  onChange={handleChange} >
+                  <option value="fixed">Fixed</option>
+                  <option value="dist">Dist</option>
+
+                  </select>
               </label>
             </div>
           </div>
