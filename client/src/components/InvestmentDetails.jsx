@@ -19,37 +19,25 @@ export const Investment = ( { setShowInvestmentForm } ) => {
     e.preventDefault();
     console.log("Investment Submitted:", formData);
     // send to server
-
-    const jwtToken = localStorage.getItem('jwtToken');  //local storage for now but we can also do session
-
-    // Check if JWT exists
-    if (!jwtToken) {
-      console.error('JWT token not found in localStorage.');
-      return;
-    }
-  
+    
     try {
-      const response = await fetch('http://financial-planner.cloeyuk4uvt9.us-east-2.rds.amazonaws.com:3306/api/investments', {
+      const response = await fetch('http://localhost:8000/api/investments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwtToken}`,  
         },
         body: JSON.stringify(formData),
       });
-  
+
       if (response.ok) {
-        console.log('Investments saved successfully');
-        setShowInvestmentTypeForm(false);
+        console.log('Investment saved successfully');
+        setShowInvestmentForm(false);
       } else {
-        console.error('Failed to save investments');
+        console.error('Failed to save investment');
       }
     } catch (error) {
-      
       console.error('Error:', error);
     }
-
-
 
 
     setShowInvestmentForm(false);
@@ -148,31 +136,25 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
 
     const jwtToken = localStorage.getItem('jwtToken');  //local storage for now but we can also do session
 
-    // Check if JWT exists
-    if (!jwtToken) {
-      console.error('JWT token not found in localStorage.');
-      return;
-    }
-  
     try {
-      const response = await fetch('http://financial-planner.cloeyuk4uvt9.us-east-2.rds.amazonaws.com:3306/api/investment-types', {
+      const response = await fetch('http://localhost:8000/api/investment-type', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwtToken}`,  // Include the JWT in the Authorization header
         },
         body: JSON.stringify(formData),
       });
-  
+
       if (response.ok) {
         console.log('Investment type saved successfully');
-        setShowInvestmentTypeForm(false);
+        setShowInvestmentForm(false);
       } else {
         console.error('Failed to save investment type');
       }
     } catch (error) {
       console.error('Error:', error);
     }
+  
   
 
     setShowInvestmentTypeForm(false);
