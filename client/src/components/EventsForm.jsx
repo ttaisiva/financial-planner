@@ -20,7 +20,8 @@ const EventsForm = ({ setShowEventsForm }) => {
     userPercentage: '',
     spousePercentage: '',
     isSocialSecurity: false,
-    isWages: false, 
+    isWages: false,
+    allocationMethod: '', 
   });
 
 
@@ -107,17 +108,9 @@ const EventsForm = ({ setShowEventsForm }) => {
         </>
       )}
 
-      {formData.eventType === 'invest' && (
+      {(formData.eventType === 'invest' || formData.eventType === 'rebalance') && (
         <>
-          <label>Some invest question</label>
-          <input type="text" name="investQuestion" value={formData.investQuestion || ''} onChange={handleChange} />
-        </>
-      )}
-
-      {formData.eventType === 'rebalance' && (
-        <>
-          <label>Some rebalance question</label>
-          <input type="text" name="rebalanceQuestion" value={formData.rebalanceQuestion || ''} onChange={handleChange} />
+          <InvestRebalanceEvent formData={formData} handleChange={handleChange} /> {/* pass as props */}
         </>
       )}
 
@@ -180,6 +173,39 @@ const IncomeEvent = ({ formData, handleChange }) => {
     );
   };
   
+// invest and rebalance are both asset allocation to investment accounts, so they can be combined into one component
+const InvestRebalanceEvent = ({ formData, handleChange }) => {
 
+    return (
+      <>
+        <div>
+          {/* Copilot prompt: How do I make a multiple-choice input instead of checkboxes, so the user can only choose one option? */}
+          <label>Choose method to allocate funds to investments:</label>
+            <input 
+              type="radio" 
+              name="allocationMethod" 
+              value="fixed_percentage" 
+              checked={formData.allocationMethod === 'fixed_percentage'} 
+              onChange={handleChange} 
+            
+            />
+            Fixed percentage
+            <input 
+              type="radio" 
+              name="allocationMethod" 
+              value="glide_path" 
+              checked={formData.allocationMethod === 'glide_path'} 
+              onChange={handleChange} 
+            /> 
+            Glide path
+        </div>
+        <div>
+          {/* TODO: get existing investments from server after sophie sends them */}
+          <label>Choose investment</label>
+          <input  />
+        </div>
+      </>
+    );
+  }
 
 
