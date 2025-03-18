@@ -9,6 +9,7 @@ const Header = () => {
       <Link to="/" className="logo">
         ManateePlanner
       </Link>
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
       <nav>
         <ul>
           <li>
