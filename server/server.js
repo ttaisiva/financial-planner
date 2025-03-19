@@ -1,12 +1,15 @@
 import dotenv from "dotenv";
+import path from "path";
+// this is for sophie pls dont delete otherwise my env wont work
+//dotenv.config({ path: path.resolve("../.env") }); 
 import mysql from "mysql2/promise";
-import * as cheerio from "cheerio";
 import express from "express";
 import session from "express-session";
 import cors from "cors";
 import { scrapeData } from "./scraping.js";
+import { createTablesIfNotExist } from "./db_tables.js";
 
-dotenv.config(); // loads environment variables from .env
+dotenv.config();
 
 const app = express();
 
@@ -29,10 +32,33 @@ app.use(session({
   }
 }))
 
+
+let connection;
+async function connectToDatabase() {
+  //console.log("DB_HOST:", process.env.DB_HOST);
+    connection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+  });
+  console.log("Database connection established.");
+  return connection;
+}
+
+async function ensureConnection() {
+  if (!connection || connection.connection._closing) {
+    console.log("Reconnecting to the database...");
+    await connectToDatabase();
+  }
+}
+
 startServer();
 
 async function startServer() {
   try {
+    await connectToDatabase();
     const g = await scrapeData();
   } catch (err) {
     console.error("Error:", err.message);
@@ -40,34 +66,64 @@ async function startServer() {
   }
 }
 
-async function connectToDatabase() {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-  });
-
-  return connection;
-}
-
-app.post("/api/investments", (req, res) => {
+app.post("/api/investments", async (req, res) => {
+  console.log("Server received request from client..")
   const { investment_type, dollar_value, tax_status } = req.body;
-
+  console.log("make query")
   const query =
     "INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)";
   const values = [investment_type, dollar_value, tax_status];
 
-  connection.query(query, values, (err, results) => {
-    if (err) {
-      console.error("Failed to insert investment:", err);
-      res.status(500).send("Failed to save investment");
-    } else {
-      res.status(201).send("Investment saved successfully");
-    }
-  });
+  console.log("Send to database..")
+  
+  try {
+    await ensureConnection();
+    await createTablesIfNotExist(connection);
+    const [results] = await connection.execute(query, values);
+    res.status(201).send("Investment saved successfully");
+  } catch (err) {
+    console.error("Failed to insert investment:", err);
+    res.status(500).send("Failed to save investment");
+  }
 });
+
+app.post("/api/investment-types", async (req, res) => {
+  const {
+    name,
+    description,
+    expAnnReturnType,
+    expAnnReturnValue,
+    expenseRatio,
+    expAnnIncomeType,
+    expAnnIncomeValue,
+    taxability,
+  } = req.body;
+
+  const query =
+    "INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  const values = [
+    name,
+    description,
+    expAnnReturnType,
+    expAnnReturnValue,
+    expenseRatio,
+    expAnnIncomeType,
+    expAnnIncomeValue,
+    taxability,
+  ];
+
+  try {
+    await ensureConnection();
+    await createTablesIfNotExist(connection);
+    const [results] = await connection.execute(query, values);
+    res.status(201).send("Investment type saved successfully");
+  } catch (err) {
+    console.error("Failed to insert investment type:", err);
+    res.status(500).send("Failed to save investment type");
+  }
+});
+
+console.log("...")
 
 app.post("/api/investment-types", (req, res) => {
   const {
@@ -103,6 +159,7 @@ app.post("/api/investment-types", (req, res) => {
     }
   });
 });
+
 
 const PORT = process.env.SERVER_PORT || 3000;
 app.listen(PORT, () => {

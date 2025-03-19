@@ -21,7 +21,7 @@ export const Investment = ( { setShowInvestmentForm } ) => {
     // send to server
     
     try {
-      const response = await fetch('http://localhost:8000/api/investments', {
+      const response = await fetch('http://localhost:3000/api/investments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
     const jwtToken = localStorage.getItem('jwtToken');  //local storage for now but we can also do session
 
     try {
-      const response = await fetch('http://localhost:8000/api/investment-type', {
+      const response = await fetch('http://localhost:3000/api/investment-type', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
