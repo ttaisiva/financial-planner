@@ -145,7 +145,7 @@ const IncomeEvent = ({ formData, handleChange }) => {
           <option value="uniform_distribution">Uniform Distribution</option>
         </select>
         {formData.annualChangeType === 'fixed' && (
-          <input type="text" name="annualChangeValue" placeholder="Enter value" value={formData.annualChangeValue} onChange={handleChange} required />
+          <input type="text" name="annualChangeValue" placeholder="Enter value" value={formData.annualChangeValue} onChange={handleChange} required />)}
         </div>
   
         <div>

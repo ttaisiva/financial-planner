@@ -30,6 +30,7 @@ const SpendingStrategy = ({ setFormData }) => {
   );
 };
 
+// both roth and rmd are ordering on pre tax retirement accounts - share drag and drop component
 const RothConversionSettings = ({ formData, setFormData }) => {
   const handleOptimizerToggle = () => {
     setFormData((prevData) => ({
@@ -93,3 +94,4 @@ const RothConversionSettings = ({ formData, setFormData }) => {
     </>
   );
 };
+

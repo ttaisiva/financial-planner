@@ -1,17 +1,21 @@
 import "../styles/NewScenario.css";
 import React, { useState } from "react";
+import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import { InvestmentType, Investment } from "./InvestmentDetails";
 
 
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   <div>
-    <label> {prefix} Life Expectancy: </label>
+    <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} life expectancy: </label>
+
     <select name={`${prefix}LifeExpectancyType`} value={data.lifeExpectancyType} onChange={handleChange}>
       <option value="" disabled>Select sample life expectancy</option>
       <option value="fixed">Fixed</option>
       <option value="dist">Normal Distribution</option>
     </select>
+    <span data-tooltip-id="tooltip" data-tooltip-content={tooltipContent.lifeExpectancy} className="info-icon">ℹ️</span>
+      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
     {data.lifeExpectancyType === "fixed" ? (
       <input type="text" name={`${prefix}LifeExpectancyValue`} placeholder="Enter value" value={data.lifeExpectancyValue} onChange={handleChange} required />
@@ -28,12 +32,15 @@ const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
 
 const RetirementAgeForm = ({ prefix, data, handleChange }) => (
   <div>
-    <label> {prefix} Retirement Age: </label>
+    <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} retirement age: </label>
+
     <select name={`${prefix}RetirementAge`} value={data.retirementAge} onChange={handleChange}>
       <option value="" disabled>Select sample retirement age</option>
       <option value="fixed">Fixed</option>
       <option value="dist">Normal Distribution</option>
     </select>
+    <span data-tooltip-id="tooltip" data-tooltip-content={tooltipContent.retirementAge} className="info-icon">ℹ️</span>
+      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
     {data.retirementAge === "fixed" ? (
       <input type="text" name={`${prefix}RetirementAgeValue`} placeholder="Enter value" value={data.retirementAgeValue} onChange={handleChange} required />
@@ -174,6 +181,8 @@ const ScenarioInfo = () => {
               <option value="single">Single</option>
               <option value="married">Married</option>
             </select>
+            <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.filingStatus} className="info-icon">ℹ️</span>
+            <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
           </label>
         </div>
 
@@ -222,3 +231,11 @@ const ScenarioInfo = () => {
 };
 
 export default ScenarioInfo;
+
+// TODO: there should probably be a file of this but idk where
+const tooltipContent={ 
+  "lifeExpectancy":["Explanation of the life exp. options"], 
+  "retirementAge":["Explanation of the retirement age options"],
+  "filingStatus":['<p>Married is for Married Filing Jointly. <br>\
+      Married Filing Separately, Head of Household, and Qualifying Surviving Spouse are currently not supported.</p>'],
+};
