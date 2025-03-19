@@ -169,12 +169,12 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
       <form onSubmit={handleSubmit}>
         <div>
           <label>Name: </label>
-          <input type="text" name="name" value={formData.name} onChange={handleChange} required />
+          <input type="text" name="name" placeholder="Investment name" value={formData.name} onChange={handleChange} required />
         </div>
 
         <div>
           <label>Description: </label>
-          <textarea name="description" value={formData.description} onChange={handleChange} required />
+          <textarea name="description" placeholder="Describe your investment..." value={formData.description} onChange={handleChange} required />
         </div>
 
         
