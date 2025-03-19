@@ -185,7 +185,7 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="normal_distribution">Normal Distribution</option>
           </select>
           {formData.expAnnReturnType === 'fixed' && (
-            <input type="number" name="expAnnReturnValue" placeholder="0.00" value={formData.expAnnReturnValue} onChange={handleChange} required />
+            <input type="number" min= "0" name="expAnnReturnValue" placeholder="0.00" value={formData.expAnnReturnValue} onChange={handleChange} required />
           )}
         </div>
 
@@ -204,7 +204,7 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="normal_distribution">Normal Distribution</option>
           </select>
           {formData.expAnnIncomeType === 'fixed' && (
-            <input type="number" name="expAnnIncomeValue" placeholder="0.00" value={formData.expAnnIncomeValue} onChange={handleChange} required />
+            <input type="number" min="0" name="expAnnIncomeValue" placeholder="0.00" value={formData.expAnnIncomeValue} onChange={handleChange} required />
           )}
           
         </div>

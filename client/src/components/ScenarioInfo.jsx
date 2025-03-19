@@ -4,6 +4,58 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import { InvestmentType, Investment } from "./InvestmentDetails";
 
+const states = [
+  { code: "AL", name: "Alabama" },
+  { code: "AK", name: "Alaska" },
+  { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" },
+  { code: "CA", name: "California" },
+  { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" },
+  { code: "DE", name: "Delaware" },
+  { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" },
+  { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" },
+  { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" },
+  { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" },
+  { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" },
+  { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" },
+  { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" },
+  { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" },
+  { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" },
+  { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" },
+  { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" },
+  { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" },
+  { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" },
+  { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" },
+  { code: "WY", name: "Wyoming" },
+]
 
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   <div>
@@ -18,11 +70,11 @@ const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
       <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
     {data.lifeExpectancyType === "fixed" ? (
-      <input type="text" name={`${prefix}LifeExpectancyValue`} placeholder="Enter value" value={data.lifeExpectancyValue} onChange={handleChange} required />
+      <input type="number" min = "0" name={`${prefix}LifeExpectancyValue`} placeholder="Enter value" value={data.lifeExpectancyValue} onChange={handleChange} required />
     ) : data.lifeExpectancyType === "dist" ? (
       <>
-        <input type="text" name={`${prefix}LifeExpectancyMean`} placeholder="Enter mean" value={data.lifeExpectancyMean} onChange={handleChange} required />
-        <input type="text" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
+        <input type="number" min = "0" name={`${prefix}LifeExpectancyMean`} placeholder="Enter mean" value={data.lifeExpectancyMean} onChange={handleChange} required />
+        <input type="number" min = "0" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
       </>
     ) : null}
   </div>
@@ -41,11 +93,11 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
       <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
     {data.retirementAge === "fixed" ? (
-      <input type="text" name={`${prefix}RetirementAgeValue`} placeholder="Enter value" value={data.retirementAgeValue} onChange={handleChange} required />
+      <input type="number" min = "0" name={`${prefix}RetirementAgeValue`} placeholder="Enter value" value={data.retirementAgeValue} onChange={handleChange} required />
     ) : data.retirementAge === "dist" ? (
       <>
-        <input type="text" name={`${prefix}RetirementAgeMean`} placeholder="Enter mean" value={data.retirementAgeMean} onChange={handleChange} required />
-        <input type="text" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
+        <input type="number" min = "0" name={`${prefix}RetirementAgeMean`} placeholder="Enter mean" value={data.retirementAgeMean} onChange={handleChange} required />
+        <input type="number" min = "0" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
       </>
     ) : null}
   </div>
@@ -57,6 +109,7 @@ const ScenarioInfo = () => {
   const [formData, setFormData] = useState({
     financialGoal: "",
     filingStatus: "single",
+    stateOfResidence: "",
     userData: {
       lifeExpectancyType: "",
       lifeExpectancyValue: "",
@@ -98,6 +151,23 @@ const ScenarioInfo = () => {
       ...prevData,
       [prefix]: { ...prevData[prefix], [key]: value },
     }));
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsedData = yaml.load(e.target.result);
+          setFormData((prevData) => ({ ...prevData, taxInfo: parsedData }));
+          console.log("Parsed YAML:", parsedData); 
+        } catch (error) {
+          console.error("Error parsing YAML file:", error);
+        }
+      };
+      reader.readAsText(file);
+    }
   };
 
   // Handle input changes
@@ -178,11 +248,23 @@ const ScenarioInfo = () => {
           <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxInfo} className="info-icon">⚠️</span>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
         </p>
-        {/* TODO: choose state */}
+        
+        {/* TODO: implement logic so if residence is not already accounted for from scraped data, user has the option to upload a YAML file
+        Display warning if the user chooses not to do this */}
         <label>Choose your state of residence (optional) 
+          <select name="stateOfResidence" value={formData.stateOfResidence} onChange={handleChange}>
+            <option value="">Select your state</option>
+            {states.map((state) => (
+              <option key={state.code} value={state.code}>
+                {state.name}
+              </option>
+            ))}
+          </select>
           <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxState} className="info-icon">ℹ️</span>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
         </label>
+
+        <input type="file" accept=".yaml,.yml" onChange={handleFileUpload} />
 
         <div>
           <label>
@@ -209,6 +291,7 @@ const ScenarioInfo = () => {
             <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.startYearTax} className="info-icon">⚠️</span>
             <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
           </p>
+
           <LifeExpectancyForm prefix="user" data={formData.userData} handleChange={handleChange} />
           <RetirementAgeForm prefix="user" data={formData.userData} handleChange={handleChange} />
         </div>
