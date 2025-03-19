@@ -11,7 +11,9 @@ const  NewScenarioPage = () => {
   return (
     <div className="content">
       <Header />
+      {/*implement functionality for upload and export scenario */}
       <button> Upload Scenario </button>
+      <button> Export Scenario </button>
       < ScenarioInfo />
       < Strategy /> 
       <Footer />
