@@ -9,6 +9,8 @@ const Strategy = () => {
 
   return (
     <div>
+      <h2>Spending Strategy</h2>
+
       <SpendingStrategy setFormData={setFormData} />
       <p> Enter Expense Withdrawal Strategy </p>
       <RothConversionSettings formData={formData} setFormData={setFormData} />

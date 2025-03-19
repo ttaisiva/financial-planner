@@ -28,8 +28,6 @@ const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   </div>
 );
 
-
-
 const RetirementAgeForm = ({ prefix, data, handleChange }) => (
   <div>
     <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} retirement age: </label>
@@ -150,14 +148,20 @@ const ScenarioInfo = () => {
 
   return (
     <div className="scenario_info-container">
-      <h2>Financial Goal</h2>
-      <p>Enter your desired wealth goal</p>
+      <h2>Financial goal</h2>
+      <p>
+        Your financial goal is the extra amount you would like to have left over after meeting all expenses. <br></br>
+        A zero financial goal means you will meet all of your expenses without a safety margin.
+        <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.financialGoal} className="info-icon">⚠️</span>
+        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+      </p>
       <form onSubmit={handleSubmit}>
         <div>
           <label>
-            Financial Goal:
+            Financial Goal: $
             <input
-              type="text"
+              type="number"
+              min = "0"
               name="financialGoal"
               value={formData.financialGoal}
               onChange={handleChange}
@@ -188,7 +192,12 @@ const ScenarioInfo = () => {
 
         <div>
           <h2>Major Life Events </h2>
-          <p>Add some major life events</p>
+          <p>
+            Event simulation will begin in the current year. <br></br>
+            Please estimate your desired retirement age and lifespan in years.
+            <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.startYearTax} className="info-icon">⚠️</span>
+            <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+          </p>
           <LifeExpectancyForm prefix="user" data={formData.userData} handleChange={handleChange} />
           <RetirementAgeForm prefix="user" data={formData.userData} handleChange={handleChange} />
         </div>
@@ -213,6 +222,10 @@ const ScenarioInfo = () => {
       </form>
 
       <h2> Investment Types and Investments </h2>
+      <p>
+        Add your investments here. <br></br>
+        Create your own type of investments with New Investment Type.
+      </p>
       <button onClick={handleInvestmentType}>New Investment Type</button>
       {showInvestmentTypeForm && (
         <InvestmentType setShowInvestmentTypeForm={setShowInvestmentTypeForm} />
@@ -236,6 +249,9 @@ export default ScenarioInfo;
 const tooltipContent={ 
   "lifeExpectancy":["Explanation of the life exp. options"], 
   "retirementAge":["Explanation of the retirement age options"],
-  "filingStatus":['<p>Married is for Married Filing Jointly. <br>\
-      Married Filing Separately, Head of Household, and Qualifying Surviving Spouse are currently not supported.</p>'],
+  "filingStatus":["<p>Married is for Married Filing Jointly. <br>\
+      Married Filing Separately, Head of Household, and Qualifying Surviving Spouse are currently not supported.</p>"],
+  "financialGoal":["The financial goal ignores loans, mortgages, and real property such as cars and houses."],
+  "startYearTax":["The simulation does not take into account previous events, investments, or income. Therefore, tax \
+    payment is omitted for the first (current) year."]
 };
