@@ -450,12 +450,3 @@ function extractYear(text) {
   let match = text.match(/(?:\d{4})/);
   return match ? match[0] : null;
 }
-
-// scrapeTaxBrackets();
-// scrapeStandardDeductions();
-// scrapeCapitalGainsTax();
-
-// const insertTaxBrackets = (year, filingStatus, incomeMin, incomeMax, taxRate) => {
-//   const sql = "INSERT INTO tax_brackets (year, filingStatus, incomeMin, incomeMax, taxRate) VALUES ?";
-//   const values =
-// }
