@@ -158,14 +158,14 @@ const ScenarioInfo = () => {
       <form onSubmit={handleSubmit}>
         <div>
           <label>
-            Financial Goal: $
+            Financial goal: $ 
             <input
               type="number"
               min = "0"
               name="financialGoal"
               value={formData.financialGoal}
               onChange={handleChange}
-              placeholder="Value"
+              placeholder="0.00"
               required
             />
           </label>
@@ -175,7 +175,7 @@ const ScenarioInfo = () => {
         <p>Upload your tax information</p>
         <div>
           <label>
-            Filing Status:
+            Filing Status: 
             <select
               name="filingStatus"
               value={formData.filingStatus}
@@ -253,5 +253,5 @@ const tooltipContent={
       Married Filing Separately, Head of Household, and Qualifying Surviving Spouse are currently not supported.</p>"],
   "financialGoal":["The financial goal ignores loans, mortgages, and real property such as cars and houses."],
   "startYearTax":["The simulation does not take into account previous events, investments, or income. Therefore, tax \
-    payment is omitted for the first (current) year."]
+      payment is omitted for the first (current) year."]
 };

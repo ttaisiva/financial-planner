@@ -52,13 +52,13 @@ const EventsForm = ({ setShowEventsForm }) => {
         <h3>Customize your event:</h3> {/* I should add a delete btn*/}
 
         <div>
-          <label>Name:</label>
-          <input type="text" name="name" value={formData.name} onChange={handleChange} required />
+          <label>Name: </label>
+          <input type="text" name="name" placeholder="Event name" value={formData.name} onChange={handleChange} required />
         </div>
 
         <div>
-          <label>Description:</label>
-          <input type="text" name="description" value={formData.description} onChange={handleChange} required />
+          <label>Description: </label>
+          <input type="text" name="description" placeholder="Describe your event..." value={formData.description} onChange={handleChange} required />
         </div>
 
         <div>
@@ -77,19 +77,19 @@ const EventsForm = ({ setShowEventsForm }) => {
         </div>
 
         <div>
-          <label>Duration:</label>
+          <label>Duration: </label>
           <select name="durationType" value={formData.durationType} onChange={handleChange}>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
           {formData.durationType === 'fixed' && (
-            <input type="text" name="durationValue" placeholder="Enter value" value={formData.durationValue} onChange={handleChange} required />
+            <input type="number" name="durationValue" min="0" placeholder="0" value={formData.durationValue} onChange={handleChange} required />
           )}
         </div>
 
         <div>
-          <label>Event Type</label>
+          <label>Event Type </label>
           <select name="eventType" value={formData.eventType} onChange={handleChange} required>
             <option value="" disabled>Select event type</option>
             <option value="income">Income</option> 
@@ -133,19 +133,23 @@ const IncomeEvent = ({ formData, handleChange }) => {
   return (
     <>
       <div>
-        <label>Initial Amount:</label>
-        <input type="text" name="initialAmount" value={formData.initialAmount} onChange={handleChange} required />
+        <label>Initial Amount: $</label>
+        <input type="number" name="initialAmount" min="0" placeholder="0.00" value={formData.initialAmount} onChange={handleChange} required />
       </div>
 
       <div>
-        <label>Expected Annual Change:</label>
+        <label>Expected Annual Change: </label>
         <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
-          <option value="fixed">Fixed Amount/Percentage</option>
+          <option value="" disabled>Select format</option>
+          <option value="fixed_amt">Fixed Amount</option>
+          <option value="fixed_percent">Fixed Percentage</option>
           <option value="normal_distribution">Normal Distribution</option>
           <option value="uniform_distribution">Uniform Distribution</option>
         </select>
-        {formData.annualChangeType === 'fixed' && (
-          <input type="text" name="annualChangeValue" placeholder="Enter value" value={formData.annualChangeValue} onChange={handleChange} required />)}
+        {formData.annualChangeType === 'fixed_amt' && (
+          <input type="number" name="annualChangeValue" min="0" placeholder="0.00" value={formData.annualChangeValue} onChange={handleChange} required />)}
+        {formData.annualChangeType === 'fixed_percent' && (
+          <input type="number" name="annualChangeValue" min="0" max="100" placeholder="0%" value={formData.annualChangeValue} onChange={handleChange} required />)}
         </div>
   
         <div>
@@ -160,6 +164,7 @@ const IncomeEvent = ({ formData, handleChange }) => {
           <input type="text" name="userPercentage" value={formData.userPercentage} onChange={handleChange} required />
         </div>
   
+          {/* TODO: only show this if the user is status married */}
         <div>
           <label>Spouse Percentage:</label>
           <input type="text" name="spousePercentage" value={formData.spousePercentage} onChange={handleChange} required />
