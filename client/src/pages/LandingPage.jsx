@@ -4,8 +4,9 @@ import LandingHeader from "../components/LandingHeader";
 import { Link } from "react-router-dom";
 
 window.handleToken = (response) => {
-  fetch('http://localhost:8000/auth/google', {
+  fetch('http://localhost:3000/auth/google', {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json', 
     },
@@ -13,13 +14,15 @@ window.handleToken = (response) => {
       credential: response.credential,
     })
   })
-    .then(response => response.json()) 
-    .then(data => console.log(data))
-    .catch(error => console.error('Error:', error));
+  .then((res) => {
+    if(res.ok) {
+      window.location.href = 'http://localhost:5173/DashboardPage';
+    }
+  })
+  .catch(error => console.error('Error:', error));
 };
 
 const LandingPage = () => {
-
   return (
     <>
       <LandingHeader />

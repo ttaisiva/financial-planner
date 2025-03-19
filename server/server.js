@@ -2,12 +2,14 @@ import dotenv from "dotenv";
 import mysql from "mysql2/promise";
 import * as cheerio from "cheerio";
 import express from "express";
+import session from "express-session";
 import cors from "cors";
 import { scrapeData } from "./scraping.js";
 
 dotenv.config(); // loads environment variables from .env
 
 const app = express();
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -16,10 +18,16 @@ app.use(
 );
 
 app.use(express.json());
-
-app.listen(8000, () => {
-  console.log("Server listening on port 8000...");
-});
+app.use(session({
+  secret: "key",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: false,
+    secure: false,
+    maxAge: 24*60*60*1000,
+  }
+}))
 
 startServer();
 
