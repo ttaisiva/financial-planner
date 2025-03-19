@@ -172,7 +172,18 @@ const ScenarioInfo = () => {
         </div>
 
         <h2>Tax Information</h2>
-        <p>Upload your tax information</p>
+        <p>
+          Your tax information will be used to compute federal and state income
+          taxes, capital gains taxes, and early withdrawal taxes where applicable. 
+          <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxInfo} className="info-icon">⚠️</span>
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+        </p>
+        {/* TODO: choose state */}
+        <label>Choose your state of residence (optional) 
+          <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxState} className="info-icon">ℹ️</span>
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+        </label>
+
         <div>
           <label>
             Filing Status: 
@@ -253,5 +264,13 @@ const tooltipContent={
       Married Filing Separately, Head of Household, and Qualifying Surviving Spouse are currently not supported.</p>"],
   "financialGoal":["The financial goal ignores loans, mortgages, and real property such as cars and houses."],
   "startYearTax":["The simulation does not take into account previous events, investments, or income. Therefore, tax \
-      payment is omitted for the first (current) year."]
+      payment is omitted for the first (current) year."],
+  "taxInfo":["The scenario does not use your federal or state tax documents. \
+    Please take a moment to read the assumptions made in place of the full tax information: <br></br> \
+    1. Only the four tax types listed are computed. No other taxes will be taken into account. <br></br> \
+    2. Income tax will be assumed to have standard deduction. No itemized deductions are taken into account. <br></br> \
+    3. Your state may tax your capital gains differently from federal tax. This is not taken into account. <br></br> \
+    4. State tax is computed the same way as federal tax, i.e. with tax rates and brackets. <br></br> \
+    5. Social security income is assumed to be 85% taxable on the federal level."],
+  "taxState":["Leaving this field blank will result in no state tax being computed."],
 };
