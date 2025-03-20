@@ -17,11 +17,11 @@ async function verify(req) {
     return ticket;
 }
 
-async function createAccount(connection, payload) {
+async function createAccount(connection, payload, names) {
     const newUser = {
         id: payload['sub'],
-        name: payload['given_name'],
-        lastName: payload['family_name'],
+        name: names.first,
+        lastName: names.last,
         email: payload['email']
     }
     const sql = "INSERT INTO users VALUES ('" + newUser.id + "','" + newUser.name + "','" + newUser.lastName + "','" + newUser.email + "')";
@@ -37,7 +37,7 @@ router.post("/google/", async (req, res) => {
     const sql = "SELECT id FROM users WHERE id=?";
     const params = [ticket.payload['sub']];
     const [rows] = await connection.execute(sql, params);
-    if (!rows.length == 0) {
+    if (rows.length == 0) {
         await connection.end();
         const userData = {
             name: ticket.payload['given_name'],
@@ -49,7 +49,7 @@ router.post("/google/", async (req, res) => {
     else {
         await connection.end();    
         req.session.user = { id: ticket.payload['sub'], email: ticket.payload['email']}
-        res.status(201).json({status: 201});
+        res.status(200).json({status: 200});
     }
 })
 
@@ -65,14 +65,28 @@ router.get("/logout/", async (req, res) => {
     })
 })
 
-/*
-router.get("/createAccount/", async (req, res) => {
+
+router.post("/createAccount/", async (req, res) => {
+    const ticket = await verify(req).catch(console.error);
+    const names = {first: req.body.name, last: req.body.lastName};
+
     const connection = await connectToDatabase();
+    // Logic for checking if account exists; Done using id (unique Google ID)
     const sql = "SELECT id FROM users WHERE id=?";
-    const params = [req.session.user.id];
-    console.log(params);
+    const params = [ticket.payload['sub']];
+    const [rows] = await connection.execute(sql, params);
+    console.log(rows.length == 0, rows);
+    if (rows.length == 0) { // Valid account creation
+        createAccount(connection, ticket.payload, names);
+        await connection.end();    
+        req.session.user = { id: ticket.payload['sub'], email: ticket.payload['email']}
+        res.status(200).send();
+    }
+    else {
+        await connection.end();
+        res.status(500).send();
+    }
 })
-    */
 
 async function authorize(req) {
     // Checks permissions
