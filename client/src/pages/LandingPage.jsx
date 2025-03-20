@@ -18,10 +18,10 @@ window.handleToken = (response) => {
     if(data.status == 201) { // Need to finish account creation
       sessionStorage.setItem('userData', JSON.stringify(data.userdata));
       sessionStorage.setItem('credential', response.credential); 
-      window.location.href = 'http://localhost:5173/CreateAccount';
+      window.location.href = '/CreateAccount';
     }
     else if (data.status == 200) { // Logged in
-      window.location.href = 'http://localhost:5173/Dashboard';
+      window.location.href = '/DashboardPage';
     }
   })
   .catch(error => console.error('Error:', error));

@@ -25,7 +25,7 @@ export const CreateAccountForm = ({ credential, userData }) => {
                 window.location.href = '/';
               }
             else if (res.status == 200) { // Logged in
-                window.location.href = 'http://localhost:5173/DashboardPage';
+                window.location.href = '/DashboardPage';
             }
             })
           .catch(error => console.error('Error:', error));
