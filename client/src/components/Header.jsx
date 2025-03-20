@@ -11,11 +11,10 @@ const Header = () => {
     })
     .then((res) => {
       console.log(res);
-      if (res.status != 200) {
-        window.location.href = '/';
-      } else {
+      if (res.status == 200) {
         // !!ERROR DISPLAY!!
       }
+      window.location.href = '/'; 
     })
   };
 

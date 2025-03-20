@@ -1,5 +1,4 @@
-import React, {useEffect} from "react";
-import DashboardPage from "./DashboardPage";
+import React from "react";
 import LandingHeader from "../components/LandingHeader";
 import { Link } from "react-router-dom";
 
@@ -14,9 +13,15 @@ window.handleToken = (response) => {
       credential: response.credential,
     })
   })
-  .then((res) => {
-    if(res.ok) {
-      window.location.href = 'http://localhost:5173/DashboardPage';
+  .then(res => res.json())
+  .then(data => {
+    if(data.status == 201) { // Need to finish account creation
+      sessionStorage.setItem('userData', JSON.stringify(data.userdata));
+      sessionStorage.setItem('credential', response.credential); 
+      window.location.href = 'http://localhost:5173/CreateAccount';
+    }
+    else if (data.status == 200) { // Logged in
+      window.location.href = 'http://localhost:5173/Dashboard';
     }
   })
   .catch(error => console.error('Error:', error));
@@ -26,8 +31,8 @@ const LandingPage = () => {
   return (
     <>
       <LandingHeader />
-      <div className="content">
-        <h1>This is Landing Page</h1>
+      <div className="landing-content">
+        <h1>Manatee Planner</h1>
         <div id="g_id_onload"
           data-client_id="197173313554-n6rm3gerdgdlmqpascna1uosju6jpgms.apps.googleusercontent.com"
           data-context="signin"
@@ -35,7 +40,6 @@ const LandingPage = () => {
           data-callback="handleToken"
           data-auto_prompt="false">
         </div>
-
         <div class="g_id_signin"
           data-type="standard"
           data-shape="pill"
@@ -44,8 +48,7 @@ const LandingPage = () => {
           data-size="large"
           data-logo_alignment="left">
         </div>
-        <Link to="/DashboardPage">Guest</Link>
-        {/* </button> */}
+        <Link to="/DashboardPage">Continue as Guest</Link>
         
       </div>
     </>
