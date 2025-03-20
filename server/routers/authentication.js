@@ -37,13 +37,20 @@ router.post("/google/", async (req, res) => {
     const sql = "SELECT id FROM users WHERE id=?";
     const params = [ticket.payload['sub']];
     const [rows] = await connection.execute(sql, params);
-    if (rows.length == 0) {
-        console.log("Firing createaccount")
-        createAccount(connection, ticket.payload)
+    if (!rows.length == 0) {
+        await connection.end();
+        const userData = {
+            name: ticket.payload['given_name'],
+            lastName: ticket.payload['family_name'],
+            email: ticket.payload['email']
+        };
+        res.status(201).json({status: 201, userdata: userData})
     }
-    await connection.end;
-    req.session.user = { id: ticket.payload['sub'], email: ticket.payload['email'], name: ticket.payload['given_name']}
-    res.send('Logged in!');
+    else {
+        await connection.end();    
+        req.session.user = { id: ticket.payload['sub'], email: ticket.payload['email']}
+        res.status(201).json({status: 201});
+    }
 })
 
 router.get("/logout/", async (req, res) => {
@@ -57,6 +64,15 @@ router.get("/logout/", async (req, res) => {
         }
     })
 })
+
+/*
+router.get("/createAccount/", async (req, res) => {
+    const connection = await connectToDatabase();
+    const sql = "SELECT id FROM users WHERE id=?";
+    const params = [req.session.user.id];
+    console.log(params);
+})
+    */
 
 async function authorize(req) {
     // Checks permissions
