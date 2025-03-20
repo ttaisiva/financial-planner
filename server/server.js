@@ -167,7 +167,6 @@ app.listen(PORT, () => {
 });
 
 import authRouter from "./routers/authentication.js";
-
 app.use("/auth", authRouter);
 
 export { connectToDatabase };

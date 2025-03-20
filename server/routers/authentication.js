@@ -3,6 +3,8 @@ let router = express.Router();
 import { OAuth2Client } from 'google-auth-library';
 const client = new OAuth2Client();
 
+import { connectToDatabase } from "../server.js";
+
 async function verify(req) {
     // Verifies the token provided by Google for User sign-in
     const ticket = await client.verifyIdToken({
@@ -15,28 +17,45 @@ async function verify(req) {
     return ticket;
 }
 
-async function createAccount(ticket) {
-    
+async function createAccount(connection, payload) {
+    const newUser = {
+        id: payload['sub'],
+        name: payload['given_name'],
+        lastName: payload['family_name'],
+        email: payload['email']
+    }
+    const sql = "INSERT INTO users VALUES ('" + newUser.id + "','" + newUser.name + "','" + newUser.lastName + "','" + newUser.email + "')";
+    const cmd = await connection.execute(sql);
 }
 
 router.post("/google/", async (req, res) => {
     const ticket = await verify(req).catch(console.error);
     
     // Once token is verified; Will create a session for user if account exists; create account then create session otherwise
-    if (false) {
-        createAccount(ticket)
+    const connection = await connectToDatabase();
+    // Logic for checking if account exists; Done using id (unique Google ID)
+    const sql = "SELECT id FROM users WHERE id=?";
+    const params = [ticket.payload['sub']];
+    const [rows] = await connection.execute(sql, params);
+    if (rows.length == 0) {
+        console.log("Firing createaccount")
+        createAccount(connection, ticket.payload)
     }
+    await connection.end;
     req.session.user = { id: ticket.payload['sub'], email: ticket.payload['email'], name: ticket.payload['given_name']}
     res.send('Logged in!');
 })
 
-router.get("/test/", async (req, res) => {
-    console.log("Test", req.session.user);
-    if (req.session.user) {
-        res.send(`Hello, ${req.session.user.name}`);
-    } else {
-        res.send('Please log in first.');
-    }
+router.get("/logout/", async (req, res) => {
+    console.log("Logout", req.session.user);
+    req.session.destroy((err) => {
+        if(err) {
+            console.error(err);
+            res.status(500).send('Error logging out');
+        } else {
+            res.send('Logged out');
+        }
+    })
 })
 
 async function authorize(req) {
