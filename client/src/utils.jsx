@@ -22,6 +22,109 @@
 //     return runif(1, lower, upper)[0];
 //   };
 
+export const resetTypes = (type) => {
+  switch (type) {
+    case "fixed":
+      return {
+        startValue: "",
+        startMean: "",
+        startStdDev: "",
+        startLower: "",
+        startUpper: "",
+      };
+    case "normal_distribution":
+      return {
+        startValue: "",
+        startMean: "",
+        startStdDev: "",
+        startLower: "",
+        startUpper: "",
+      };
+    case "uniform_distribution":
+      return {
+        startValue: "",
+        startMean: "",
+        startStdDev: "",
+        startLower: "",
+        startUpper: "",
+      };
+      default:
+        return {
+          startValue: "",
+          startMean: "",
+          startStdDev: "",
+          startLower: "",
+          startUpper: "",
+        };
+    }
+  };
+
+export const inputTypes = ({ type, formData, handleChange }) => {
+  switch (type) {
+    case "fixed":
+      return (
+        <input
+          type="number"
+          min="0"
+          name="startValue"
+          placeholder="Enter value"
+          value={formData.startValue || ""}
+          onChange={handleChange}
+          required
+        />
+      );
+    case "normal_distribution":
+      return (
+        <>
+          <input
+            type="number"
+            min="0"
+            name="startMean"
+            placeholder="Enter mean"
+            value={formData.startMean || ""}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="number"
+            min="0"
+            name="startStdDev"
+            placeholder="Enter standard deviation"
+            value={formData.startStdDev || ""}
+            onChange={handleChange}
+            required
+          />
+        </>
+      );
+    case "uniform_distribution":
+      return (
+        <>
+          <input
+            type="number"
+            min="0"
+            name="startLower"
+            placeholder="Enter lower bound"
+            value={formData.startLower || ""}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="number"
+            min="0"
+            name="startUpper"
+            placeholder="Enter upper bound"
+            value={formData.startUpper || ""}
+            onChange={handleChange}
+            required
+          />
+        </>
+      );
+    default:
+      return null;
+  }
+};
+
+
 export const states = [
   { code: "AL", name: "Alabama" },
   { code: "AK", name: "Alaska" },

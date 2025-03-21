@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { inputTypes, resetTypes } from '../utils';
 
 const EventsForm = ({ setShowEventsForm }) => {
   const [formData, setFormData] = useState({
@@ -6,6 +7,10 @@ const EventsForm = ({ setShowEventsForm }) => {
     description: '',
     startType: '',
     startValue: '',
+    startMean: '',
+    startStdDev: '',
+    startupper: '',
+    startlower: '',
     durationType: '',
     durationValue: '',
     eventType: '',
@@ -29,9 +34,13 @@ const EventsForm = ({ setShowEventsForm }) => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    if (name === "startType" && value !== "fixed") {
-      setFormData((prev) => ({ ...prev, startValue: "" }));
+    if (name === "startType") {
+      setFormData((prev) => ({
+        ...prev,
+        ...resetTypes(value),
+      }));
     }
+
     if (name === "durationType" && value !== "fixed") {
       setFormData((prev) => ({ ...prev, durationValue: "" }));
     }
@@ -92,28 +101,29 @@ const EventsForm = ({ setShowEventsForm }) => {
         <div>
           <label>Start year:</label>
           <select name="startType" value={formData.startType} onChange={handleChange}>
-      
+            <option value="" disabled>Select start year</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
             <option value="same_year">Same year as event series</option>
             <option value="year_after">Year after event series</option>
           </select>
-          {formData.startType === 'fixed' && (
-            <input type="text" name="startValue" placeholder="Enter value" value={formData.startValue} onChange={handleChange} required />
-          )}
+          
+          {inputTypes({ type: formData.startType, formData, handleChange })}
+        
+      
+
         </div>
 
         <div>
           <label>Duration: </label>
           <select name="durationType" value={formData.durationType} onChange={handleChange}>
+            <option value="" disabled>Select Duration</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
-          {formData.durationType === 'fixed' && (
-            <input type="number" name="durationValue" min="0" placeholder="0" value={formData.durationValue} onChange={handleChange} required />
-          )}
+          {inputTypes({ type: formData.durationType, formData, handleChange })}
         </div>
 
         <div>
@@ -169,15 +179,15 @@ const IncomeEvent = ({ formData, handleChange }) => {
         <label>Expected Annual Change: </label>
         <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
           <option value="" disabled>Select format</option>
-          <option value="fixed_amt">Fixed Amount</option>
-          <option value="fixed_percent">Fixed Percentage</option>
+          <option value="fixed">Fixed</option>
           <option value="normal_distribution">Normal Distribution</option>
           <option value="uniform_distribution">Uniform Distribution</option>
         </select>
-        {formData.annualChangeType === 'fixed_amt' && (
+        {/* {formData.annualChangeType === 'fixed_amt' && (
           <input type="number" name="annualChangeValue" min="0" placeholder="0.00" value={formData.annualChangeValue} onChange={handleChange} required />)}
         {formData.annualChangeType === 'fixed_percent' && (
           <input type="number" name="annualChangeValue" min="0" max="100" placeholder="0%" value={formData.annualChangeValue} onChange={handleChange} required />)}
+         */}
         </div>
   
         <div>

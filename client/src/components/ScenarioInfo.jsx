@@ -27,6 +27,11 @@ const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
         <input type="number" min = "0" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
       </>
     ) : null}
+    {/* TODO: make one variable that tracks the type: percentage or amount*/}
+    <select>
+      <option name={`${prefix}LifeExpectancyPercentage`} value="percentage">Percentage</option>
+      <option name={`${prefix}LifeExpectancyAmount`} value="amount">Amount</option>
+    </select>
   </div>
 );
 
@@ -50,6 +55,10 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
         <input type="number" min = "0" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
       </>
     ) : null}
+    <select>
+      <option value="RetirementAgePercentage">Percentage</option>
+      <option value="RetirementAgeAmount">Amount</option>
+    </select>
   </div>
 );
 
@@ -187,12 +196,16 @@ const ScenarioInfo = () => {
   return (
     <div className="scenario_info-container">
       <h2>Financial goal</h2>
-      <p>
-        Your financial goal is the extra amount you would like to have left over after meeting all expenses. <br></br>
-        A zero financial goal means you will meet all of your expenses without a safety margin.
-        <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.financialGoal} className="info-icon">⚠️</span>
+    
+        <p>
+          Your financial goal is the extra amount you would like to have left over after meeting all expenses. <br></br>
+          A zero financial goal means you will meet all of your expenses without a safety margin.
+          <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.financialGoal} className="info-icon">⚠️</span>
+          
+        </p>
         <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-      </p>
+      
+
       <form onSubmit={handleSubmit}>
         <div>
           <label>
@@ -214,8 +227,9 @@ const ScenarioInfo = () => {
           Your tax information will be used to compute federal and state income
           taxes, capital gains taxes, and early withdrawal taxes where applicable. 
           <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxInfo} className="info-icon">⚠️</span>
-          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+          
         </p>
+        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
         
         {/* TODO: implement logic so if residence is not already accounted for from scraped data, user has the option to upload a YAML file
         Display warning if the user chooses not to do this */}
@@ -257,8 +271,9 @@ const ScenarioInfo = () => {
             Event simulation will begin in the current year. <br></br>
             Please estimate your desired retirement age and lifespan in years.
             <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.startYearTax} className="info-icon">⚠️</span>
-            <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+            
           </p>
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
           <LifeExpectancyForm prefix="user" data={formData.userData} handleChange={handleChange} />
           <RetirementAgeForm prefix="user" data={formData.userData} handleChange={handleChange} />
