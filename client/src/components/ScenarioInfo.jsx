@@ -7,6 +7,7 @@ import { states, tooltipContent, handleFileUpload } from "../utils";
 
 
 
+
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   <div>
     <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} life expectancy: </label>

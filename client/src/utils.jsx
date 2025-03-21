@@ -1,6 +1,7 @@
 //import { rnorm } from 'probability-distributions';
 
 
+
 // /**
 //  * Samples a number from a normal distribution with a provided mean and standard deviation.
 //  * @param {number} mean - The mean of the normal distribution.
@@ -208,6 +209,7 @@ export const states = [
   { code: "WI", name: "Wisconsin" },
   { code: "WY", name: "Wyoming" },
 ]
+
 
 export const tooltipContent={ 
   "lifeExpectancy":["Explanation of the life exp. options"], 
