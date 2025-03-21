@@ -59,70 +59,70 @@ export const resetTypes = (type) => {
     }
   };
 
-export const inputTypes = ({ type, formData, handleChange }) => {
-  switch (type) {
-    case "fixed":
-      return (
-        <input
-          type="number"
-          min="0"
-          name="startValue"
-          placeholder="Enter value"
-          value={formData.startValue || ""}
-          onChange={handleChange}
-          required
-        />
-      );
-    case "normal_distribution":
-      return (
-        <>
+  export const inputTypes = ({ type, formData, handleChange, prefix }) => {
+    switch (type) {
+      case "fixed":
+        return (
           <input
             type="number"
             min="0"
-            name="startMean"
-            placeholder="Enter mean"
-            value={formData.startMean || ""}
+            name={`${prefix}Value`}
+            placeholder="Enter value"
+            value={formData[`${prefix}Value`] || ""}
             onChange={handleChange}
             required
           />
-          <input
-            type="number"
-            min="0"
-            name="startStdDev"
-            placeholder="Enter standard deviation"
-            value={formData.startStdDev || ""}
-            onChange={handleChange}
-            required
-          />
-        </>
-      );
-    case "uniform_distribution":
-      return (
-        <>
-          <input
-            type="number"
-            min="0"
-            name="startLower"
-            placeholder="Enter lower bound"
-            value={formData.startLower || ""}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="number"
-            min="0"
-            name="startUpper"
-            placeholder="Enter upper bound"
-            value={formData.startUpper || ""}
-            onChange={handleChange}
-            required
-          />
-        </>
-      );
-    default:
-      return null;
-  }
-};
+        );
+      case "normal_distribution":
+        return (
+          <>
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}Mean`}
+              placeholder="Enter mean"
+              value={formData[`${prefix}Mean`] || ""}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}StdDev`}
+              placeholder="Enter standard deviation"
+              value={formData[`${prefix}StdDev`] || ""}
+              onChange={handleChange}
+              required
+            />
+          </>
+        );
+      case "uniform_distribution":
+        return (
+          <>
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}Lower`}
+              placeholder="Enter lower bound"
+              value={formData[`${prefix}Lower`] || ""}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}Upper`}
+              placeholder="Enter upper bound"
+              value={formData[`${prefix}Upper`] || ""}
+              onChange={handleChange}
+              required
+            />
+          </>
+        );
+      default:
+        return null;
+    }
+  };
 
 
 export const states = [

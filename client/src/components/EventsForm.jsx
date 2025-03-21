@@ -34,16 +34,14 @@ const EventsForm = ({ setShowEventsForm }) => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    if (name === "startType") {
+    if (name === "startType" || name === "durationType") {
+      const prefix = name === "startType" ? "start" : "duration";
       setFormData((prev) => ({
         ...prev,
-        ...resetTypes(value),
+        ...resetTypes(value, prefix),
       }));
     }
 
-    if (name === "durationType" && value !== "fixed") {
-      setFormData((prev) => ({ ...prev, durationValue: "" }));
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -109,7 +107,7 @@ const EventsForm = ({ setShowEventsForm }) => {
             <option value="year_after">Year after event series</option>
           </select>
           
-          {inputTypes({ type: formData.startType, formData, handleChange })}
+          {inputTypes({ type: formData.startType, formData, handleChange, prefix: "start" })}
         
       
 
@@ -123,7 +121,8 @@ const EventsForm = ({ setShowEventsForm }) => {
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
-          {inputTypes({ type: formData.durationType, formData, handleChange })}
+
+          {inputTypes({ type: formData.durationType, formData, handleChange, prefix: "duration"  })}
         </div>
 
         <div>
