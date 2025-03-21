@@ -108,24 +108,58 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
     description: "",
     expAnnReturnType: "fixed",
     expAnnReturnValue: "",
+    expAnnReturnStdDev: "",
+    expAnnReturnMean: "",
     expenseRatio: "",
     expAnnIncomeType: "fixed",
     expAnnIncomeValue: "",
+    expAnnIncomeStdDev: "",
+    expAnnIncomeMean: "",
     taxability: "taxable",
   });
+
+  
+  const resetValues = (type, value) => {
+    if (type === "expAnnReturnType") {
+      if (value === "fixed") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnReturnMean: "",
+          expAnnReturnStdDev: "",
+        }));
+      } else if (value === "normal_distribution") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnReturnValue: "",
+        }));
+      }
+    } else if (type === "expAnnIncomeType") {
+      if (value === "fixed") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnIncomeMean: "",
+          expAnnIncomeStdDev: "",
+        }));
+      } else if (value === "normal_distribution") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnIncomeValue: "",
+        }));
+      }
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setFormData({ ...formData, [name]: value });
 
-    // Reset values when switching from "fixed" to another type
-    if (name === "expAnnReturnType" && value !== "fixed") {
-      setFormData((prev) => ({ ...prev, expAnnReturnValue: "" }));
+
+    if (name === "expAnnReturnType" || name === "expAnnIncomeType") {
+      resetValues(name, value);
     }
-    if (name === "expAnnIncomeType" && value !== "fixed") {
-      setFormData((prev) => ({ ...prev, expAnnIncomeValue: "" }));
-    }
+
+
   };
 
   const handleSubmit = async (e) => {
@@ -153,9 +187,7 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
       console.error('Error:', error);
     }
   
-  
-
-    setShowInvestmentTypeForm(false);
+      setShowInvestmentTypeForm(false);
   };
 
   const handleBack = () => {
@@ -184,9 +216,16 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
           </select>
-          {formData.expAnnReturnType === 'fixed' && (
-            <input type="number" min= "0" name="expAnnReturnValue" placeholder="0.00" value={formData.expAnnReturnValue} onChange={handleChange} required />
-          )}
+        
+          {formData.expAnnReturnType === "fixed" ? (
+              <input type="number" min = "0" name="expAnnReturnValue" placeholder="0.0" value={formData.expAnnReturnValue} onChange={handleChange} required />
+              ) : formData.expAnnReturnType === "normal_distribution" ? (
+              <>
+                <input type="number" min = "0" name= "expAnnReturnMean" placeholder="Enter mean" value={formData.expAnnReturnMean} onChange={handleChange} required />
+                <input type="number" min = "0" name= "expAnnReturnStdDev" placeholder="Enter standard deviation" value={formData.expAnnReturnStdDev} onChange={handleChange} required />
+              </>
+            ) : null}
+
         </div>
 
 
@@ -203,9 +242,14 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
           </select>
-          {formData.expAnnIncomeType === 'fixed' && (
-            <input type="number" min="0" name="expAnnIncomeValue" placeholder="0.00" value={formData.expAnnIncomeValue} onChange={handleChange} required />
-          )}
+          {formData.expAnnIncomeType === "fixed" ? (
+              <input type="number" min = "0" name="expAnnIncomeValue" placeholder="0.0" value={formData.expAnnIncomeValue} onChange={handleChange} required />
+              ) : formData.expAnnIncomeType === "normal_distribution" ? (
+              <>
+                <input type="number" min = "0" name= "expAnnIncomeMean" placeholder="Enter mean" value={formData.expAnnIncomeMean} onChange={handleChange} required />
+                <input type="number" min = "0" name= "expAnnIncomeStdDev" placeholder="Enter standard deviation" value={formData.expAnnIncomeStdDev} onChange={handleChange} required />
+              </>
+            ) : null}
           
         </div>
 
