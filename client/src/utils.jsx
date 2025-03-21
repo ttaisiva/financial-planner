@@ -1,6 +1,7 @@
 //import { rnorm } from 'probability-distributions';
 
 
+
 // /**
 //  * Samples a number from a normal distribution with a provided mean and standard deviation.
 //  * @param {number} mean - The mean of the normal distribution.
@@ -21,6 +22,140 @@
 // export const sampleUniformDistribution = (lower, upper) => {
 //     return runif(1, lower, upper)[0];
 //   };
+
+import yaml from 'js-yaml';
+
+export const handleFileUpload = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+  
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsedData = yaml.load(e.target.result);
+        // do i set the tax info here 
+        // setFormData((prevData) => ({ ...prevData, taxInfo: parsedData }));
+        console.log("Parsed YAML:", parsedData); 
+      } catch (error) {
+        console.error("Error parsing YAML file:", error);
+      }
+    };
+
+    reader.readAsText(file);
+    console.log("file read");
+  }
+};
+
+export const handleScenarioUpload = (e) => {
+  handleFileUpload(e);
+  //TODO: send scenario to database
+
+}
+
+
+
+export const resetTypes = (type) => {
+  switch (type) {
+    case "fixed":
+      return {
+        startValue: "",
+        startMean: "",
+        startStdDev: "",
+        startLower: "",
+        startUpper: "",
+      };
+    case "normal_distribution":
+      return {
+        startValue: "",
+        startMean: "",
+        startStdDev: "",
+        startLower: "",
+        startUpper: "",
+      };
+    case "uniform_distribution":
+      return {
+        startValue: "",
+        startMean: "",
+        startStdDev: "",
+        startLower: "",
+        startUpper: "",
+      };
+      default:
+        return {
+          startValue: "",
+          startMean: "",
+          startStdDev: "",
+          startLower: "",
+          startUpper: "",
+        };
+    }
+  };
+
+  export const inputTypes = ({ type, formData, handleChange, prefix }) => {
+    switch (type) {
+      case "fixed":
+        return (
+          <input
+            type="number"
+            min="0"
+            name={`${prefix}Value`}
+            placeholder="Enter value"
+            value={formData[`${prefix}Value`] || ""}
+            onChange={handleChange}
+            required
+          />
+        );
+      case "normal_distribution":
+        return (
+          <>
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}Mean`}
+              placeholder="Enter mean"
+              value={formData[`${prefix}Mean`] || ""}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}StdDev`}
+              placeholder="Enter standard deviation"
+              value={formData[`${prefix}StdDev`] || ""}
+              onChange={handleChange}
+              required
+            />
+          </>
+        );
+      case "uniform_distribution":
+        return (
+          <>
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}Lower`}
+              placeholder="Enter lower bound"
+              value={formData[`${prefix}Lower`] || ""}
+              onChange={handleChange}
+              required
+            />
+            <input
+              type="number"
+              min="0"
+              name={`${prefix}Upper`}
+              placeholder="Enter upper bound"
+              value={formData[`${prefix}Upper`] || ""}
+              onChange={handleChange}
+              required
+            />
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
 
 export const states = [
   { code: "AL", name: "Alabama" },
@@ -74,6 +209,7 @@ export const states = [
   { code: "WI", name: "Wisconsin" },
   { code: "WY", name: "Wyoming" },
 ]
+
 
 export const tooltipContent={ 
   "lifeExpectancy":["Explanation of the life exp. options"], 

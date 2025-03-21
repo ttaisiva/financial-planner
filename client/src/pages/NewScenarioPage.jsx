@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ScenarioInfo from "../components/ScenarioInfo";
 import Strategy from "../components/Strategy";
+import { handleScenarioUpload } from "../utils";
 
 
 const  NewScenarioPage = () => {
@@ -11,8 +12,12 @@ const  NewScenarioPage = () => {
   return (
     <div className="content">
       <Header />
-      {/*implement functionality for upload and export scenario */}
-      <button> Upload Scenario </button>
+      <div>
+        <p> Upload Scenario </p>
+        <input type="file" accept=".yaml,.yml" onChange={(e) => handleScenarioUpload(e)} />
+      </div>
+
+      {/*Add upload Icon to this */}
       <button> Export Scenario </button>
       
       < ScenarioInfo />
