@@ -39,6 +39,34 @@ const EventsForm = ({ setShowEventsForm }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("event submitted");
+
+    try {
+   
+      if (formData.eventType === 'income') {
+        console.log("Event Type: Income event");
+        const response = await fetch('http://localhost:3000/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          console.log('Events saved successfully');
+          setShowEventsForm(false);
+        } else {
+          console.error('Failed to save events details');
+        }
+
+      } //TODO: not sure if this is the best way to handle this -> discuss with tai
+
+
+    } catch (error) {
+      console.error('Error:', error);
+    }
+
     setShowEventsForm(false); //hide form 
   };
 

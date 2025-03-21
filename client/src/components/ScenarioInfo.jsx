@@ -3,59 +3,9 @@ import React, { useState } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import { InvestmentType, Investment } from "./InvestmentDetails";
+import { states, tooltipContent} from "../utils";
 
-const states = [
-  { code: "AL", name: "Alabama" },
-  { code: "AK", name: "Alaska" },
-  { code: "AZ", name: "Arizona" },
-  { code: "AR", name: "Arkansas" },
-  { code: "CA", name: "California" },
-  { code: "CO", name: "Colorado" },
-  { code: "CT", name: "Connecticut" },
-  { code: "DE", name: "Delaware" },
-  { code: "FL", name: "Florida" },
-  { code: "GA", name: "Georgia" },
-  { code: "HI", name: "Hawaii" },
-  { code: "ID", name: "Idaho" },
-  { code: "IL", name: "Illinois" },
-  { code: "IN", name: "Indiana" },
-  { code: "IA", name: "Iowa" },
-  { code: "KS", name: "Kansas" },
-  { code: "KY", name: "Kentucky" },
-  { code: "LA", name: "Louisiana" },
-  { code: "ME", name: "Maine" },
-  { code: "MD", name: "Maryland" },
-  { code: "MA", name: "Massachusetts" },
-  { code: "MI", name: "Michigan" },
-  { code: "MN", name: "Minnesota" },
-  { code: "MS", name: "Mississippi" },
-  { code: "MO", name: "Missouri" },
-  { code: "MT", name: "Montana" },
-  { code: "NE", name: "Nebraska" },
-  { code: "NV", name: "Nevada" },
-  { code: "NH", name: "New Hampshire" },
-  { code: "NJ", name: "New Jersey" },
-  { code: "NM", name: "New Mexico" },
-  { code: "NY", name: "New York" },
-  { code: "NC", name: "North Carolina" },
-  { code: "ND", name: "North Dakota" },
-  { code: "OH", name: "Ohio" },
-  { code: "OK", name: "Oklahoma" },
-  { code: "OR", name: "Oregon" },
-  { code: "PA", name: "Pennsylvania" },
-  { code: "RI", name: "Rhode Island" },
-  { code: "SC", name: "South Carolina" },
-  { code: "SD", name: "South Dakota" },
-  { code: "TN", name: "Tennessee" },
-  { code: "TX", name: "Texas" },
-  { code: "UT", name: "Utah" },
-  { code: "VT", name: "Vermont" },
-  { code: "VA", name: "Virginia" },
-  { code: "WA", name: "Washington" },
-  { code: "WV", name: "West Virginia" },
-  { code: "WI", name: "Wisconsin" },
-  { code: "WY", name: "Wyoming" },
-]
+
 
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   <div>
@@ -201,9 +151,27 @@ const ScenarioInfo = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    console.log("User Scenario Info Submitted:", formData);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/user-scenario-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        console.log('User details saved successfully');
+      } else {
+        console.error('Failed to save user details');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
 
     console.log("Form Submitted with Data:", formData);
   };
@@ -311,9 +279,9 @@ const ScenarioInfo = () => {
             <RetirementAgeForm prefix="spouse" data={formData.spouseData} handleChange={handleChange} />
           </div>
         )}
-
-        <button type="submit">Save</button>
+       <button type="submit">Run Simulation</button>
       </form>
+
 
       <h2> Investment Types and Investments </h2>
       <p>
@@ -333,27 +301,14 @@ const ScenarioInfo = () => {
       <h2> Event Series</h2>
       <button onClick={handleCreateEvent}>New Event</button>
       {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
+
+      
+     
+
     </div>
   );
 };
 
 export default ScenarioInfo;
 
-// TODO: there should probably be a file of this but idk where
-const tooltipContent={ 
-  "lifeExpectancy":["Explanation of the life exp. options"], 
-  "retirementAge":["Explanation of the retirement age options"],
-  "filingStatus":["<p>Married is for Married Filing Jointly. <br>\
-      Married Filing Separately, Head of Household, and Qualifying Surviving Spouse are currently not supported.</p>"],
-  "financialGoal":["The financial goal ignores loans, mortgages, and real property such as cars and houses."],
-  "startYearTax":["The simulation does not take into account previous events, investments, or income. Therefore, tax \
-      payment is omitted for the first (current) year."],
-  "taxInfo":["The scenario does not use your federal or state tax documents. \
-    Please take a moment to read the assumptions made in place of the full tax information: <br></br> \
-    1. Only the four tax types listed are computed. No other taxes will be taken into account. <br></br> \
-    2. Income tax will be assumed to have standard deduction. No itemized deductions are taken into account. <br></br> \
-    3. Your state may tax your capital gains differently from federal tax. This is not taken into account. <br></br> \
-    4. State tax is computed the same way as federal tax, i.e. with tax rates and brackets. <br></br> \
-    5. Social security income is assumed to be 85% taxable on the federal level."],
-  "taxState":["Leaving this field blank will result in no state tax being computed."],
-};
+
