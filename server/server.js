@@ -1,15 +1,15 @@
 import dotenv from "dotenv";
 import path from "path";
 // this is for sophie pls dont delete otherwise my env wont work
-//dotenv.config({ path: path.resolve("../.env") }); 
+dotenv.config({ path: path.resolve("../.env") }); 
 import mysql from "mysql2/promise";
 import express from "express";
 import session from "express-session";
 import cors from "cors";
 import { scrapeData } from "./scraping.js";
-import { createTablesIfNotExist } from "./db_tables.js";
 
-dotenv.config();
+
+//dotenv.config();
 
 const app = express();
 
@@ -47,8 +47,8 @@ async function connectToDatabase() {
   return connection;
 }
 
-async function ensureConnection() {
-  if (!connection || connection.connection._closing) {
+export async function ensureConnection() {
+  if (!connection || connection.connection._closing) { //If connection is gone or closing
     console.log("Reconnecting to the database...");
     await connectToDatabase();
   }
@@ -66,108 +66,37 @@ async function startServer() {
   }
 }
 
-app.post("/api/investments", async (req, res) => {
-  console.log("Server received request from client..")
-  const { investment_type, dollar_value, tax_status } = req.body;
-  console.log("make query")
-  const query =
-    "INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)";
-  const values = [investment_type, dollar_value, tax_status];
-
-  console.log("Send to database..")
-  
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, values);
-    res.status(201).send("Investment saved successfully");
-  } catch (err) {
-    console.error("Failed to insert investment:", err);
-    res.status(500).send("Failed to save investment");
-  }
-});
-
-app.post("/api/investment-types", async (req, res) => {
-  const {
-    name,
-    description,
-    expAnnReturnType,
-    expAnnReturnValue,
-    expenseRatio,
-    expAnnIncomeType,
-    expAnnIncomeValue,
-    taxability,
-  } = req.body;
-
-  const query =
-    "INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-  const values = [
-    name,
-    description,
-    expAnnReturnType,
-    expAnnReturnValue,
-    expenseRatio,
-    expAnnIncomeType,
-    expAnnIncomeValue,
-    taxability,
-  ];
-
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, values);
-    res.status(201).send("Investment type saved successfully");
-  } catch (err) {
-    console.error("Failed to insert investment type:", err);
-    res.status(500).send("Failed to save investment type");
-  }
-});
-
-console.log("...")
-
-app.post("/api/investment-types", (req, res) => {
-  const {
-    name,
-    description,
-    expAnnReturnType,
-    expAnnReturnValue,
-    expenseRatio,
-    expAnnIncomeType,
-    expAnnIncomeValue,
-    taxability,
-  } = req.body;
-
-  const query =
-    "INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-  const values = [
-    name,
-    description,
-    expAnnReturnType,
-    expAnnReturnValue,
-    expenseRatio,
-    expAnnIncomeType,
-    expAnnIncomeValue,
-    taxability,
-  ];
-
-  connection.query(query, values, (err, results) => {
-    if (err) {
-      console.error("Failed to insert investment type:", err);
-      res.status(500).send("Failed to save investment type");
-    } else {
-      res.status(201).send("Investment type saved successfully");
-    }
-  });
-});
-
-
 const PORT = process.env.SERVER_PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
 import authRouter from "./routers/authentication.js";
-
 app.use("/auth", authRouter);
 
-export { connectToDatabase };
+import scenarioRouter from "./routers/scenario_endpoints.js";
+app.use("/api", scenarioRouter);
+
+// app.post("/api/investments", async (req, res) => {
+//   console.log("Server received investment request from client..");
+//   const { investment_type, dollar_value, tax_status } = req.body;
+//   console.log("make query");
+//   const query =
+//     "INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)";
+//   const values = [investment_type, dollar_value, tax_status];
+
+//   console.log("Send to database..");
+
+//   try {
+//     await ensureConnection();
+//     await createTablesIfNotExist(connection);
+//     const [results] = await connection.execute(query, values);
+//     res.status(201).send("Investment saved successfully");
+//   } catch (err) {
+//     console.error("Failed to insert investment:", err);
+//     res.status(500).send("Failed to save investment");
+//   }
+// });
+
+
+export { connectToDatabase, connection };

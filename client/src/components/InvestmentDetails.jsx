@@ -132,7 +132,7 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
     e.preventDefault();
     console.log("Investment Type Submitted:", formData);
 
-    const jwtToken = localStorage.getItem('jwtToken');  //local storage for now but we can also do session
+    
 
     try {
       const response = await fetch('http://localhost:3000/api/investment-type', {
@@ -145,7 +145,7 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
 
       if (response.ok) {
         console.log('Investment type saved successfully');
-        setShowInvestmentForm(false);
+        setShowInvestmentTypeForm(false);
       } else {
         console.error('Failed to save investment type');
       }
