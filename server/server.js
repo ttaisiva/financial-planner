@@ -1,15 +1,14 @@
 import dotenv from "dotenv";
 import path from "path";
 // this is for sophie pls dont delete otherwise my env wont work
-dotenv.config({ path: path.resolve("../.env") }); 
+// dotenv.config({ path: path.resolve("../.env") });
 import mysql from "mysql2/promise";
 import express from "express";
 import session from "express-session";
 import cors from "cors";
 import { scrapeData } from "./scraping.js";
 
-
-//dotenv.config();
+dotenv.config();
 
 const app = express();
 
@@ -21,22 +20,23 @@ app.use(
 );
 
 app.use(express.json());
-app.use(session({
-  secret: "key",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: false,
-    secure: false,
-    maxAge: 24*60*60*1000,
-  }
-}))
-
+app.use(
+  session({
+    secret: "key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: false,
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  })
+);
 
 let connection;
 async function connectToDatabase() {
   //console.log("DB_HOST:", process.env.DB_HOST);
-    connection = await mysql.createConnection({
+  connection = await mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
@@ -48,7 +48,8 @@ async function connectToDatabase() {
 }
 
 export async function ensureConnection() {
-  if (!connection || connection.connection._closing) { //If connection is gone or closing
+  if (!connection || connection.connection._closing) {
+    //If connection is gone or closing
     console.log("Reconnecting to the database...");
     await connectToDatabase();
   }
@@ -58,8 +59,8 @@ startServer();
 
 async function startServer() {
   try {
-    await connectToDatabase();
-    const g = await scrapeData();
+    // await connectToDatabase();
+    await scrapeData();
   } catch (err) {
     console.error("Error:", err.message);
     throw err;
@@ -97,6 +98,5 @@ app.use("/api", scenarioRouter);
 //     res.status(500).send("Failed to save investment");
 //   }
 // });
-
 
 export { connectToDatabase, connection };
