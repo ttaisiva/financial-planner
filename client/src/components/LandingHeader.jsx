@@ -7,16 +7,13 @@ const Header = () => {
   return (
     <header>
       <Link to="/" className="logo">
-        ManateePlanner
+        Manatee Planner
       </Link>
       <script src="https://accounts.google.com/gsi/client" async defer></script>
       <nav>
         <ul>
           <li>
-            <Link to="/DashboardPage">Sign Up</Link>
-          </li>
-          <li>
-            <Link to="/ResourcesPage">Login</Link>
+            <Link to="/DashboardPage">Continue as Guest</Link>
           </li>
         </ul>
       </nav>
