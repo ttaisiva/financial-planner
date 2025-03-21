@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import { InvestmentType, Investment } from "./InvestmentDetails";
-import { states, tooltipContent} from "../utils";
+import { states, tooltipContent, handleFileUpload } from "../utils";
 
 
 
@@ -112,22 +112,6 @@ const ScenarioInfo = () => {
     }));
   };
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const parsedData = yaml.load(e.target.result);
-          setFormData((prevData) => ({ ...prevData, taxInfo: parsedData }));
-          console.log("Parsed YAML:", parsedData); 
-        } catch (error) {
-          console.error("Error parsing YAML file:", error);
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
 
   // Handle input changes
   const handleChange = (e) => {
@@ -246,7 +230,8 @@ const ScenarioInfo = () => {
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
         </label>
 
-        <input type="file" accept=".yaml,.yml" onChange={handleFileUpload} />
+        {/*TODO add tooltip for file upload: something like "only .yaml file accepted" */}
+        <input type="file" accept=".yaml,.yml" onChange={(e) => handleFileUpload(e)} />
 
         <div>
           <label>

@@ -22,6 +22,37 @@
 //     return runif(1, lower, upper)[0];
 //   };
 
+import yaml from 'js-yaml';
+
+export const handleFileUpload = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+  
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsedData = yaml.load(e.target.result);
+        // do i set the tax info here 
+        // setFormData((prevData) => ({ ...prevData, taxInfo: parsedData }));
+        console.log("Parsed YAML:", parsedData); 
+      } catch (error) {
+        console.error("Error parsing YAML file:", error);
+      }
+    };
+
+    reader.readAsText(file);
+    console.log("file read");
+  }
+};
+
+export const handleScenarioUpload = (e) => {
+  handleFileUpload(e);
+  //TODO: send scenario to database
+
+}
+
+
+
 export const resetTypes = (type) => {
   switch (type) {
     case "fixed":
