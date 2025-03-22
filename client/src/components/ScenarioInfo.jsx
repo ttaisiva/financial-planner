@@ -4,6 +4,9 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import { InvestmentType, Investment, ViewInvestmentDetails } from "./InvestmentDetails";
 import { states, tooltipContent, handleFileUpload } from "../utils";
+import Strategy from "./Strategy";
+
+
 
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   <div>
@@ -281,6 +284,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
       <button  onClick={handleCreateEvent} > Create Event </button>
       {showEventsForm && <EventsForm setShowEventsForm={ setShowEventsForm }/>}
+
+      <Strategy investments={investments}/>
     </div>
   );
 });
