@@ -1,34 +1,28 @@
 import "../styles/NewScenario.css";
-import React, { useState } from "react";
+import React, { useState, forwardRef, useImperativeHandle } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import { InvestmentType, Investment } from "./InvestmentDetails";
 import { states, tooltipContent, handleFileUpload } from "../utils";
 
-
-
-
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   <div>
-    <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} life expectancy: </label>
-
+    <label> {(prefix === 'user' && "Your") || (prefix === 'spouse' && "Spouse's")} life expectancy: </label>
     <select name={`${prefix}LifeExpectancyType`} value={data.lifeExpectancyType} onChange={handleChange}>
       <option value="" disabled>Select sample life expectancy</option>
       <option value="fixed">Fixed</option>
       <option value="dist">Normal Distribution</option>
     </select>
     <span data-tooltip-id="tooltip" data-tooltip-content={tooltipContent.lifeExpectancy} className="info-icon">ℹ️</span>
-      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-
+    <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
     {data.lifeExpectancyType === "fixed" ? (
-      <input type="number" min = "0" name={`${prefix}LifeExpectancyValue`} placeholder="Enter value" value={data.lifeExpectancyValue} onChange={handleChange} required />
+      <input type="number" min="0" name={`${prefix}LifeExpectancyValue`} placeholder="Enter value" value={data.lifeExpectancyValue} onChange={handleChange} required />
     ) : data.lifeExpectancyType === "dist" ? (
       <>
-        <input type="number" min = "0" name={`${prefix}LifeExpectancyMean`} placeholder="Enter mean" value={data.lifeExpectancyMean} onChange={handleChange} required />
-        <input type="number" min = "0" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
+        <input type="number" min="0" name={`${prefix}LifeExpectancyMean`} placeholder="Enter mean" value={data.lifeExpectancyMean} onChange={handleChange} required />
+        <input type="number" min="0" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
       </>
     ) : null}
-    {/* TODO: make one variable that tracks the type: percentage or amount*/}
     <select>
       <option name={`${prefix}LifeExpectancyPercentage`} value="percentage">Percentage</option>
       <option name={`${prefix}LifeExpectancyAmount`} value="amount">Amount</option>
@@ -38,22 +32,20 @@ const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
 
 const RetirementAgeForm = ({ prefix, data, handleChange }) => (
   <div>
-    <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} retirement age: </label>
-
+    <label> {(prefix === 'user' && "Your") || (prefix === 'spouse' && "Spouse's")} retirement age: </label>
     <select name={`${prefix}RetirementAge`} value={data.retirementAge} onChange={handleChange}>
       <option value="" disabled>Select sample retirement age</option>
       <option value="fixed">Fixed</option>
       <option value="dist">Normal Distribution</option>
     </select>
     <span data-tooltip-id="tooltip" data-tooltip-content={tooltipContent.retirementAge} className="info-icon">ℹ️</span>
-      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-
+    <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
     {data.retirementAge === "fixed" ? (
-      <input type="number" min = "0" name={`${prefix}RetirementAgeValue`} placeholder="Enter value" value={data.retirementAgeValue} onChange={handleChange} required />
+      <input type="number" min="0" name={`${prefix}RetirementAgeValue`} placeholder="Enter value" value={data.retirementAgeValue} onChange={handleChange} required />
     ) : data.retirementAge === "dist" ? (
       <>
-        <input type="number" min = "0" name={`${prefix}RetirementAgeMean`} placeholder="Enter mean" value={data.retirementAgeMean} onChange={handleChange} required />
-        <input type="number" min = "0" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
+        <input type="number" min="0" name={`${prefix}RetirementAgeMean`} placeholder="Enter mean" value={data.retirementAgeMean} onChange={handleChange} required />
+        <input type="number" min="0" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
       </>
     ) : null}
     <select>
@@ -63,8 +55,7 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
   </div>
 );
 
-
-const ScenarioInfo = (  ) => {
+const ScenarioInfo = forwardRef((props, ref) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     financialGoal: "",
@@ -113,7 +104,6 @@ const ScenarioInfo = (  ) => {
     }));
   };
 
-
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -145,7 +135,7 @@ const ScenarioInfo = (  ) => {
   };
 
   const handleSubmitUserInfo = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     console.log("User Scenario Info Submitted:", formData);
 
     try {
@@ -168,6 +158,11 @@ const ScenarioInfo = (  ) => {
 
     console.log("Form Submitted with Data:", formData);
   };
+
+  // Expose handleSubmitUserInfo to parent component
+  useImperativeHandle(ref, () => ({
+    handleSubmitUserInfo,
+  }));
 
   const handleInvestmentType = () => {
     setShowInvestmentTypeForm(true);
@@ -307,8 +302,6 @@ const ScenarioInfo = (  ) => {
 
     </div>
   );
-};
+});
 
 export default ScenarioInfo;
-
-

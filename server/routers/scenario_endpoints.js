@@ -4,21 +4,21 @@ import { createTablesIfNotExist } from "../db_tables.js";
 
 const router = express.Router();
 
-let investments = [];
-let investmentTypes = [];
+let investmentsLocalStorage = [];
+let investmentTypesLocalStorage = [];
 
 // Route to handle temporary storage: 
 router.post('/investment-type', (req, res) => {
   const investmentTypeData = req.body;
-  investmentTypes.push(investmentTypeData);
+  investmentTypesLocalStorage.push(investmentTypeData);
   console.log('Investment type stored temporarily:', investmentTypeData);
   res.status(200).json({ message: 'Investment type saved temporarily' });
 });
 
 router.post('/investments', (req, res) => {
-  const investmentTypeData = req.body;
-  investmentTypes.push(investmentTypeData);
-  console.log('Investment stored temporarily:', investmentTypeData);
+  const investmentData = req.body;
+  investmentsLocalStorage.push(investmentData);
+  console.log('Investment stored temporarily:', investmentData);
   res.status(200).json({ message: 'Investment saved temporarily' });
 });
 
@@ -90,9 +90,12 @@ router.post("/user-scenario-info", async (req, res) => {
 
 router.post("/run-simulation", async (req, res) => {
   console.log("Running simulation and saving temporary data to database...");
+  console.log("Local storage investment type: ", investmentTypesLocalStorage);
+  console.log("Local storage investment: ", investmentsLocalStorage);
 
   // Inserting investment types
-  for (const investmentType of investmentTypes) {
+  for (const investmentType of investmentTypesLocalStorage) {
+    console.log("Inserting investment type:", investmentType);
     const query = `
       INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -111,6 +114,7 @@ router.post("/run-simulation", async (req, res) => {
     try {
       await ensureConnection();
       await createTablesIfNotExist(connection);
+      console.log("Executing query:", query, "with values:", values);
       await connection.execute(query, values);
       console.log(`Investment type ${investmentType.name} saved to the database.`);
     } catch (err) {
@@ -119,7 +123,7 @@ router.post("/run-simulation", async (req, res) => {
   }
 
   // Inserting investments
-  for (const investment of investments) {
+  for (const investment of investmentsLocalStorage) {
     const query = `
       INSERT INTO investments (investment_type, dollar_value, tax_status) 
       VALUES (?, ?, ?)
@@ -141,8 +145,8 @@ router.post("/run-simulation", async (req, res) => {
   }
 
   // Clear temporary data after insertion
-  investments = [];
-  investmentTypes = [];
+  investmentsLocalStorage = [];
+  investmentTypesLocalStorage = [];
 
   console.log("All temporary data has been saved to the database.");
   res.status(200).send("Simulation run and data saved to the database.");
