@@ -2,7 +2,7 @@ import "../styles/NewScenario.css";
 import React, { useState, forwardRef, useImperativeHandle } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
-import { InvestmentType, Investment } from "./InvestmentDetails";
+import { InvestmentType, Investment, ViewInvestmentDetails } from "./InvestmentDetails";
 import { states, tooltipContent, handleFileUpload } from "../utils";
 
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
@@ -23,10 +23,6 @@ const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
         <input type="number" min="0" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
       </>
     ) : null}
-    <select>
-      <option name={`${prefix}LifeExpectancyPercentage`} value="percentage">Percentage</option>
-      <option name={`${prefix}LifeExpectancyAmount`} value="amount">Amount</option>
-    </select>
   </div>
 );
 
@@ -48,10 +44,6 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
         <input type="number" min="0" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
       </>
     ) : null}
-    <select>
-      <option value="RetirementAgePercentage">Percentage</option>
-      <option value="RetirementAgeAmount">Amount</option>
-    </select>
   </div>
 );
 
@@ -87,6 +79,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
   const [showEventsForm, setShowEventsForm] = useState(false);
   const [showInvestmentTypeForm, setShowInvestmentTypeForm] = useState(false);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
+  const [investments, setInvestments] = useState([]);
+  const [investmentTypes, setInvestmentTypes] = useState([]);
 
   const handleAddSpouse = () => {
     setShowSpouseForm(!showSpouseForm);
@@ -175,15 +169,12 @@ const ScenarioInfo = forwardRef((props, ref) => {
   return (
     <div className="scenario_info-container">
       <h2>Financial goal</h2>
-    
-        <p>
-          Your financial goal is the extra amount you would like to have left over after meeting all expenses. <br></br>
-          A zero financial goal means you will meet all of your expenses without a safety margin.
-          <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.financialGoal} className="info-icon">⚠️</span>
-          
-        </p>
-        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-      
+      <p>
+        Your financial goal is the extra amount you would like to have left over after meeting all expenses. <br />
+        A zero financial goal means you will meet all of your expenses without a safety margin.
+        <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.financialGoal} className="info-icon">⚠️</span>
+      </p>
+      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
       <form onSubmit={handleSubmitUserInfo}>
         <div>
@@ -191,7 +182,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
             Financial goal: $ 
             <input
               type="number"
-              min = "0"
+              min="0"
               name="financialGoal"
               value={formData.financialGoal}
               onChange={handleChange}
@@ -203,15 +194,11 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
         <h2>Tax Information</h2>
         <p>
-          Your tax information will be used to compute federal and state income
-          taxes, capital gains taxes, and early withdrawal taxes where applicable. 
+          Your tax information will be used to compute federal and state income taxes, capital gains taxes, and early withdrawal taxes where applicable. 
           <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxInfo} className="info-icon">⚠️</span>
-          
         </p>
         <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
         
-        {/* TODO: implement logic so if residence is not already accounted for from scraped data, user has the option to upload a YAML file
-        Display warning if the user chooses not to do this */}
         <label>Choose your state of residence (optional) 
           <select name="stateOfResidence" value={formData.stateOfResidence} onChange={handleChange}>
             <option value="">Select your state</option>
@@ -225,7 +212,6 @@ const ScenarioInfo = forwardRef((props, ref) => {
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
         </label>
 
-        {/*TODO add tooltip for file upload: something like "only .yaml file accepted" */}
         <input type="file" accept=".yaml,.yml" onChange={(e) => handleFileUpload(e)} />
 
         <div>
@@ -248,10 +234,9 @@ const ScenarioInfo = forwardRef((props, ref) => {
         <div>
           <h2>Major Life Events </h2>
           <p>
-            Event simulation will begin in the current year. <br></br>
+            Event simulation will begin in the current year. <br />
             Please estimate your desired retirement age and lifespan in years.
             <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.startYearTax} className="info-icon">⚠️</span>
-            
           </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
@@ -259,14 +244,12 @@ const ScenarioInfo = forwardRef((props, ref) => {
           <RetirementAgeForm prefix="user" data={formData.userData} handleChange={handleChange} />
         </div>
 
-        {/* Add Spouse Button */}
         <div>
           <button type="button" onClick={handleAddSpouse}>
             {showSpouseForm ? "Remove Spouse" : "Add Spouse"}
           </button>
         </div>
 
-        {/* Spouse Form (conditional display based on showSpouseForm state) */}
         {showSpouseForm && (
           <div>
             <h3>Spouse Information</h3>
@@ -274,32 +257,21 @@ const ScenarioInfo = forwardRef((props, ref) => {
             <RetirementAgeForm prefix="spouse" data={formData.spouseData} handleChange={handleChange} />
           </div>
         )}
-          
       </form>
 
-
-      <h2> Investment Types and Investments </h2>
-      <p>
-        Add your investments here. <br></br>
-        Create your own type of investments with New Investment Type.
-      </p>
+      <h2>Investment Types and Investments</h2>
       <button onClick={handleInvestmentType}>New Investment Type</button>
       {showInvestmentTypeForm && (
-        <InvestmentType setShowInvestmentTypeForm={setShowInvestmentTypeForm} />
+        <InvestmentType investmentTypes={investmentTypes} setInvestmentTypes={setInvestmentTypes} setShowInvestmentTypeForm={setShowInvestmentTypeForm} />
       )}
 
       <button onClick={handleInvestment}>New Investment</button>
       {showInvestmentForm && (
-        <Investment setShowInvestmentForm={setShowInvestmentForm} />
+        <Investment investments={investments} setInvestments={setInvestments} setShowInvestmentForm={setShowInvestmentForm}  />
       )}
 
-      <h2> Event Series</h2>
-      <button onClick={handleCreateEvent}>New Event</button>
-      {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
-
-      
-     
-
+      <ViewInvestmentDetails investments={investments} investmentTypes={investmentTypes} />
+      {showEventsForm && <EventsForm />}
     </div>
   );
 });
