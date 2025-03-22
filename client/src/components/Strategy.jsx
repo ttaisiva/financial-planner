@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
+import { DndContext, closestCenter } from '@dnd-kit/core'; // drag and collision detection
+import { arrayMove, SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'; // modify array order after dnd
+import { useSortable } from '@dnd-kit/sortable'; // dnd for individual items
+import { CSS } from '@dnd-kit/utilities'; // apply css to dnd items
 
 const Strategy = () => {
   // State to manage form data
@@ -83,6 +87,19 @@ const RothConversionSettings = ({ formData, setFormData }) => {
     fetchPreTaxInvestments();
   }, []);
 
+  // Drag and drop functionality
+  const onDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setAccounts((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   return (
     <>
       {/* Optimizer Settings */}
@@ -125,9 +142,35 @@ const RothConversionSettings = ({ formData, setFormData }) => {
       <div>
         <p>Choose order of pre-tax retirement accounts below</p>
         {/* Drag and drop mechanism? */}
+        <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={accounts} strategy={sortableKeyboardCoordinates}>
+            <ul>
+              {accounts.map((account) => (
+                <SortableItem key={account.id} id={account.id} account={account} />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+        
       </div>
       
     </>
+  );
+};
+
+// individual item for drag and drop
+const SortableItem = ({ id, account }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {account.investment_type}: ${account.dollar_value}
+    </li>
   );
 };
 
