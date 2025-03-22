@@ -276,7 +276,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       <ViewInvestmentDetails investments={investments} investmentTypes={investmentTypes} />
       {showEventsForm && <EventsForm />}
 
-      <Strategy/>
+      <Strategy investments={investments}/>
     </div>
   );
 });

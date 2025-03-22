@@ -5,7 +5,7 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 import { useSortable } from '@dnd-kit/sortable'; // dnd for individual items
 import { CSS } from '@dnd-kit/utilities'; // apply css to dnd items
 
-const Strategy = () => {
+const Strategy = ({investments}) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     optimizer: false,
@@ -22,7 +22,7 @@ const Strategy = () => {
       <SpendingStrategy setFormData={setFormData} />
       <p> Enter Expense Withdrawal Strategy </p>
       <RothConversionSettings formData={formData} setFormData={setFormData} 
-        accounts={accounts} setAccounts={setAccounts}/>
+        accounts={accounts} setAccounts={setAccounts} investments={investments}/>
       <p> Optional Enter RMD Strategy </p>
     </div>
   );
@@ -59,7 +59,7 @@ const SpendingStrategy = ({ setFormData }) => {
 };
 
 // both roth and rmd are ordering on pre tax retirement accounts - share drag and drop component
-const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts }) => {
+const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, investments }) => {
 
   const handleOptimizerToggle = () => {
     setFormData((prevData) => ({
@@ -88,7 +88,7 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts }
       }
     };
     fetchPreTaxInvestments();
-  }, [formData]);
+  }, [formData, investments]);
 
   // Drag and drop functionality
   const onDragEnd = (event) => {
