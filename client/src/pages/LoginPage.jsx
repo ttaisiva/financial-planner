@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import LandingHeader from "../components/LandingHeader";
 import { Link } from "react-router-dom";
+import { loadAnimation } from "../utils";
 
 window.handleToken = (response) => {
   fetch("http://localhost:3000/auth/google", {
@@ -30,6 +31,8 @@ window.handleToken = (response) => {
 
 const LoginPage = () => {
   useEffect(() => {
+    loadAnimation();
+
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
@@ -44,13 +47,14 @@ const LoginPage = () => {
       });
 
       window.google.accounts.id.renderButton(
-        document.getElementById("g_id_signin"),
+        document.getElementById("button-google"),
         {
           theme: "outline",
           size: "large",
-          shape: "pill",
+          shape: "rectangular",
           text: "continue_with",
           logo_alignment: "left",
+          width: "300px",
         }
       );
     };
@@ -58,21 +62,15 @@ const LoginPage = () => {
 
   return (
     <>
-      <div className="landing-content">
-        <h1>Manatee Planner</h1>
-        <div
-          className="g_id_signin"
-          // data-type="standard"
-          // data-shape="pill"
-          // data-theme="outline"
-          // data-text="continue_with"
-          // data-size="large"
-          // data-logo_alignment="left"
-        ></div>
-        <p>
-          Don't want to login?
-          <Link to="/DashboardPage"> Continue as Guest</Link>
-        </p>
+      <div className="container-landing">
+        <div className="content-landing">
+          <h1 className="fade-in-up">Login to Manatee Planner</h1>
+          <div id="button-google" className="fade-in-up"></div>
+          <p className="fade-in-up">
+            Don't want to login?
+            <Link to="/DashboardPage"> Continue as Guest</Link>
+          </p>
+        </div>
       </div>
     </>
   );
