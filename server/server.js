@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.resolve("../.env") }); // this is for sophie pls dont delete otherwise my env wont work
+//dotenv.config({ path: path.resolve("../.env") }); // this is for sophie pls dont delete otherwise my env wont work
 
 import mysql from "mysql2/promise";
 import express from "express";
