@@ -50,6 +50,7 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
 const ScenarioInfo = forwardRef((props, ref) => {
   // State to manage form data
   const [formData, setFormData] = useState({
+    scenarioName: "",
     financialGoal: "",
     filingStatus: "single",
     stateOfResidence: "",
@@ -168,6 +169,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
   return (
     <div className="scenario_info-container">
+      
       <h2>Financial goal</h2>
       <p>
         Your financial goal is the extra amount you would like to have left over after meeting all expenses. <br />
@@ -178,6 +180,11 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
       <form onSubmit={handleSubmitUserInfo}>
         <div>
+          <label>
+            Scenario Name: 
+            <input type="text" name="scenarioName" value={formData.scenarioName} placeholder="Enter scenario name" onChange={handleChange} required/>
+          </label>
+          
           <label>
             Financial goal: $ 
             <input
@@ -271,7 +278,9 @@ const ScenarioInfo = forwardRef((props, ref) => {
       )}
 
       <ViewInvestmentDetails investments={investments} investmentTypes={investmentTypes} />
-      {showEventsForm && <EventsForm />}
+
+      <button  onClick={handleCreateEvent} > Create Event </button>
+      {showEventsForm && <EventsForm setShowEventsForm={ setShowEventsForm }/>}
     </div>
   );
 });

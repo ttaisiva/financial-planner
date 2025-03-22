@@ -8,6 +8,7 @@ import NewScenarioPage from "./pages/NewScenarioPage.jsx";
 import ResourcesPage from "./pages/ResourcesPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import ViewScenarioPage from "./pages/ViewScenarioPage.jsx";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -22,6 +23,7 @@ function App() {
         <Route path="/ResourcesPage" element={<ResourcesPage />} />
         <Route path="/ProfilePage" element={<ProfilePage />} />
         <Route path="/LoginPage" element={<LoginPage />} />
+        <Route path="/ViewScenarioPage" element={<ViewScenarioPage />} />
       </Routes>
     </>
   );
