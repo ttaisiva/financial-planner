@@ -64,7 +64,7 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
 );
 
 
-const ScenarioInfo = () => {
+const ScenarioInfo = (  ) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     financialGoal: "",
@@ -144,8 +144,7 @@ const ScenarioInfo = () => {
     }
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmitUserInfo = async (e) => {
     e.preventDefault();
     console.log("User Scenario Info Submitted:", formData);
 
@@ -191,7 +190,7 @@ const ScenarioInfo = () => {
         <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
       
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmitUserInfo}>
         <div>
           <label>
             Financial goal: $ 
@@ -280,7 +279,7 @@ const ScenarioInfo = () => {
             <RetirementAgeForm prefix="spouse" data={formData.spouseData} handleChange={handleChange} />
           </div>
         )}
-       <button type="submit">Run Simulation</button>
+          
       </form>
 
 
