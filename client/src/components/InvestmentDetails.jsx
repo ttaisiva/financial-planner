@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 
-export const Investment = ( { setShowInvestmentForm } ) => {
+export const Investment = ( { investments, setInvestments, setShowInvestmentForm } ) => {
   const [formData, setFormData] = useState({
     investment_type: "",
     dollar_value: "",
@@ -12,7 +12,10 @@ export const Investment = ( { setShowInvestmentForm } ) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData({
+      ...formData,
+      [name]: name === "dollar_value" ? parseFloat(value) : value,
+    });
   };
 
   const handleSubmit =  async (e) => {
@@ -31,8 +34,14 @@ export const Investment = ( { setShowInvestmentForm } ) => {
 
       if (response.ok) {
         console.log('Investment saved successfully');
+        const newInvestment = await response.json(); // ERROR HERE
+        setInvestments((prev) => [...prev, newInvestment]);
+
+        console.log("New investment: " ,newInvestment);
+      
         setShowInvestmentForm(false);
       } else {
+        setInvestments((prev) => [...prev, formData]);
         console.error('Failed to save investment');
       }
     } catch (error) {
@@ -102,7 +111,7 @@ export const Investment = ( { setShowInvestmentForm } ) => {
 
 
 //TODO: send stuff to database, validate inputs, fix expense ratio, view, edit
-export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
+export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowInvestmentTypeForm }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -179,12 +188,15 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
 
       if (response.ok) {
         console.log('Investment type saved successfully');
+        const newType = await response.json();
+        setInvestmentTypes((prev) => [...prev, newType]); //add new investmenttype to list
         setShowInvestmentTypeForm(false);
       } else {
         console.error('Failed to save investment type');
       }
     } catch (error) {
       console.error('Error:', error);
+      setInvestmentTypes((prev) => [...prev, formData]);
     }
   
       setShowInvestmentTypeForm(false);
@@ -268,3 +280,49 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
     </div>
   );
 };
+
+
+
+export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
+
+  console.log("investments", investments);
+  console.log("investmentTypes", investmentTypes);
+  return (
+    <div className="p-4 border rounded-md mt-6">
+      <h3> Your Investment Types</h3>
+      {investmentTypes.length > 0 ? (
+        <ul >
+          {investmentTypes.map((item, idx) => (
+            <ul key={idx}>
+              <strong>{item.name} </strong>: 
+               {item.description}, Expected Annual Return: {item.expAnnReturnType === "fixed" ? `$${item.expAnnReturnValue}` : `Mean: ${item.expAnnReturnMean}, Std Dev: ${item.expAnnReturnStdDev}`}
+               , Expense Ratio: {item.expenseRatio}%
+              , Expected Annual Income: {item.expAnnIncomeType === "fixed" ? `$${item.expAnnIncomeValue}` : `Mean: ${item.expAnnIncomeMean}, Std Dev: ${item.expAnnIncomeStdDev}`}  
+                , Taxability: {item.taxability} 
+
+            </ul>
+          ))}
+        </ul>
+      ) : (
+        null
+      )}
+
+      <h3> Your Investments </h3> 
+      {investments.length > 0 ? (
+        <ul >
+          
+          {investments.map((item, idx) => (
+            <ul key={idx}>
+              <strong>{item.investment_type}</strong>: ${item.dollar_value}, ({item.tax_status})
+            </ul>
+          ))}
+        </ul>
+      ) : (
+        null
+      )}
+    </div>
+  );
+};
+
+
+
