@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 import path from "path";
-// this is for sophie pls dont delete otherwise my env wont work
-// dotenv.config({ path: path.resolve("../.env") });
+
+//dotenv.config({ path: path.resolve("../.env") }); // this is for sophie pls dont delete otherwise my env wont work
+
 import mysql from "mysql2/promise";
 import express from "express";
 import session from "express-session";
@@ -78,25 +79,8 @@ app.use("/auth", authRouter);
 import scenarioRouter from "./routers/scenario_endpoints.js";
 app.use("/api", scenarioRouter);
 
-// app.post("/api/investments", async (req, res) => {
-//   console.log("Server received investment request from client..");
-//   const { investment_type, dollar_value, tax_status } = req.body;
-//   console.log("make query");
-//   const query =
-//     "INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)";
-//   const values = [investment_type, dollar_value, tax_status];
 
-//   console.log("Send to database..");
 
-//   try {
-//     await ensureConnection();
-//     await createTablesIfNotExist(connection);
-//     const [results] = await connection.execute(query, values);
-//     res.status(201).send("Investment saved successfully");
-//   } catch (err) {
-//     console.error("Failed to insert investment:", err);
-//     res.status(500).send("Failed to save investment");
-//   }
-// });
+
 
 export { connectToDatabase, connection };
