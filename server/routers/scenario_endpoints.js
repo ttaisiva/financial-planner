@@ -16,7 +16,9 @@ router.post('/investment-type', (req, res) => {
 });
 
 router.post('/investments', (req, res) => {
-  const investmentData = req.body;
+  // const investmentData = req.body;
+  let investmentData = req.body;
+  investmentData.id = investmentsLocalStorage.length; // Assign a unique ID
   investmentsLocalStorage.push(investmentData);
   console.log('Investment stored temporarily:', investmentData);
   res.status(200).json(investmentData);

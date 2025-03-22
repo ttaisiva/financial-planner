@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
 import { DndContext, closestCenter } from '@dnd-kit/core'; // drag and collision detection
-import { arrayMove, SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'; // modify array order after dnd
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'; // modify array order after dnd
 import { useSortable } from '@dnd-kit/sortable'; // dnd for individual items
 import { CSS } from '@dnd-kit/utilities'; // apply css to dnd items
 
@@ -94,6 +94,11 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts }
   const onDragEnd = (event) => {
     const { active, over } = event;
 
+    if(!active || !over) {
+      console.log("No active or over item");
+      return;
+    }
+
     if (active.id !== over.id) {
       setAccounts((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
@@ -142,15 +147,17 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts }
       </div>
       
       {/* Ordering Strategy */}
-      {formData.optimizer && (
+      {formData.optimizer && accounts && (
         <div>
-          <p>Choose order of pre-tax retirement accounts below</p>
+          <p>Assets will be transferred out of your pre-tax retirement accounts into 
+            after-tax accounts in the following order. <br></br>
+            Drag the investments into your preferred order below:</p>
           {/* Drag and drop mechanism? */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={accounts} strategy={sortableKeyboardCoordinates}>
+            <SortableContext items={accounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
               <ul>
                 {accounts.map((account) => (
-                  <SortableItem key={account.investment_type} id={account.investment_type} account={account} />
+                  <SortableItem key={account.id} id={account.id} account={account} />
                 ))}
               </ul>
             </SortableContext>
