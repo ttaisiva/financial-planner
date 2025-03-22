@@ -11,6 +11,9 @@ const Strategy = () => {
     optimizer: false,
     rmd: false,
   });
+  // for rendering investments to order
+  const [accounts, setAccounts] = useState([]);
+
 
   return (
     <div>
@@ -18,7 +21,8 @@ const Strategy = () => {
 
       <SpendingStrategy setFormData={setFormData} />
       <p> Enter Expense Withdrawal Strategy </p>
-      <RothConversionSettings formData={formData} setFormData={setFormData} />
+      <RothConversionSettings formData={formData} setFormData={setFormData} 
+        accounts={accounts} setAccounts={setAccounts}/>
       <p> Optional Enter RMD Strategy </p>
     </div>
   );
@@ -55,8 +59,7 @@ const SpendingStrategy = ({ setFormData }) => {
 };
 
 // both roth and rmd are ordering on pre tax retirement accounts - share drag and drop component
-const RothConversionSettings = ({ formData, setFormData }) => {
-  const [accounts, setAccounts] = useState([]);
+const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts }) => {
 
   const handleOptimizerToggle = () => {
     setFormData((prevData) => ({
@@ -76,7 +79,7 @@ const RothConversionSettings = ({ formData, setFormData }) => {
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/pre-tax-investments');
+        const response = await fetch('http://localhost:3000/api/investments-pretax');
         const data = await response.json();
         setAccounts(data);
         console.log('Pre-tax investments:', data);
@@ -85,7 +88,7 @@ const RothConversionSettings = ({ formData, setFormData }) => {
       }
     };
     fetchPreTaxInvestments();
-  }, []);
+  }, [formData]);
 
   // Drag and drop functionality
   const onDragEnd = (event) => {
@@ -139,21 +142,23 @@ const RothConversionSettings = ({ formData, setFormData }) => {
       </div>
       
       {/* Ordering Strategy */}
-      <div>
-        <p>Choose order of pre-tax retirement accounts below</p>
-        {/* Drag and drop mechanism? */}
-        <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={accounts} strategy={sortableKeyboardCoordinates}>
-            <ul>
-              {accounts.map((account) => (
-                <SortableItem key={account.id} id={account.id} account={account} />
-              ))}
-            </ul>
-          </SortableContext>
-        </DndContext>
-        
-      </div>
-      
+      {formData.optimizer && (
+        <div>
+          <p>Choose order of pre-tax retirement accounts below</p>
+          {/* Drag and drop mechanism? */}
+          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={accounts} strategy={sortableKeyboardCoordinates}>
+              <ul>
+                {accounts.map((account) => (
+                  <SortableItem key={account.investment_type} id={account.investment_type} account={account} />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+          
+        </div>
+      )}
+ 
     </>
   );
 };

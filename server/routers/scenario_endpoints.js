@@ -24,7 +24,17 @@ router.post('/investments', (req, res) => {
 
 // Route to retrieve temporary storage:
 router.get('/investments', (req, res) => {
-  res.status(200).json(investments);
+  console.log("Received request for locally stored investments.")
+  console.log((investmentsLocalStorage))
+  res.status(200).json(investmentsLocalStorage);
+});
+
+// specifically pre-tax
+router.get('/investments-pretax', (req, res) => {
+  console.log("Received request for locally stored investments of type pre-tax.")
+  const filtered = investmentsLocalStorage.filter((investment) => investment.tax_status === "Pre_Tax")
+  console.log((filtered))
+  res.status(200).json(filtered);
 });
 
 router.get('/investment-types', (req, res) => {
