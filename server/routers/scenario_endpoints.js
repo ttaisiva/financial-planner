@@ -12,14 +12,14 @@ router.post('/investment-type', (req, res) => {
   const investmentTypeData = req.body;
   investmentTypesLocalStorage.push(investmentTypeData);
   console.log('Investment type stored temporarily:', investmentTypeData);
-  res.status(200).json({ message: 'Investment type saved temporarily' });
+  res.status(200).json(investmentTypeData);
 });
 
 router.post('/investments', (req, res) => {
   const investmentData = req.body;
   investmentsLocalStorage.push(investmentData);
   console.log('Investment stored temporarily:', investmentData);
-  res.status(200).json({ message: 'Investment saved temporarily' });
+  res.status(200).json(investmentData);
 });
 
 // Route to retrieve temporary storage:
