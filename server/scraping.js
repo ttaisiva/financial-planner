@@ -114,6 +114,8 @@ async function insertTaxBrackets(taxBrackets) {
       const values = Object.values(element);
       connection.execute(sql, values);
     });
+
+    await connection.end();
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
@@ -209,6 +211,8 @@ async function insertStandardDeductions(standardDeductions) {
       const values = Object.values(element);
       connection.execute(sql, values);
     });
+
+    await connection.end();
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
@@ -360,6 +364,8 @@ async function insertCapitalGains(capitalGainsTaxRates) {
       const values = Object.values(element);
       connection.execute(sql, values);
     });
+
+    await connection.end();
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;

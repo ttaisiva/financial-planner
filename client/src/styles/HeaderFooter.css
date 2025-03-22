@@ -11,7 +11,8 @@ header {
   height: 4rem;
   top: 0;
   z-index: 1000;
-  background-color: var(--primary-color);
+  background-color: white;
+  box-shadow: 0 0px 25px 2px lightslategray;
 }
 
 nav ul {
