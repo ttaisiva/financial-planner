@@ -9,13 +9,13 @@ import cors from "cors";
 import { scrapeData } from "./scraping.js";
 
 
-//dotenv.config();
+dotenv.config();
 
 const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ['http://localhost:5173', 'http://localhost:5175'],
     credentials: true,
   })
 );
@@ -76,27 +76,5 @@ app.use("/auth", authRouter);
 
 import scenarioRouter from "./routers/scenario_endpoints.js";
 app.use("/api", scenarioRouter);
-
-// app.post("/api/investments", async (req, res) => {
-//   console.log("Server received investment request from client..");
-//   const { investment_type, dollar_value, tax_status } = req.body;
-//   console.log("make query");
-//   const query =
-//     "INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)";
-//   const values = [investment_type, dollar_value, tax_status];
-
-//   console.log("Send to database..");
-
-//   try {
-//     await ensureConnection();
-//     await createTablesIfNotExist(connection);
-//     const [results] = await connection.execute(query, values);
-//     res.status(201).send("Investment saved successfully");
-//   } catch (err) {
-//     console.error("Failed to insert investment:", err);
-//     res.status(500).send("Failed to save investment");
-//   }
-// });
-
 
 export { connectToDatabase, connection };

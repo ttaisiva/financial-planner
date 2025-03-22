@@ -179,4 +179,36 @@ router.post("/investment-type", async (req, res) => {
   }
 });
 
+router.get('/pre-tax-investments', async (req, res) => {
+  console.log("Server received request for pre-tax type investments..");
+
+  const query = "SELECT * FROM investments WHERE tax_status = 'pre-tax'";
+
+  try {
+    await ensureConnection();
+    const [rows] = await connection.execute(query);
+    res.json(rows);
+    console.log('Sent pre-tax investments to client:', rows);
+  } catch (err) {
+    console.error("Failed to fetch pre-tax type investments:", err);
+    res.status(500).send("Failed to fetch pre-tax type investments");
+  }
+});
+
+// *** don't have expenses yet
+// router.get('/discretionary-expenses', async (req, res) => {
+//   console.log("Server received request for discretionary expenses..");
+
+//   const query = "SELECT * FROM discretionary_expenses";
+
+//   try {
+//     await ensureConnection();
+//     const [rows] = await connection.execute(query);
+//     res.json(rows);
+//   } catch (err) {
+//     console.error("Failed to fetch discretionary expenses:", err);
+//     res.status(500).send("Failed to fetch discretionary expenses");
+//   }
+// });
+
 export default router;

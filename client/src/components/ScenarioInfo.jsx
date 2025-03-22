@@ -4,7 +4,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import { InvestmentType, Investment } from "./InvestmentDetails";
 import { states, tooltipContent, handleFileUpload } from "../utils";
-
+import Strategy from "./Strategy";
 
 
 
@@ -303,7 +303,7 @@ const ScenarioInfo = () => {
       <button onClick={handleCreateEvent}>New Event</button>
       {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
 
-      
+      <Strategy/>      
      
 
     </div>

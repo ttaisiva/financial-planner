@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useEffect } from "react";
 
 const Strategy = () => {
   // State to manage form data
@@ -23,6 +24,23 @@ export default Strategy;
 
 // ordering on discretionary expenses
 const SpendingStrategy = ({ setFormData }) => {
+  const [expenses, setExpenses] = useState([]);
+
+  // not possible yet ****
+  // useEffect(() => {
+  //   const fetchExpenses = async () => {
+  //     try {
+  //       const response = await fetch('http://localhost:3000/api/discretionary-expenses');
+  //       const data = await response.json();
+  //       setExpenses(data);
+  //     } catch (error) {
+  //       console.error('Error fetching discretionary expenses:', error);
+  //     }
+  //   };
+
+  //   fetchExpenses();
+  // }, []);
+
   return (
     <div>
       <p>Enter Spending Strategy</p>
@@ -34,6 +52,8 @@ const SpendingStrategy = ({ setFormData }) => {
 
 // both roth and rmd are ordering on pre tax retirement accounts - share drag and drop component
 const RothConversionSettings = ({ formData, setFormData }) => {
+  const [accounts, setAccounts] = useState([]);
+
   const handleOptimizerToggle = () => {
     setFormData((prevData) => ({
       ...prevData,
@@ -48,6 +68,20 @@ const RothConversionSettings = ({ formData, setFormData }) => {
       [name]: value,
     }));
   };
+
+  useEffect(() => {
+    const fetchPreTaxInvestments = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/pre-tax-investments');
+        const data = await response.json();
+        setAccounts(data);
+        console.log('Pre-tax investments:', data);
+      } catch (error) {
+        console.error('Error fetching pre-tax investments:', error);
+      }
+    };
+    fetchPreTaxInvestments();
+  }, []);
 
   return (
     <>
