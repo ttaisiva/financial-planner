@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import LandingHeader from "../components/LandingHeader";
 import { Link } from "react-router-dom";
 import { loadAnimation } from "../utils";
+import "../styles/Landing.css";
 
 window.handleToken = (response) => {
   fetch("http://localhost:3000/auth/google", {
