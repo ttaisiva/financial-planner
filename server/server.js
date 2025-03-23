@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
+import { createTablesIfNotExist } from "./db_tables.js";
 
 dotenv.config({ path: path.resolve("../.env") }); // this is for sophie pls dont delete otherwise my env wont work
 
@@ -60,8 +61,13 @@ startServer();
 
 async function startServer() {
   try {
-    // await connectToDatabase();
+    await connectToDatabase();
+   
     await scrapeData();
+    console.log("Scraping completed.");
+    await createTablesIfNotExist(connection);
+    console.log("All tables created or already exist.");
+    
   } catch (err) {
     console.error("Error:", err.message);
     throw err;

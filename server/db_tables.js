@@ -6,10 +6,22 @@ export async function createTablesIfNotExist(connection) {
   // inflation_assumption DECIMAL(5, 2),    
   // annual_pre_tax_contribution_limit DECIMAL(10, 2),  
   // annual_after_tax_contribution_limit DECIMAL(10, 2),
+
+  // const createUsersTable = `
+  //     CREATE TABLE users (
+  //      id varchar(255) NOT NULL , 
+  //      name varchar(100), 
+  //      lastName varchar(100), 
+  //      email varchar(255), 
+  //      UNIQUE(email), 
+  //      PRIMARY KEY(id));
+  // `;
   
   const createUserScenarioInfoTable = `
     CREATE TABLE IF NOT EXISTS user_scenario_info (
+      FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE,
       id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id VARCHAR(255) NOT NULL,
       scenario_id INT,
       scenario_name VARCHAR(255) NOT NULL,
       financial_goal DECIMAL(10, 2) NOT NULL,
