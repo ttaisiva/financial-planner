@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 
-export const Investment = ( { setShowInvestmentForm } ) => {
+export const Investment = ( { investments, setInvestments, setShowInvestmentForm } ) => {
   const [formData, setFormData] = useState({
     investment_type: "",
     dollar_value: "",
@@ -12,7 +12,10 @@ export const Investment = ( { setShowInvestmentForm } ) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData({
+      ...formData,
+      [name]: name === "dollar_value" ? parseFloat(value) : value,
+    });
   };
 
   const handleSubmit =  async (e) => {
@@ -21,7 +24,7 @@ export const Investment = ( { setShowInvestmentForm } ) => {
     // send to server
     
     try {
-      const response = await fetch('http://localhost:8000/api/investments', {
+      const response = await fetch('http://localhost:3000/api/investments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,8 +34,14 @@ export const Investment = ( { setShowInvestmentForm } ) => {
 
       if (response.ok) {
         console.log('Investment saved successfully');
+        const newInvestment = await response.json(); // ERROR HERE
+        setInvestments((prev) => [...prev, newInvestment]);
+
+        console.log("New investment: " ,newInvestment);
+      
         setShowInvestmentForm(false);
       } else {
+        setInvestments((prev) => [...prev, formData]);
         console.error('Failed to save investment');
       }
     } catch (error) {
@@ -102,40 +111,74 @@ export const Investment = ( { setShowInvestmentForm } ) => {
 
 
 //TODO: send stuff to database, validate inputs, fix expense ratio, view, edit
-export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
+export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowInvestmentTypeForm }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     expAnnReturnType: "fixed",
     expAnnReturnValue: "",
+    expAnnReturnStdDev: "",
+    expAnnReturnMean: "",
     expenseRatio: "",
     expAnnIncomeType: "fixed",
     expAnnIncomeValue: "",
+    expAnnIncomeStdDev: "",
+    expAnnIncomeMean: "",
     taxability: "taxable",
   });
+
+  
+  const resetValues = (type, value) => {
+    if (type === "expAnnReturnType") {
+      if (value === "fixed") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnReturnMean: "",
+          expAnnReturnStdDev: "",
+        }));
+      } else if (value === "normal_distribution") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnReturnValue: "",
+        }));
+      }
+    } else if (type === "expAnnIncomeType") {
+      if (value === "fixed") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnIncomeMean: "",
+          expAnnIncomeStdDev: "",
+        }));
+      } else if (value === "normal_distribution") {
+        setFormData((prev) => ({
+          ...prev,
+          expAnnIncomeValue: "",
+        }));
+      }
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setFormData({ ...formData, [name]: value });
 
-    // Reset values when switching from "fixed" to another type
-    if (name === "expAnnReturnType" && value !== "fixed") {
-      setFormData((prev) => ({ ...prev, expAnnReturnValue: "" }));
+
+    if (name === "expAnnReturnType" || name === "expAnnIncomeType") {
+      resetValues(name, value);
     }
-    if (name === "expAnnIncomeType" && value !== "fixed") {
-      setFormData((prev) => ({ ...prev, expAnnIncomeValue: "" }));
-    }
+
+
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Investment Type Submitted:", formData);
 
-    const jwtToken = localStorage.getItem('jwtToken');  //local storage for now but we can also do session
+    
 
     try {
-      const response = await fetch('http://localhost:8000/api/investment-type', {
+      const response = await fetch('http://localhost:3000/api/investment-type', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,17 +188,18 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
 
       if (response.ok) {
         console.log('Investment type saved successfully');
-        setShowInvestmentForm(false);
+        const newType = await response.json();
+        setInvestmentTypes((prev) => [...prev, newType]); //add new investmenttype to list
+        setShowInvestmentTypeForm(false);
       } else {
         console.error('Failed to save investment type');
       }
     } catch (error) {
       console.error('Error:', error);
+      setInvestmentTypes((prev) => [...prev, formData]);
     }
   
-  
-
-    setShowInvestmentTypeForm(false);
+      setShowInvestmentTypeForm(false);
   };
 
   const handleBack = () => {
@@ -184,9 +228,16 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
           </select>
-          {formData.expAnnReturnType === 'fixed' && (
-            <input type="number" name="expAnnReturnValue" placeholder="0.00" value={formData.expAnnReturnValue} onChange={handleChange} required />
-          )}
+        
+          {formData.expAnnReturnType === "fixed" ? (
+              <input type="number" min = "0" name="expAnnReturnValue" placeholder="0.0" value={formData.expAnnReturnValue} onChange={handleChange} required />
+              ) : formData.expAnnReturnType === "normal_distribution" ? (
+              <>
+                <input type="number" min = "0" name= "expAnnReturnMean" placeholder="Enter mean" value={formData.expAnnReturnMean} onChange={handleChange} required />
+                <input type="number" min = "0" name= "expAnnReturnStdDev" placeholder="Enter standard deviation" value={formData.expAnnReturnStdDev} onChange={handleChange} required />
+              </>
+            ) : null}
+
         </div>
 
 
@@ -203,9 +254,14 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
           </select>
-          {formData.expAnnIncomeType === 'fixed' && (
-            <input type="number" name="expAnnIncomeValue" placeholder="0.00" value={formData.expAnnIncomeValue} onChange={handleChange} required />
-          )}
+          {formData.expAnnIncomeType === "fixed" ? (
+              <input type="number" min = "0" name="expAnnIncomeValue" placeholder="0.0" value={formData.expAnnIncomeValue} onChange={handleChange} required />
+              ) : formData.expAnnIncomeType === "normal_distribution" ? (
+              <>
+                <input type="number" min = "0" name= "expAnnIncomeMean" placeholder="Enter mean" value={formData.expAnnIncomeMean} onChange={handleChange} required />
+                <input type="number" min = "0" name= "expAnnIncomeStdDev" placeholder="Enter standard deviation" value={formData.expAnnIncomeStdDev} onChange={handleChange} required />
+              </>
+            ) : null}
           
         </div>
 
@@ -224,3 +280,49 @@ export const InvestmentType = ({ setShowInvestmentTypeForm }) => {
     </div>
   );
 };
+
+
+
+export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
+
+  console.log("investments", investments);
+  console.log("investmentTypes", investmentTypes);
+  return (
+    <div className="p-4 border rounded-md mt-6">
+      <h3> Your Investment Types</h3>
+      {investmentTypes.length > 0 ? (
+        <ul >
+          {investmentTypes.map((item, idx) => (
+            <ul key={idx}>
+              <strong>{item.name} </strong>: 
+               {item.description}, Expected Annual Return: {item.expAnnReturnType === "fixed" ? `$${item.expAnnReturnValue}` : `Mean: ${item.expAnnReturnMean}, Std Dev: ${item.expAnnReturnStdDev}`}
+               , Expense Ratio: {item.expenseRatio}%
+              , Expected Annual Income: {item.expAnnIncomeType === "fixed" ? `$${item.expAnnIncomeValue}` : `Mean: ${item.expAnnIncomeMean}, Std Dev: ${item.expAnnIncomeStdDev}`}  
+                , Taxability: {item.taxability} 
+
+            </ul>
+          ))}
+        </ul>
+      ) : (
+        null
+      )}
+
+      <h3> Your Investments </h3> 
+      {investments.length > 0 ? (
+        <ul >
+          
+          {investments.map((item, idx) => (
+            <ul key={idx}>
+              <strong>{item.investment_type}</strong>: ${item.dollar_value}, ({item.tax_status})
+            </ul>
+          ))}
+        </ul>
+      ) : (
+        null
+      )}
+    </div>
+  );
+};
+
+
+

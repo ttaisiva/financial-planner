@@ -1,55 +1,31 @@
-import React from "react";
+import React, { useEffect } from "react";
 import LandingHeader from "../components/LandingHeader";
 import { Link } from "react-router-dom";
-
-window.handleToken = (response) => {
-  fetch('http://localhost:3000/auth/google', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json', 
-    },
-    body: JSON.stringify({
-      credential: response.credential,
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if(data.status == 201) { // Need to finish account creation
-      sessionStorage.setItem('userData', JSON.stringify(data.userdata));
-      sessionStorage.setItem('credential', response.credential); 
-      window.location.href = '/CreateAccount';
-    }
-    else if (data.status == 200) { // Logged in
-      window.location.href = '/DashboardPage';
-    }
-  })
-  .catch(error => console.error('Error:', error));
-};
+import { loadAnimation } from "../utils";
+import "../styles/Landing.css";
 
 const LandingPage = () => {
+  useEffect(() => {
+    loadAnimation();
+  }, []);
+
   return (
     <>
       <LandingHeader />
-      <div className="landing-content">
-        <h1>Manatee Planner</h1>
-        <div id="g_id_onload"
-          data-client_id="197173313554-n6rm3gerdgdlmqpascna1uosju6jpgms.apps.googleusercontent.com"
-          data-context="signin"
-          data-ux_mode="popup"
-          data-callback="handleToken"
-          data-auto_prompt="false">
+      <div className="container-landing">
+        <div className="content-landing">
+          <h1 className="fade-in-up">Start planning your life today</h1>
+          <p className="landing fade-in-up">
+            Monitor investments and major life events.
+            <br />
+            Create simulations and view informational charts.
+            <br />
+            Be in control of your future.
+          </p>
+          <Link to="/LoginPage" className="button-action fade-in-up">
+            Try it Out!
+          </Link>
         </div>
-        <div class="g_id_signin"
-          data-type="standard"
-          data-shape="pill"
-          data-theme="outline"
-          data-text="continue_with"
-          data-size="large"
-          data-logo_alignment="left">
-        </div>
-        <Link to="/DashboardPage">Continue as Guest</Link>
-        
       </div>
     </>
   );
