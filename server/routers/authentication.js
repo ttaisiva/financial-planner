@@ -88,6 +88,15 @@ router.post("/createAccount/", async (req, res) => {
     }
 })
 
+router.get("/isAuth/", async (req, res) => {
+    if (req.session.user == null) {
+        req.status(401).send();
+    }
+    else {
+        req.status(302).send();
+    }
+})
+
 async function authorize(req) {
     // Checks permissions
 }
