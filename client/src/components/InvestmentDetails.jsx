@@ -307,8 +307,8 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
 
 export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
 
-  console.log("investments", investments);
-  console.log("investmentTypes", investmentTypes);
+  // console.log("investments", investments);
+  // console.log("investmentTypes", investmentTypes);
   return (
     <div className="p-4 border rounded-md mt-6">
       <h3> Your Investment Types</h3>
