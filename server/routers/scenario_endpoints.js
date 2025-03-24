@@ -8,6 +8,7 @@ const router = express.Router();
 let investmentsLocalStorage = [];
 let investmentTypesLocalStorage = [];
 let eventsLocalStorage = [];
+let strategyLocalStorage = [];
 
 
 // Route to handle temporary storage: 
@@ -42,7 +43,7 @@ router.get('/discretionary-expenses', (req, res) => {
 });
 
 router.post('/strategies', (req, res) => {
-  eventsLocalStorage.push(req.body);
+  strategyLocalStorage.push(req.body);
   console.log('Strategy data stored temporarily.');
   res.status(200).json(req.body);
 });
@@ -73,6 +74,7 @@ router.post("/user-scenario-info", async (req, res) => {
     console.log("Authenticated user ID:", userId);
 
   } 
+  
  
   console.log("authenticated", req.session.user)
   const {
@@ -195,12 +197,46 @@ router.post("/user-scenario-info", async (req, res) => {
       ];
       await connection.execute(eventsQuery, eventsValues);
       console.log(`Event ${e.name} saved to the database.`);
+      
+      
     }    
 
-    // Step 5: Clear temporary data after insertion
+    // Step 5: Insert strategy with scenario_id
+    // for (const s of strategyLocalStorage) {
+    //   const eventsQuery = `
+    //     INSERT INTO  (scenario_id, name, description, start_type, start_value, duration_type, duration_value, event_type, initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, asset_allocation)
+    //     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    //   `;
+    //   const eventsValues = [
+    //     scenario_id || null,
+    //     e.name || null,
+    //     e.description || null,
+    //     e.startType || null,
+    //     e.startValue || null,
+    //     e.durationType || null,
+    //     e.durationValue || null,
+    //     e.eventType || null, 
+    //     e.initialAmount || null,
+    //     e.annualChangeType || null,
+    //     e.annualChangeValue || null,
+    //     e.inflationAdjusted || null,
+    //     e.userPercentage || null,
+    //     e.spousePercentage || null,
+    //     e.isSocialSecurity || null,
+    //     e.isWages || null,
+    //     e.allocationMethod || null,
+    //   ];
+    //   await connection.execute(eventsQuery, eventsValues);
+    //   console.log(`Event ${e.name} saved to the database.`);
+      
+      
+    // } 
+
+    // Step 6: Clear temporary data after insertion
     investmentsLocalStorage = [];
     investmentTypesLocalStorage = [];
     eventsLocalStorage = [];
+    strategyLocalStorage =  [];
 
     res.status(200).send("User scenario and related data saved successfully.");
   } catch (err) {
@@ -217,8 +253,8 @@ router.get('/scenarios', async (req, res) => {
 
   try{
     //if (req.session.user){
-      const userId = req.session.user['id'];
-      //const userId = 107981191838034384868; //i just hard coded this for now because too many issues with loggin in
+      //const userId = req.session.user['id'];
+      const userId = 107981191838034384868; //i just hard coded this for now because too many issues with loggin in
       console.log("user id: ", userId)
       const query = `
         SELECT  
