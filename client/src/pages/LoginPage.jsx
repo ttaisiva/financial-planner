@@ -21,10 +21,10 @@ window.handleToken = (response) => {
         // Need to finish account creation
         sessionStorage.setItem("userData", JSON.stringify(data.userdata));
         sessionStorage.setItem("credential", response.credential);
-        window.location.href = "/CreateAccount";
+        window.location.href = "/create/account";
       } else if (data.status == 200) {
         // Logged in
-        window.location.href = "/DashboardPage";
+        window.location.href = "/dashboard";
       }
     })
     .catch((error) => console.error("Error:", error));
@@ -69,7 +69,7 @@ const LoginPage = () => {
           <div id="button-google" className="fade-in-up"></div>
           <p className="fade-in-up">
             Don't want to login?
-            <Link to="/DashboardPage"> Continue as Guest</Link>
+            <Link to="/dashboard"> Continue as Guest</Link>
           </p>
         </div>
       </div>

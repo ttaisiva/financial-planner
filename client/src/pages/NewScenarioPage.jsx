@@ -16,7 +16,7 @@ const NewScenarioPage = () => {
       scenarioInfoRef.current.handleSubmitUserInfo();
     } // scenario endpoint also pushes all local storage to database
 
-    navigate("/ViewScenarioPage");
+    navigate("/scenario");
 
   };
 

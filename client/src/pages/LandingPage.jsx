@@ -22,7 +22,7 @@ const LandingPage = () => {
             <br />
             Be in control of your future.
           </p>
-          <Link to="/LoginPage" className="button-action fade-in-up">
+          <Link to="/login" className="button-action fade-in-up">
             Try it Out!
           </Link>
         </div>

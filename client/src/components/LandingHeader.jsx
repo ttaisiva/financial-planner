@@ -3,6 +3,10 @@ import "../styles/HeaderFooter.css";
 // import LandingPage from "../pages/LandingPage";
 import { Link } from "react-router-dom";
 
+const handleGuest = () => {
+  
+}
+
 const Header = () => {
   return (
     <header>
@@ -13,10 +17,10 @@ const Header = () => {
       <nav>
         <ul>
           <li>
-            <Link to="/LoginPage">Login</Link>
+            <Link to="/login">Login</Link>
           </li>
           <li>
-            <Link to="/DashboardPage">Continue as Guest</Link>
+            <Link onClick={handleGuest}>Continue as Guest</Link>
           </li>
         </ul>
       </nav>

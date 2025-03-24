@@ -23,7 +23,7 @@ fetch("http://localhost:3000/auth/isAuth", {
 
         <div className="header-dashboard fade-in-up">
           <h6 className="dashboard">My Scenarios</h6>
-          <Link to="/NewScenarioPage" className="create-scenario">
+          <Link to="/create/scenario" className="create-scenario">
             <img src="client\public\plus.png" className="icon"></img>
             <img
               src="client\public\plus_white.png"

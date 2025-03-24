@@ -139,11 +139,14 @@ const ScenarioInfo = forwardRef((props, ref) => {
     try {
       const response = await fetch('http://localhost:3000/api/user-scenario-info', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
-      });
+        body: JSON.stringify(formData)
+      })
+
+      console.log(response);
 
       if (response.ok) {
         console.log('User details saved successfully');

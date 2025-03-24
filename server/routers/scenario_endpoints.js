@@ -87,14 +87,12 @@ router.get('/scenarios', async (req, res) => {
 
 router.post("/user-scenario-info", async (req, res) => {
   try {
-   
-    const authResponse = await fetch('http://localhost:3000/auth/isAuth/', {credentials: 'include',});
-    console.log("Auth response:", authResponse.status);
-    if (authResponse.status === 302) {
+    console.log("user", req.session.user)
+    if (req.session.user) {
       
       const userId = req.session.user.id;
       console.log("Authenticated user ID:", userId);
-      
+
 
       const {
         scenarioName,

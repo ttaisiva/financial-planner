@@ -103,6 +103,7 @@ router.get("/isAuth/", async (req, res) => {
         res.status(401).send();
     }
     else {
+        console.log("isAuth", req.session.user['id']);
         res.status(302).send();
     }
 })
