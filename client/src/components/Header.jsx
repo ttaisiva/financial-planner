@@ -20,14 +20,14 @@ const Header = () => {
 
   return (
     <header>
-      <Link to="/DashboardPage">Dashboard</Link>
+      <Link to="/dashboard">Dashboard</Link>
       <nav>
         <ul>
           <li>
-            <Link to="/ResourcesPage">Resources</Link>
+            <Link to="/resources">Resources</Link>
           </li>
           <li>
-            <Link to="/ProfilePage">Profile</Link>
+            <Link to="/profile">Profile</Link>
           </li>
           <li>
             <Link onClick={logOut}>Log Out</Link>

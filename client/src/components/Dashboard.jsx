@@ -3,48 +3,141 @@ import "../styles/Dashboard.css";
 /* import display scenarios? how to display the different scenario tabs */
 import { Link } from "react-router-dom";
 import { loadAnimation } from "../utils";
+import { handleScenarioUpload } from "../utils";
 
 export const Dashboard = () => {
-  useEffect(() => {
-    loadAnimation();
-  });
+  const [username, setUsername] = useState("undefined");
 
-  fetch("http://localhost:3000/auth/isAuth", {
-    method: "GET",
-    credentials: "include",
-  }).then((res) => console.log(res.status));
+  useEffect(() => {
+    loadAnimation();=
+      
+    fetch("http://localhost:3000/auth/isAuth", {
+      method: "GET",
+      credentials: "include",
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setUsername(data.name);
+    });
+  });
 
   return (
     <div className="container-dashboard">
       <div className="content-dashboard">
-        <h1 className="dashboard fade-in">Welcome to your dashboard!</h1>
-
-        <div className="header-dashboard fade-in">
-          <h6 className="dashboard">My Scenarios</h6>
-          <Link to="/NewScenarioPage" className="create-scenario">
-            <img src="client\public\plus.png" className="icon"></img>
-            <img
-              src="client\public\plus_white.png"
-              className="icon-hover"
-            ></img>
-            Create New Scenario
-          </Link>
-        </div>
-
-        <div className="filter-options fade-in">
-          <label>
-            <input type="checkbox" checked /> Created by me
-          </label>
-          <label>
-            <input type="checkbox" /> Shared with me
-          </label>
-        </div>
-
+        <DashboardContent />
         <div className="user_scenarios">
           <DisplayUserScenarios />
         </div>
       </div>
     </div>
+  );
+};
+
+const DashboardContent = () => {
+  const [showPopup, setShowPopup] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+
+  const togglePopup = () => {
+    setShowPopup(!showPopup);
+  };
+
+  const toggleUpload = () => {
+    setShowUpload(!showUpload);
+  };
+
+  return (
+    <>
+      {/* Add Scenario Popups */}
+      <Popup
+        togglePopup={togglePopup}
+        isActive={showPopup}
+        toggleUpload={toggleUpload}
+      />
+      <div className={`overlay ${showPopup ? "active" : ""}`}></div>
+
+      {/* Submit Scenario YAML Popup */}
+      <UploadScenario
+        toggleUpload={toggleUpload}
+        isActive={showUpload}
+        // handleFileChange={handleFileChange}
+      />
+      <div className={`upload-overlay ${showUpload ? "active" : ""}`}></div>
+
+      {/* Main Content */}
+      <h1 className="dashboard fade-in">Welcome to your dashboard!</h1>
+
+      <div className="header-dashboard fade-in">
+        <h6 className="dashboard">My Scenarios</h6>
+
+        <button onClick={togglePopup} className="create-scenario">
+          <img src="client\public\plus.png" className="icon"></img>
+          <img src="client\public\plus_white.png" className="icon-hover"></img>
+          Add New Scenario
+        </button>
+      </div>
+
+      <div className="filter-options fade-in">
+        <label>
+          <input type="checkbox" checked /> Created by me
+        </label>
+        <label>
+          <input type="checkbox" /> Shared with me
+        </label>
+      </div>
+    </>
+  );
+};
+
+const Popup = ({ togglePopup, isActive, toggleUpload }) => {
+  return (
+    <div className={`popup ${isActive ? "active" : ""}`}>
+      <div className="content-popup">
+        <h1>How would you like to add a scenario?</h1>
+
+        <div>
+          <button onClick={toggleUpload} className="button-popup">
+            <h3>Upload an existing Scenario</h3>
+            <p>
+              Scenarios can be exported and imported as YAML files. Import an
+              existing Scenario YAML file.
+            </p>
+          </button>
+          <Link to="/NewScenarioPage">
+            <div className="button-popup">
+              <h3>Create a Scenario from scratch</h3>
+              <p>
+                Start with a blank canvas and create a new scenario completely
+                from scratch!
+              </p>
+            </div>
+          </Link>
+        </div>
+
+        <div>
+          <button onClick={togglePopup} className="btn-action-popup">
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const UploadScenario = ({ toggleUpload, isActive }) => {
+  return (
+    <>
+      <div className={`popup-upload ${isActive ? "active" : ""}`}>
+        <div>
+          <h3>Submit a YAML file.</h3>
+          <input type="file" accept=".yaml,.yml" />
+        </div>
+        <div>
+          <button onClick={toggleUpload} className="btn-action-popup">
+            Back
+          </button>
+        </div>
+      </div>
+    </>
   );
 };
 

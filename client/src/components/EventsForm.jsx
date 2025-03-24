@@ -23,7 +23,8 @@ const EventsForm = ({ setShowEventsForm }) => {
     spousePercentage: '',
     isSocialSecurity: false,
     isWages: false,
-    allocationMethod: '', 
+    allocationMethod: '',
+    discretionary: false, 
   });
 
   const handleChange = (e) => {
@@ -51,7 +52,7 @@ const EventsForm = ({ setShowEventsForm }) => {
     try {
    
       
-        console.log("Event Type: Income event");
+        console.log("Event Type: ", formData.eventType);
         const response = await fetch('http://localhost:3000/api/events', {
           method: 'POST',
           headers: {
@@ -143,10 +144,7 @@ const EventsForm = ({ setShowEventsForm }) => {
         )}
 
         {formData.eventType === 'expense' && (
-          <>
-            <label>Some expense question</label>
-            <input type="text" name="expenseQuestion" value={formData.expenseQuestion || ''} onChange={handleChange} />
-          </>
+          <ExpenseEvent formData={formData} handleChange={handleChange} />
         )}
 
       {(formData.eventType === 'invest') && (
@@ -517,6 +515,53 @@ const InvestEvent = ({ formData, handleChange }) => {
   );
 };
 
+const ExpenseEvent = ({formData, handleChange}) => {
+  return (
+    <>
+      <div>
+        <label>Initial Amount: $</label>
+        <input type="number" name="initialAmount" min="0" placeholder="0.00" value={formData.initialAmount} onChange={handleChange} required />
+      </div>
+
+      <div>
+          <label>Expected Annual Change: </label>
+          <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
+            <option value="" disabled>Select format</option>
+            <option value="fixed">Fixed</option> 
+            <option value="normal_distribution">Normal Distribution</option>
+            <option value="uniform_distribution">Uniform Distribution</option>
+          </select>
+
+          {inputTypes({ type: formData.annualChangeType, formData, handleChange, prefix: "annualChange"  })}
+        </div>
+  
+      <div>
+          <label>
+            <input type="checkbox" name="inflationAdjusted" checked={formData.inflationAdjusted} onChange={handleChange} />
+            Inflation Adjusted
+          </label>
+      </div>
+  
+      <div>
+          <label>User Percentage:</label>
+          <input type="text" name="userPercentage" value={formData.userPercentage} onChange={handleChange} required />
+       </div>
+  
+          {/* TODO: only show this if the user is status married */}
+      <div>
+          <label>Spouse Percentage:</label>
+          <input type="text" name="spousePercentage" value={formData.spousePercentage} onChange={handleChange} required />
+      </div>
+  
+      <div>
+          <label>Discretionary</label>
+          <input type="checkbox" name="discretionary" value={formData.discretionary || ''} onChange={handleChange} />
+      </div>
+  
+  
+      </>
+    );
+}
 
 
 

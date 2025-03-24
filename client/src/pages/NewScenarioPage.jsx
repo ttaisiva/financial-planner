@@ -18,8 +18,7 @@ const NewScenarioPage = () => {
     if (scenarioInfoRef.current) {
       scenarioInfoRef.current.handleSubmitUserInfo();
     } // scenario endpoint also pushes all local storage to database
-
-    navigate("/ViewScenarioPage");
+    navigate("/scenario");
   };
 
   const handleFileChange = (event) => {
@@ -40,7 +39,7 @@ const NewScenarioPage = () => {
       <div className="container-new-scenario">
         <div className="content-new-scenario">
           <div className="section-new-scenario">
-            <h2 className="fade-in">Upload Scenario</h2>
+            {/* <h2 className="fade-in">Upload Scenario</h2>
             <div className="fade-in">
               <p>
                 Already have a scenario saved? If you have a scenario stored in
@@ -51,7 +50,7 @@ const NewScenarioPage = () => {
                 accept=".yaml,.yml"
                 onChange={handleFileChange}
               />
-            </div>
+            </div> */}
           </div>
 
           <button className="fade-in">Export Scenario</button>

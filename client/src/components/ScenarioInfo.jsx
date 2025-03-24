@@ -288,7 +288,6 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
       console.log(response);
 
-
       if (response.ok) {
         console.log("User details saved successfully");
       } else {
@@ -528,7 +527,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       </div>
     
       <div className="fade-in">
-        <Strategy investments={investments} />
+        <Strategy investments={investments} showEventsForm={showEventsForm} />
       </div>
     </div>
   );
