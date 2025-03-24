@@ -10,19 +10,28 @@ const Strategy = ({investments}) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     optimizer: false,
-    rmd: false,
     rothConversionStrat: [],
+    rmdStrat: [],
   });
   // for rendering investments to order
-  const [rothAccounts, setRothrothAccounts] = useState([]);
+  const [rothAccounts, setRothAccounts] = useState([]);
+  const [rmdAccounts, setRmdAccounts] = useState([]);
 
   // update form before sending to server
   useEffect(() => {
-    setFormData((prevData) => ({
-      ...prevData,
-      rothConversionStrat: rothAccounts,
-    }));
-  }, [rothAccounts]);
+    if(formData.optimizer) {
+      setFormData((prevData) => ({
+        ...prevData,
+        rothConversionStrat: rothAccounts,
+        rmdStrat: rmdAccounts,
+      }));
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        rmdStrat: rmdAccounts,
+      }));
+    }
+  }, [rothAccounts, rmdAccounts]);
   
   // send updated settings to server whenever formData updates
   useEffect(() => {
@@ -46,12 +55,8 @@ const Strategy = ({investments}) => {
       }
     };
   
-    if (formData.rothConversionStrat.length > 0) { // Prevent unnecessary API calls
       updateStrategySettings();
-    }
   }, [formData]); // Now it waits for formData to update before sending to the server
-
-
 
   return (
     <div>
@@ -60,16 +65,76 @@ const Strategy = ({investments}) => {
       <SpendingStrategy setFormData={setFormData} />
       <p> Enter Expense Withdrawal Strategy </p>
       <RothConversionSettings formData={formData} setFormData={setFormData} 
-        rothAccounts={rothAccounts} setRothrothAccounts={setRothrothAccounts} investments={investments}/>
-      <p> Optional Enter RMD Strategy </p>
+        rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
+      <RMDSettings formData={formData} setFormData={setFormData} rmdAccounts={rmdAccounts}
+        setRmdAccounts={setRmdAccounts} investments={investments}/>
     </div>
   );
 };
 
 export default Strategy;
 
-const RMDSettings = ({ formData, setFormData, rothAccounts, setRothrothAccounts, investments }) => {
+const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, investments }) => {
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  useEffect(() => {
+    const fetchPreTaxInvestments = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/api/investments-pretax`);
+        const data = await response.json();
+        setRmdAccounts(data);
+      } catch (error) {
+        console.error('Error fetching pre-tax investments:', error);
+      }
+    };
+    fetchPreTaxInvestments();
+  }, [investments]);
+
+  // Drag and drop functionality
+  const onDragEnd = (event) => {
+    const { active, over } = event;
+  
+    if (!active || !over) return;
+  
+    setRmdAccounts((prevRmdAccounts) => {
+      const newRmdAccounts = switchOrder(prevRmdAccounts, active.id, over.id);
+      return [...newRmdAccounts]; // Ensure new array reference
+    });
+  };
+
+  return (
+    <>
+      <h3> RMD Strategy </h3>
+
+      {rmdAccounts && (
+        <div>
+          <p>To meet required minimum distributions, assets will be transferred out of 
+          your pre-tax retirement accounts into after-tax accounts in the following 
+          order. <br></br> Drag the investments into your preferred order below:</p>
+          {/* Drag and drop mechanism */}
+          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext key={rmdAccounts.map(a => a.id).join(",")} items={rmdAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
+
+              <ul>
+                {rmdAccounts.map((account) => (
+                  <SortableItem key={account.id} id={account.id} account={account} />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+          
+        </div>
+      )}
+
+    </>
+  )
 }
 
 // ordering on discretionary expenses
@@ -101,7 +166,7 @@ const SpendingStrategy = ({ setFormData }) => {
 };
 
 // both roth and rmd are ordering on pre tax retirement rothAccounts - share drag and drop component
-const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothrothAccounts, investments }) => {
+const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAccounts, investments }) => {
 
   const handleOptimizerToggle = () => {
     setFormData((prevData) => ({
@@ -123,7 +188,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothro
       try {
         const response = await fetch(`http://localhost:3000/api/investments-pretax`);
         const data = await response.json();
-        setRothrothAccounts(data);
+        setRothAccounts(data);
       } catch (error) {
         console.error('Error fetching pre-tax investments:', error);
       }
@@ -131,15 +196,6 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothro
     fetchPreTaxInvestments();
   }, [investments]);
 
-
-  const switchOrder = (items, activeId, overId) => {
-    const oldIndex = items.findIndex((item) => item.id === activeId);
-    const newIndex = items.findIndex((item) => item.id === overId);
-  
-    if (oldIndex === newIndex) return items; // Avoid unnecessary updates
-  
-    return arrayMove(items, oldIndex, newIndex); // Return the updated order
-  };
 
   useEffect(() => {
     console.log("Updated rothAccounts state:", rothAccounts);
@@ -151,7 +207,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothro
   
     if (!active || !over) return;
   
-    setRothrothAccounts((prevrothAccounts) => {
+    setRothAccounts((prevrothAccounts) => {
       const newrothAccounts = switchOrder(prevrothAccounts, active.id, over.id);
       return [...newrothAccounts]; // Ensure new array reference
     });
@@ -163,7 +219,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothro
       {/* Optimizer Settings */}
       <div>
         <div>
-            <p> Roth Conversion Optimizer</p>
+            <h3> Roth Conversion Optimizer</h3>
             <button type="button" onClick={handleOptimizerToggle}>
               {formData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
             </button>
@@ -199,8 +255,8 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothro
       {/* Ordering Strategy */}
       {formData.optimizer && rothAccounts && (
         <div>
-          <p>Assets will be transferred out of your pre-tax retirement rothAccounts into 
-            after-tax rothAccounts in the following order. <br></br>
+          <p>Assets will be transferred out of your pre-tax retirement accounts into 
+            after-tax accounts in the following order. <br></br>
             Drag the investments into your preferred order below:</p>
           {/* Drag and drop mechanism? */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -236,5 +292,14 @@ const SortableItem = ({ id, account }) => {
       {account.investment_type}: ${account.dollar_value}
     </li>
   );
+};
+
+const switchOrder = (items, activeId, overId) => {
+  const oldIndex = items.findIndex((item) => item.id === activeId);
+  const newIndex = items.findIndex((item) => item.id === overId);
+
+  if (oldIndex === newIndex) return items; // Avoid unnecessary updates
+
+  return arrayMove(items, oldIndex, newIndex); // Return the updated order
 };
 
