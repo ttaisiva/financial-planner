@@ -245,56 +245,56 @@ router.post("/user-scenario-info", async (req, res) => {
   }
 });
 
-router.get('/scenarios', async (req, res) => {
-  console.log("Display scenarios in server")
-  console.log(req.session.user)
+// router.get('/scenarios', async (req, res) => {
+//   console.log("Display scenarios in server")
+//   console.log(req.session.user)
   
-  try{
-    if (req.session.user){
-      const userId = req.session.user['id'];
-      //const userId = 107981191838034384868; //i just hard coded this for now because too many issues with loggin in
-      console.log("user id: ", userId)
-      const query = `
-        SELECT  
-          usi.*, 
-          it.*, 
-          i.* ,
-          e.*
-        FROM 
-          user_scenario_info usi
-        LEFT JOIN 
-          investment_types it ON usi.id = it.scenario_id
-        LEFT JOIN 
-          investments i ON usi.id = i.scenario_id
-        LEFT JOIN 
-          events e ON usi.id = e.scenario_id   
-        WHERE 
-          usi.user_id = ?
-      `;
-      try {
-        await ensureConnection();
-        await createTablesIfNotExist(connection);
-        const [results] = await connection.execute(query, [userId]);
-        console.log("Retrieved scenarios:");
-        res.status(200).json(results);
-      } catch (err) {
-        console.error("Failed to retrieve scenarios:", err);
-        res.status(500).send("Failed to retrieve scenarios");
-      }
-    } else {
-      // User is not authenticated
-      res.status(401).send("User is not authenticated.");
-    }
-  }
-  catch (err) {
-    console.error("Error during authentication or insertion:", err);
-    res.status(500).send("Failed to insert user scenario info.");
-  }
+//   try{
+//     if (req.session.user){
+//       const userId = req.session.user['id'];
+//       //const userId = 107981191838034384868; //i just hard coded this for now because too many issues with loggin in
+//       console.log("user id: ", userId)
+//       const query = `
+//         SELECT  
+//           usi.*, 
+//           it.*, 
+//           i.* ,
+//           e.*
+//         FROM 
+//           user_scenario_info usi
+//         LEFT JOIN 
+//           investment_types it ON usi.id = it.scenario_id
+//         LEFT JOIN 
+//           investments i ON usi.id = i.scenario_id
+//         LEFT JOIN 
+//           events e ON usi.id = e.scenario_id   
+//         WHERE 
+//           usi.user_id = ?
+//       `;
+//       try {
+//         await ensureConnection();
+//         await createTablesIfNotExist(connection);
+//         const [results] = await connection.execute(query, [userId]);
+//         console.log("Retrieved scenarios:");
+//         res.status(200).json(results);
+//       } catch (err) {
+//         console.error("Failed to retrieve scenarios:", err);
+//         res.status(500).send("Failed to retrieve scenarios");
+//       }
+//     } else {
+//       // User is not authenticated
+//       res.status(401).send("User is not authenticated.");
+//     }
+//   }
+//   catch (err) {
+//     console.error("Error during authentication or insertion:", err);
+//     res.status(500).send("Failed to insert user scenario info.");
+//   }
 
   
 
 
-});
+// });
 
 
 
@@ -367,6 +367,69 @@ router.get('/scenarios', async (req, res) => {
 //     res.status(500).send("Failed to insert user scenario info.");
 //   }
 // });
+
+router.get('/scenarios', async (req, res) => {
+  console.log("Display scenarios in server");
+  console.log(req.session.user);
+
+  try {
+    if (!req.session.user) {
+      return res.status(401).send("User is not authenticated.");
+    }
+
+    const userId = req.session.user['id'];
+    console.log("user id: ", userId);
+
+    await ensureConnection();
+    await createTablesIfNotExist(connection);
+
+    // 1. Fetch user scenarios
+    const [scenarios] = await connection.execute(
+      `SELECT * FROM user_scenario_info WHERE user_id = ?`,
+      [userId]
+    );
+
+    if (scenarios.length === 0) {
+      return res.status(200).json([]); // No scenarios
+    }
+
+    // Get all scenario IDs
+    const scenarioIds = scenarios.map(s => s.id);
+
+    // 2. Fetch all related investments, investment types, and events in one go
+    const [investments] = await connection.query(
+      `SELECT * FROM investments WHERE scenario_id IN (?)`,
+      [scenarioIds]
+    );
+
+    const [investmentTypes] = await connection.query(
+      `SELECT * FROM investment_types WHERE scenario_id IN (?)`,
+      [scenarioIds]
+    );
+
+    const [events] = await connection.query(
+      `SELECT * FROM events WHERE scenario_id IN (?)`,
+      [scenarioIds]
+    );
+
+    // 3. Group related data under each scenario
+    const scenarioMap = scenarios.map(scenario => {
+      return {
+        ...scenario,
+        investments: investments.filter(inv => inv.scenario_id === scenario.id),
+        investment_types: investmentTypes.filter(type => type.scenario_id === scenario.id),
+        events: events.filter(evt => evt.scenario_id === scenario.id),
+      };
+    });
+
+    console.log("Formatted scenarios:", scenarioMap);
+    res.status(200).json(scenarioMap);
+
+  } catch (err) {
+    console.error("Error retrieving scenarios:", err);
+    res.status(500).send("Failed to retrieve scenarios.");
+  }
+});
 
 
 router.post("/investments", async (req, res) => {
@@ -452,8 +515,18 @@ router.get('/get-investments', (req, res) => {
   const { taxStatus } = req.query;
   console.log(taxStatus)
 
-  // Filter investments from local storage
-  const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status));
+  
+  // Check if there's at least one investment with a tax status from taxStatus
+  const hasMatchingInvestments = investmentsLocalStorage.some(investment =>
+    taxStatus && investment.tax_status && taxStatus.includes(investment.tax_status)
+  );
+
+  // If there are matching investments, proceed with filtering; otherwise, return an empty array
+  const filteredInvestments = hasMatchingInvestments
+    ? investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status))
+    : [];
+    
+  //const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status));
 
   res.json(filteredInvestments);
   console.log(`Sent investments tax statuses ${taxStatus} to client:`, filteredInvestments);
