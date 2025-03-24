@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { inputTypes, resetTypes } from '../utils';
 
 const EventsForm = ({ setShowEventsForm }) => {
@@ -175,44 +175,41 @@ const IncomeEvent = ({ formData, handleChange }) => {
       </div>
 
       <div>
-        <label>Expected Annual Change: </label>
-        <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
-          <option value="" disabled>Select format</option>
-          <option value="fixed">Fixed</option>
-          <option value="normal_distribution">Normal Distribution</option>
-          <option value="uniform_distribution">Uniform Distribution</option>
-        </select>
-        {/* {formData.annualChangeType === 'fixed_amt' && (
-          <input type="number" name="annualChangeValue" min="0" placeholder="0.00" value={formData.annualChangeValue} onChange={handleChange} required />)}
-        {formData.annualChangeType === 'fixed_percent' && (
-          <input type="number" name="annualChangeValue" min="0" max="100" placeholder="0%" value={formData.annualChangeValue} onChange={handleChange} required />)}
-         */}
+          <label>Expected Annual Change: </label>
+          <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
+            <option value="" disabled>Select format</option>
+            <option value="fixed">Fixed</option> 
+            <option value="normal_distribution">Normal Distribution</option>
+            <option value="uniform_distribution">Uniform Distribution</option>
+          </select>
+
+          {inputTypes({ type: formData.annualChangeType, formData, handleChange, prefix: "annualChange"  })}
         </div>
   
-        <div>
+      <div>
           <label>
             <input type="checkbox" name="inflationAdjusted" checked={formData.inflationAdjusted} onChange={handleChange} />
             Inflation Adjusted
           </label>
-        </div>
+      </div>
   
-        <div>
+      <div>
           <label>User Percentage:</label>
           <input type="text" name="userPercentage" value={formData.userPercentage} onChange={handleChange} required />
-        </div>
+       </div>
   
           {/* TODO: only show this if the user is status married */}
-        <div>
+      <div>
           <label>Spouse Percentage:</label>
           <input type="text" name="spousePercentage" value={formData.spousePercentage} onChange={handleChange} required />
-        </div>
+      </div>
   
-        <div>
+      <div>
           <label>
             <input type="checkbox" name="isSocialSecurity" checked={formData.isSocialSecurity} onChange={handleChange} />
             Social Security
           </label>
-        </div>
+      </div>
   
   
       </>
@@ -221,37 +218,152 @@ const IncomeEvent = ({ formData, handleChange }) => {
   
 // invest and rebalance are both asset allocation to investment accounts, so they can be combined into one component
 const InvestRebalanceEvent = ({ formData, handleChange }) => {
+  const [accounts, setAccounts] = useState([]);
+  const [startYear, setStartYear] = useState(formData.startYear || 2025); // example start year
+  const [endYear, setEndYear] = useState(formData.endYear || 2035); // example end year
+  const [allocationPercentages, setAllocationPercentages] = useState({});
 
-    return (
-      <>
+  // Fetch investments when allocation method changes
+  useEffect(() => {
+    const fetchInvestments = async () => {
+      try {
+        const taxStatus = formData.allocationMethod === 'glide_path' ? 'After-Tax' : 'Non-Retirement';
+        const response = await fetch(`http://localhost:3000/api/get-investments?taxStatus=${taxStatus}`);
+        const data = await response.json();
+        setAccounts(data);
+        console.log(`${taxStatus} investments:`, data);
+      } catch (error) {
+        console.error('Error fetching investments:', error);
+      }
+    };
+
+    if (formData.allocationMethod) {
+      fetchInvestments();
+    }
+  }, [formData.allocationMethod]);
+
+  // Handle fixed percentage allocation
+  const handleFixedPercentageChange = (investmentId, percentage) => {
+    setAllocationPercentages((prevState) => {
+      const newAllocations = { ...prevState, [investmentId]: parseFloat(percentage) };
+      // Ensure that the sum of percentages is 100
+      const totalPercentage = Object.values(newAllocations).reduce((sum, val) => sum + val, 0);
+      if (totalPercentage > 100) {
+        alert('The total allocation must sum to 100%.');
+        return prevState;
+      }
+      return newAllocations;
+    });
+  };
+
+  // Handle glide path calculation
+  const calculateGlidePathPercentages = (currentYear) => {
+    const yearRange = endYear - startYear;
+    const progress = (currentYear - startYear) / yearRange;
+
+    const startPercentages = formData.startPercentages; // Start percentages for glide path
+    const endPercentages = formData.endPercentages; // End percentages for glide path
+
+    return accounts.map((account) => {
+      const startPercent = startPercentages[account.id] || 0;
+      const endPercent = endPercentages[account.id] || 0;
+      const interpolatedPercent = startPercent + (endPercent - startPercent) * progress;
+      return {
+        id: account.id,
+        name: account.name,
+        percentage: interpolatedPercent,
+      };
+    });
+  };
+
+  // Handle year change for glide path
+  const handleYearChange = (e) => {
+    const year = parseInt(e.target.value, 10);
+    const updatedPercentages = calculateGlidePathPercentages(year);
+    setAllocationPercentages(updatedPercentages);
+  };
+
+  return (
+    <>
+      <div>
+        <label>Choose method to allocate funds to investments:</label>
+        <input 
+          type="radio" 
+          name="allocationMethod" 
+          value="fixed_percentage" 
+          checked={formData.allocationMethod === 'fixed_percentage'} 
+          onChange={handleChange} 
+        />
+        Fixed percentage
+        <input 
+          type="radio" 
+          name="allocationMethod" 
+          value="glide_path" 
+          checked={formData.allocationMethod === 'glide_path'} 
+          onChange={handleChange} 
+        /> 
+        Glide path
+      </div>
+      
+      {formData.allocationMethod === 'fixed_percentage' && (
         <div>
-          {/* Copilot prompt: How do I make a multiple-choice input instead of checkboxes, so the user can only choose one option? */}
-          <label>Choose method to allocate funds to investments:</label>
-            <input 
-              type="radio" 
-              name="allocationMethod" 
-              value="fixed_percentage" 
-              checked={formData.allocationMethod === 'fixed_percentage'} 
-              onChange={handleChange} 
-            
+          <label>Fixed percentage allocations:</label>
+          {accounts.map((account) => (
+            <div key={account.id}>
+              <label>{account.name}</label>
+              <input
+                type="number"
+                value={allocationPercentages[account.id] || 0}
+                onChange={(e) => handleFixedPercentageChange(account.id, e.target.value)}
+              />
+              <span>%</span>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {formData.allocationMethod === 'glide_path' && (
+        <div>
+          <label>Select year for glide path allocation:</label>
+          <input
+            type="number"
+            value={startYear}
+            onChange={(e) => setStartYear(e.target.value)}
+          />
+          <span>Start Year</span>
+          <input
+            type="number"
+            value={endYear}
+            onChange={(e) => setEndYear(e.target.value)}
+          />
+          <span>End Year</span>
+          <div>
+            <label>Current year for glide path allocation:</label>
+            <input
+              type="number"
+              min={startYear}
+              max={endYear}
+              value={formData.currentYear || startYear}
+              onChange={handleYearChange}
             />
-            Fixed percentage
-            <input 
-              type="radio" 
-              name="allocationMethod" 
-              value="glide_path" 
-              checked={formData.allocationMethod === 'glide_path'} 
-              onChange={handleChange} 
-            /> 
-            Glide path
+          </div>
+          <div>
+            <label>Glide Path Allocations:</label>
+            {accounts.map((account) => {
+              const percentage = allocationPercentages[account.id]?.percentage || 0;
+              return (
+                <div key={account.id}>
+                  <label>{account.name}</label>
+                  <span>{percentage.toFixed(2)}%</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div>
-          {/* TODO: get existing investments from server after sophie sends them */}
-          <label>Choose investment</label>
-          <input  />
-        </div>
-      </>
-    );
-  }
+      )}
+    </>
+  );
+};
+
 
 

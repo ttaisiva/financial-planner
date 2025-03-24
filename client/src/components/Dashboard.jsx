@@ -11,7 +11,7 @@ export const Dashboard = () => {
 
   return (
     <div className="content-main fade-in-up">
-      <h1>Welcome to your dashboard, username!</h1>
+      <h1>Welcome to your dashboard!</h1>
 
       <div className="header-local fade-in-up">
         <h2>My Scenarios</h2>
@@ -67,6 +67,7 @@ export const DisplayUserScenarios = () => {
 
   return (
     <div className="content-main fade-in-up">
+      {/* only show scnearios for the user that is logged in */}
       <div className="scenarios-list">
         {scenarios.length > 0 ? (
           
