@@ -82,7 +82,7 @@ export async function createTablesIfNotExist(connection) {
     CREATE TABLE IF NOT EXISTS events (
       id INT AUTO_INCREMENT PRIMARY KEY,
       scenario_id INT,
-      name VARCHAR(255) NOT NULL,
+      name VARCHAR(255),
       description TEXT,
       start_type VARCHAR(255),
       start_value DECIMAL(10, 2),

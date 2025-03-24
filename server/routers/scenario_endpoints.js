@@ -9,6 +9,7 @@ let investmentsLocalStorage = [];
 let investmentTypesLocalStorage = [];
 let eventsLocalStorage = [];
 
+
 // Route to handle temporary storage: 
 router.post('/investment-type', (req, res) => {
   const investmentTypeData = req.body;
@@ -66,15 +67,13 @@ router.get('/investment-types', (req, res) => {
 router.post("/user-scenario-info", async (req, res) => {
   console.log("Server received user info request from client..");
 
-  let userId
+  let userId;
   if (req.session.user) {  
     userId = req.session.user.id;
     console.log("Authenticated user ID:", userId);
 
   } 
-  else{
-    //TODO: need to handle code for guest. -> local storage
-  }
+ 
   console.log("authenticated", req.session.user)
   const {
     scenarioName ,
@@ -96,7 +95,7 @@ router.post("/user-scenario-info", async (req, res) => {
   `;
 
   const values = [
-    userId,
+    userId || null,
     scenarioName || null,
     financialGoal || null,
     filingStatus || null,
@@ -136,17 +135,17 @@ router.post("/user-scenario-info", async (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const investmentTypeValues = [
-        scenario_id,
-        investmentType.name,
-        investmentType.description,
-        investmentType.expAnnReturnType,
-        investmentType.expAnnReturnValue,
-        investmentType.expAnnReturnTypeAmtOrPct,
-        investmentType.expenseRatio,
-        investmentType.expAnnIncomeType,
-        investmentType.expAnnIncomeValue,
-        investmentType.expAnnIncomeTypeAmtOrPct,
-        investmentType.taxability,
+        scenario_id || null,
+        investmentType.name || null,
+        investmentType.description || null,
+        investmentType.expAnnReturnType || null,
+        investmentType.expAnnReturnValue || null,
+        investmentType.expAnnReturnTypeAmtOrPct || null,
+        investmentType.expenseRatio || null,
+        investmentType.expAnnIncomeType || null,
+        investmentType.expAnnIncomeValue || null,
+        investmentType.expAnnIncomeTypeAmtOrPct || null,
+        investmentType.taxability || null,
       ];
       await connection.execute(investmentTypeQuery, investmentTypeValues);
       console.log(`Investment type ${investmentType.name} saved to the database.`);
@@ -159,42 +158,43 @@ router.post("/user-scenario-info", async (req, res) => {
         VALUES (?, ?, ?, ?)
       `;
       const investmentValues = [
-        scenario_id,
-        investment.investment_type,
-        investment.dollar_value,
-        investment.tax_status,
+        scenario_id || null,
+        investment.investment_type || null,
+        investment.dollar_value || null,
+        investment.tax_status || null,
       ];
       await connection.execute(investmentQuery, investmentValues);
       console.log(`Investment ${investment.investment_type} saved to the database.`);
     }
 
     // Step 4: Insert events with scenario_id
-    for (const event of eventsLocalStorage) {
+    console.log(eventsLocalStorage)
+    for (const e of eventsLocalStorage) {
       const eventsQuery = `
-        INSERT INTO events (scenario_id, name, description, start_type, start_value, duration_type, duration_value, event_type, initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, allocation_method)
+        INSERT INTO events (scenario_id, name, description, start_type, start_value, duration_type, duration_value, event_type, initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, asset_allocation)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const eventsValues = [
-        scenario_id,
-        event.name,
-        event.description,
-        event.startType,
-        event.startValue,
-        event.durationType,
-        event.durationValue,
-        event.eventType,
-        event.initialAmount,
-        event.annualChangeType,
-        event.annualChangeValue,
-        event.inflationAdjusted,
-        event.userPercentage,
-        event.spousePercentage,
-        event.isSocialSecurity,
-        event.isWages,
-        event.allocationMethod,
+        scenario_id || null,
+        e.name || null,
+        e.description || null,
+        e.startType || null,
+        e.startValue || null,
+        e.durationType || null,
+        e.durationValue || null,
+        e.eventType || null, 
+        e.initialAmount || null,
+        e.annualChangeType || null,
+        e.annualChangeValue || null,
+        e.inflationAdjusted || null,
+        e.userPercentage || null,
+        e.spousePercentage || null,
+        e.isSocialSecurity || null,
+        e.isWages || null,
+        e.allocationMethod || null,
       ];
       await connection.execute(eventsQuery, eventsValues);
-      console.log(`Event ${event.name} saved to the database.`);
+      console.log(`Event ${e.name} saved to the database.`);
     }    
 
     // Step 5: Clear temporary data after insertion
@@ -211,39 +211,55 @@ router.post("/user-scenario-info", async (req, res) => {
 
 router.get('/scenarios', async (req, res) => {
   console.log("Display scenarios in server")
-
-
-  let userId = null;
-  if (req.session.user) {
-    userId = req.session.user.id;
-  }
+  console.log(req.session.user)
   
-  // TODO: need to add code for when user is not authenticated
 
-  const query = `
-    SELECT  
-      usi.*, 
-      it.*, 
-      i.* 
-    FROM 
-      user_scenario_info usi
-    LEFT JOIN 
-      investment_types it ON usi.id = it.scenario_id
-    LEFT JOIN 
-      investments i ON usi.id = i.scenario_id
-    WHERE 
-      usi.user_id = ?
-  `;
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, [userId]);
-    console.log("Retrieved scenarios:", results);
-    res.status(200).json(results);
-  } catch (err) {
-    console.error("Failed to retrieve scenarios:", err);
-    res.status(500).send("Failed to retrieve scenarios");
+
+  try{
+    //if (req.session.user){
+      const userId = req.session.user['id'];
+      //const userId = 107981191838034384868; //i just hard coded this for now because too many issues with loggin in
+      console.log("user id: ", userId)
+      const query = `
+        SELECT  
+          usi.*, 
+          it.*, 
+          i.* ,
+          e.*
+        FROM 
+          user_scenario_info usi
+        LEFT JOIN 
+          investment_types it ON usi.id = it.scenario_id
+        LEFT JOIN 
+          investments i ON usi.id = i.scenario_id
+        LEFT JOIN 
+          events e ON usi.id = e.scenario_id   
+        WHERE 
+          usi.user_id = ?
+      `;
+      try {
+        await ensureConnection();
+        await createTablesIfNotExist(connection);
+        const [results] = await connection.execute(query, [userId]);
+        console.log("Retrieved scenarios:");
+        res.status(200).json(results);
+      } catch (err) {
+        console.error("Failed to retrieve scenarios:", err);
+        res.status(500).send("Failed to retrieve scenarios");
+      }
+    // } else {
+    //   // User is not authenticated
+    //   res.status(401).send("User is not authenticated.");
+    // }
   }
+  catch (err) {
+    console.error("Error during authentication or insertion:", err);
+    res.status(500).send("Failed to insert user scenario info.");
+  }
+
+  
+
+
 });
 
 
@@ -320,67 +336,67 @@ router.post("/user-scenario-info", async (req, res) => {
 });
 
 // this needs to be added to temporary storage:
-router.post("/events", async (req, res) => {
-  //right now this is just handeling income events
-  console.log("Server received income event request from client..");
-  const {
-    name,
-    description,
-    startType,
-    startValue,
-    durationType,
-    durationValue,
-    eventType,
-    initialAmount,
-    annualChangeType,
-    annualChangeValue,
-    inflationAdjusted,
-    userPercentage,
-    spousePercentage,
-    isSocialSecurity,
-    isWages,
-    allocationMethod,
-  } = req.body;
+// router.post("/events", async (req, res) => {
+//   //right now this is just handeling income events
+//   console.log("Server received income event request from client..");
+//   const {
+//     name,
+//     description,
+//     startType,
+//     startValue,
+//     durationType,
+//     durationValue,
+//     eventType,
+//     initialAmount,
+//     annualChangeType,
+//     annualChangeValue,
+//     inflationAdjusted,
+//     userPercentage,
+//     spousePercentage,
+//     isSocialSecurity,
+//     isWages,
+//     allocationMethod,
+//   } = req.body;
 
-  const query = `
-    INSERT INTO income_events (
-      name, description, start_type, start_value, duration_type, duration_value, event_type,
-      initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage,
-      spouse_percentage, is_social_security, is_wages, allocation_method
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+//   const query = `
+//     INSERT INTO income_events (
+//       name, description, start_type, start_value, duration_type, duration_value, event_type,
+//       initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage,
+//       spouse_percentage, is_social_security, is_wages, allocation_method
+//     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//   `;
 
-  const values = [
-    name,
-    description,
-    startType,
-    startValue,
-    durationType,
-    durationValue,
-    eventType,
-    initialAmount,
-    annualChangeType,
-    annualChangeValue,
-    inflationAdjusted,
-    userPercentage,
-    spousePercentage,
-    isSocialSecurity,
-    isWages,
-    allocationMethod,
-  ];
+//   const values = [
+//     name,
+//     description,
+//     startType,
+//     startValue,
+//     durationType,
+//     durationValue,
+//     eventType,
+//     initialAmount,
+//     annualChangeType,
+//     annualChangeValue,
+//     inflationAdjusted,
+//     userPercentage,
+//     spousePercentage,
+//     isSocialSecurity,
+//     isWages,
+//     allocationMethod,
+//   ];
 
-  console.log("Send to database..");
+//   console.log("Send to database..");
 
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, values);
-    res.status(201).send("Event saved successfully");
-  } catch (err) {
-    console.error("Failed to insert event:", err);
-    res.status(500).send("Failed to save event");
-  }
-});
+//   try {
+//     await ensureConnection();
+//     await createTablesIfNotExist(connection);
+//     const [results] = await connection.execute(query, values);
+//     res.status(201).send("Event saved successfully");
+//   } catch (err) {
+//     console.error("Failed to insert event:", err);
+//     res.status(500).send("Failed to save event");
+//   }
+// });
 
 
 router.post("/investments", async (req, res) => {
