@@ -79,7 +79,8 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, 
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/investments-pretax');
+        const taxStatus = 'pre-tax'; 
+        const response = await fetch(`http://localhost:3000/api/get-investments?taxStatus=${taxStatus}`);
         const data = await response.json();
         setAccounts(data);
         console.log('Pre-tax investments:', data);
