@@ -17,11 +17,13 @@ const Strategy = ({ investments }) => {
     rothConversionStrat: [],
     rmdStrat: [],
     expenseWithdrawalStrat: [],
+    spendingStrat: [],
   });
   // for rendering investments to order
   const [rothAccounts, setRothAccounts] = useState([]);
   const [rmdAccounts, setRmdAccounts] = useState([]);
   const [expAccounts, setExpAccounts] = useState([]);
+  const [expenses, setExpenses] = useState([]);
 
   // update form before sending to server
   useEffect(() => {
@@ -31,15 +33,17 @@ const Strategy = ({ investments }) => {
         rothConversionStrat: rothAccounts,
         rmdStrat: rmdAccounts,
         expenseWithdrawalStrat: expAccounts,
+        spendingStrat: expenses,
       }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
         rmdStrat: rmdAccounts,
         expenseWithdrawalStrat: expAccounts,
+        spendingStrat: expenses,
       }));
     }
-  }, [rothAccounts, rmdAccounts, expAccounts]);
+  }, [rothAccounts, rmdAccounts, expAccounts, expenses]);
   
   // send updated settings to server whenever formData updates
   useEffect(() => {
@@ -70,7 +74,7 @@ const Strategy = ({ investments }) => {
     <div>
       <h2>Strategies</h2>
 
-      <SpendingSettings setFormData={setFormData} />
+      <SpendingSettings setFormData={setFormData} expenses={expenses} setExpenses={setExpenses} />
       <ExpenseWithdrawSettings formData={formData} setFormData={setFormData}
       expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
       <RothConversionSettings formData={formData} setFormData={setFormData} 
@@ -132,7 +136,7 @@ const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccount
             <SortableContext key={expAccounts.map(a => a.id).join(",")} items={expAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
               <ul>
                 {expAccounts.map((account) => (
-                  <SortableItem key={account.id} id={account.id} account={account} />
+                  <SortableInvestment key={account.id} id={account.id} account={account} />
                 ))}
               </ul>
             </SortableContext>
@@ -197,7 +201,7 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
 
               <ul>
                 {rmdAccounts.map((account) => (
-                  <SortableItem key={account.id} id={account.id} account={account} />
+                  <SortableInvestment key={account.id} id={account.id} account={account} />
                 ))}
               </ul>
             </SortableContext>
@@ -312,7 +316,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
             
               <ul>
                 {rothAccounts.map((account) => (
-                  <SortableItem key={account.id} id={account.id} account={account} />
+                  <SortableInvestment key={account.id} id={account.id} account={account} />
                 ))}
               </ul>
             </SortableContext>
@@ -324,15 +328,14 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
 };
 
 // ordering on discretionary expenses
-const SpendingSettings = ({ setFormData }) => {
-  // const [expenses, setExpenses] = useState([]);
+const SpendingSettings = ({ setFormData, expenses, setExpenses }) => {
 
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
         const response = await fetch('http://localhost:3000/api/discretionary-expenses');
         const data = await response.json();
-        // setExpenses(data);
+        setExpenses(data);
       } catch (error) {
         console.error('Error fetching discretionary expenses:', error);
       }
@@ -341,20 +344,41 @@ const SpendingSettings = ({ setFormData }) => {
     fetchExpenses();
   }, []);
 
+  // Drag and drop functionality
+  const onDragEnd = (event) => {
+    const { active, over } = event;
+  
+    if (!active || !over) return;
+  
+    setExpenses((prevExpenses) => {
+      const newExpenses = switchOrder(prevExpenses, active.id, over.id);
+      return [...newExpenses]; // Ensure new array reference
+    });
+  };
+
   return (
     <div>
       <h3>Spending Strategy</h3>
       <p>Discretionary expenses will be paid one at a time, in the following order.
         <br></br>Drag the expenses into your preferred order below:
       </p>
-      {/* TODO: Fetch existing discretionary expenses from server */}
-      {/* Drag and drop mechanism? */}
+      {/* Drag and drop mechanism */}
+      <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext key={expenses.map(a => a.id).join(",")} items={expenses.map((expense) => expense.id)} strategy={verticalListSortingStrategy}>
+
+              <ul>
+                {expenses.map((expense) => (
+                  <SortableExpense key={expense.id} id={expense.id} expense={expense} />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
     </div>
   );
 };
 
 // individual item for drag and drop
-const SortableItem = ({ id, account }) => {
+const SortableInvestment = ({ id, account }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
 
@@ -372,6 +396,29 @@ const SortableItem = ({ id, account }) => {
       {...listeners}
     >
       {account.investment_type}: ${account.dollar_value}, ({account.tax_status})
+    </div>
+  );
+};
+
+// individual item for drag and drop
+const SortableExpense = ({ id, expense }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="drag"
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
+      {expense.name} (${expense.initialAmount}): {expense.description}
     </div>
   );
 };

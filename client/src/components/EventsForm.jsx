@@ -23,7 +23,8 @@ const EventsForm = ({ setShowEventsForm }) => {
     spousePercentage: '',
     isSocialSecurity: false,
     isWages: false,
-    allocationMethod: '', 
+    allocationMethod: '',
+    discretionary: false, 
   });
 
   const handleChange = (e) => {
@@ -51,7 +52,7 @@ const EventsForm = ({ setShowEventsForm }) => {
     try {
    
       
-        console.log("Event Type: Income event");
+        console.log("Event Type: ", formData.eventType);
         const response = await fetch('http://localhost:3000/api/events', {
           method: 'POST',
           headers: {
@@ -144,8 +145,8 @@ const EventsForm = ({ setShowEventsForm }) => {
 
         {formData.eventType === 'expense' && (
           <>
-            <label>Some expense question</label>
-            <input type="text" name="expenseQuestion" value={formData.expenseQuestion || ''} onChange={handleChange} />
+            <label>Discretionary</label>
+            <input type="checkbox" name="discretionaryExpense" value={formData.discretionaryExpense || ''} onChange={handleChange} />
           </>
         )}
 
