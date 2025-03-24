@@ -47,42 +47,42 @@ export const handleScenarioUpload = (e) => {
   //TODO: send scenario to database
 };
 
-export const resetTypes = (type) => {
-  switch (type) {
-    case "fixed":
-      return {
-        startValue: "",
-        startMean: "",
-        startStdDev: "",
-        startLower: "",
-        startUpper: "",
-      };
-    case "normal_distribution":
-      return {
-        startValue: "",
-        startMean: "",
-        startStdDev: "",
-        startLower: "",
-        startUpper: "",
-      };
-    case "uniform_distribution":
-      return {
-        startValue: "",
-        startMean: "",
-        startStdDev: "",
-        startLower: "",
-        startUpper: "",
-      };
-    default:
-      return {
-        startValue: "",
-        startMean: "",
-        startStdDev: "",
-        startLower: "",
-        startUpper: "",
-      };
-  }
-};
+// export const resetTypes = (type) => {
+//   switch (type) {
+//     case "fixed":
+//       return {
+//         startValue: "",
+//         startMean: "",
+//         startStdDev: "",
+//         startLower: "",
+//         startUpper: "",
+//       };
+//     case "normal_distribution":
+//       return {
+//         startValue: "",
+//         startMean: "",
+//         startStdDev: "",
+//         startLower: "",
+//         startUpper: "",
+//       };
+//     case "uniform_distribution":
+//       return {
+//         startValue: "",
+//         startMean: "",
+//         startStdDev: "",
+//         startLower: "",
+//         startUpper: "",
+//       };
+//     default:
+//       return {
+//         startValue: "",
+//         startMean: "",
+//         startStdDev: "",
+//         startLower: "",
+//         startUpper: "",
+//       };
+//   }
+// };
 
 export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   switch (type) {
@@ -148,6 +148,40 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
       return null;
   }
 };
+
+export const resetTypes = (selectedType, prefix) => {
+  const reset = {};
+
+  // Clear all possible inputs under this prefix
+  reset[`${prefix}Value`] = "";
+  reset[`${prefix}Mean`] = "";
+  reset[`${prefix}StdDev`] = "";
+  reset[`${prefix}Lower`] = "";
+  reset[`${prefix}Upper`] = "";
+
+  // Optionally, keep only the needed fields for the selected type
+  switch (selectedType) {
+    case "fixed":
+      delete reset[`${prefix}Mean`];
+      delete reset[`${prefix}StdDev`];
+      delete reset[`${prefix}Lower`];
+      delete reset[`${prefix}Upper`];
+      break;
+    case "normal_distribution":
+      delete reset[`${prefix}Value`];
+      delete reset[`${prefix}Lower`];
+      delete reset[`${prefix}Upper`];
+      break;
+    case "uniform_distribution":
+      delete reset[`${prefix}Value`];
+      delete reset[`${prefix}Mean`];
+      delete reset[`${prefix}StdDev`];
+      break;
+  }
+
+  return reset;
+};
+
 
 export const states = [
   { code: "AL", name: "Alabama" },
