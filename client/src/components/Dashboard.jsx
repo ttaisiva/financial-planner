@@ -82,6 +82,14 @@ const DashboardContent = () => {
   );
 };
 
+/**
+ * Popup after pressing "Add a Scenario". Prompts the user to choose between uploading a YAML file of a Scenario or creating a new Scenario
+ *
+ * @param {*} param0
+ * @returns React JS element
+ * TP: GitHub Copilot GPT-4o, prompt - "how to make a pop up element after pressing a button on my website.
+ * i am making a react app. this pop up element has buttons on it too"
+ */
 const Popup = ({ togglePopup, isActive, toggleUpload }) => {
   return (
     <div className={`popup ${isActive ? "active" : ""}`}>
