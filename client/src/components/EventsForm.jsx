@@ -219,16 +219,16 @@ const IncomeEvent = ({ formData, handleChange }) => {
 // invest and rebalance are both asset allocation to investment accounts, so they can be combined into one component
 const InvestRebalanceEvent = ({ formData, handleChange }) => {
   const [accounts, setAccounts] = useState([]);
-  const [startYear, setStartYear] = useState(formData.startYear || 2025); // example start year
-  const [endYear, setEndYear] = useState(formData.endYear || 2035); // example end year
   const [allocationPercentages, setAllocationPercentages] = useState({});
 
   // Fetch investments when allocation method changes
   useEffect(() => {
     const fetchInvestments = async () => {
       try {
-        const taxStatus = formData.allocationMethod === 'glide_path' ? 'After-Tax' : 'Non-Retirement';
-        const response = await fetch(`http://localhost:3000/api/get-investments?taxStatus=${taxStatus}`);
+        const taxStatus = ["After-Tax", "Non-Retirement"];
+        const queryString = taxStatus.map(status => `taxStatus=${status}`).join('&');
+        const response = await fetch(`http://localhost:3000/api/get-investments?${queryString}`);
+        
         const data = await response.json();
         setAccounts(data);
         console.log(`${taxStatus} investments:`, data);
@@ -324,29 +324,8 @@ const InvestRebalanceEvent = ({ formData, handleChange }) => {
       
       {formData.allocationMethod === 'glide_path' && (
         <div>
-          <label>Select year for glide path allocation:</label>
-          <input
-            type="number"
-            value={startYear}
-            onChange={(e) => setStartYear(e.target.value)}
-          />
-          <span>Start Year</span>
-          <input
-            type="number"
-            value={endYear}
-            onChange={(e) => setEndYear(e.target.value)}
-          />
-          <span>End Year</span>
-          <div>
-            <label>Current year for glide path allocation:</label>
-            <input
-              type="number"
-              min={startYear}
-              max={endYear}
-              value={formData.currentYear || startYear}
-              onChange={handleYearChange}
-            />
-          </div>
+          
+        
           <div>
             <label>Glide Path Allocations:</label>
             {accounts.map((account) => {

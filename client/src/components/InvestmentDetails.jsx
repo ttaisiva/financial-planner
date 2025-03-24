@@ -5,7 +5,7 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
   const [formData, setFormData] = useState({
     investment_type: "",
     dollar_value: "",
-    tax_status: "Pre_Tax",
+    tax_status: "",
   });
 
 
@@ -96,7 +96,9 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
             name="tax_status"
             value={formData.tax_status}
             onChange={handleChange}
+            required
           >
+            <option value="" disabled>Select Tax Status</option>
             <option value="Pre-Tax">Pre Tax</option>
             <option value="Non-Retirement">Non Retirement</option>
             <option value="After-Tax">After Tax</option>
