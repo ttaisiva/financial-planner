@@ -25,7 +25,6 @@ async function createAccount(connection, payload, names) {
         lastName: names.last,
         email: payload['email']
     }
-
     try{
         //await createTablesIfNotExist(connection);
         const sql = "INSERT INTO users (id, name, lastName, email) VALUES (?, ?, ?, ?)";
