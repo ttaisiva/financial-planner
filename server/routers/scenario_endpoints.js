@@ -34,9 +34,15 @@ router.post('/events', (req, res) => {
   res.status(200).json(eventsData);
 });
 
+router.get('/discretionary-expenses', (req, res) => {
+  console.log('Received request for locally stored discretionary expenses.')
+  const filtered = eventsLocalStorage.filter((event) => event.discretionary == true)
+  res.status(200).json(filtered);
+});
+
 router.post('/strategies', (req, res) => {
   eventsLocalStorage.push(req.body);
-  console.log('Strategy data stored temporarily:', req.body);
+  console.log('Strategy data stored temporarily.');
   res.status(200).json(req.body);
 });
 
@@ -387,16 +393,13 @@ router.get('/pre-tax-investments', async (req, res) => {
 router.get('/get-investments', (req, res) => {
   console.log("Server received request for investments..");
   const { taxStatus } = req.query;
-
-  // Convert taxStatus to an array if it's not already
-  const taxStatusList = taxStatus ? taxStatus.split(',') : [];
-  console.log(taxStatusList);
+  console.log(taxStatus)
 
   // Filter investments from local storage
-  const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatusList.includes(investment.tax_status));
+  const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status));
 
   res.json(filteredInvestments);
-  console.log(`Sent investments tax statuses ${taxStatusList.join(', ')} to client:`, filteredInvestments);
+  console.log(`Sent investments tax statuses ${taxStatus} to client:`, filteredInvestments);
 });
 
 // *** don't have expenses yet

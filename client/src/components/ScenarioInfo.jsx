@@ -517,17 +517,18 @@ const ScenarioInfo = forwardRef((props, ref) => {
           />
         )}
       </div>
-
-      <div className="fade-in">
-        <ViewInvestmentDetails
-          investments={investments}
-          investmentTypes={investmentTypes}
-        />
-        {showEventsForm && <EventsForm />}
+      <div>
+        <ViewInvestmentDetails investments={investments} investmentTypes={investmentTypes} />
       </div>
 
+      <h2 className="fade-in">Event Series</h2>
       <div className="fade-in">
-        <Strategy investments={investments} />
+        <button  onClick={handleCreateEvent} > Create Event </button>
+        {showEventsForm && <EventsForm setShowEventsForm={ setShowEventsForm }/>}
+      </div>
+    
+      <div className="fade-in">
+        <Strategy investments={investments} showEventsForm={showEventsForm} />
       </div>
     </div>
   );
