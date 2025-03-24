@@ -316,6 +316,21 @@ const ScenarioInfo = forwardRef((props, ref) => {
   return (
     <div className="section-new-scenario">
       <form onSubmit={handleSubmitUserInfo}>
+        <h1 className="fade-in">New Scenario</h1>
+        <label>
+          <h2 className="fade-in">Scenario Name</h2>
+        </label>
+        <div className="fade-in">
+          <input
+            type="text"
+            name="scenarioName"
+            value={formData.scenarioName}
+            placeholder="Enter scenario name"
+            onChange={handleChange}
+            required
+          />
+        </div>
+
         <h2 className="fade-in">Financial goal</h2>
         <div className="fade-in">
           <p>
@@ -346,20 +361,6 @@ const ScenarioInfo = forwardRef((props, ref) => {
               required
             />
           </div>
-        </div>
-
-        <div className="fade-in">
-          <label>
-            <h4>Scenario Name:</h4>
-          </label>
-          <input
-            type="text"
-            name="scenarioName"
-            value={formData.scenarioName}
-            placeholder="Enter scenario name"
-            onChange={handleChange}
-            required
-          />
         </div>
 
         <h2 className="fade-in">Tax Information</h2>
