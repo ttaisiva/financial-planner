@@ -49,7 +49,7 @@ router.get('/investments', (req, res) => {
 // specifically pre-tax
 router.get('/investments-pretax', (req, res) => {
   console.log("Received request for locally stored investments of type pre-tax.")
-  const filtered = investmentsLocalStorage.filter((investment) => investment.tax_status === "Pre_Tax")
+  const filtered = investmentsLocalStorage.filter((investment) => investment.tax_status === "Pre-Tax")
   res.status(200).json(filtered);
 });
 
