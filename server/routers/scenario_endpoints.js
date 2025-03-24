@@ -248,6 +248,77 @@ router.get('/scenarios', async (req, res) => {
 
 
 
+
+router.post("/user-scenario-info", async (req, res) => {
+  try {
+    console.log("user", req.session.user)
+    if (req.session.user) {
+      
+      const userId = req.session.user['id'];
+      console.log("Authenticated user ID:", userId);
+
+
+      const {
+        scenarioName,
+        financialGoal,
+        filingStatus,
+        stateOfResidence,
+        userData,
+        spouseData,
+      } = req.body;
+
+      const query = `
+        INSERT INTO user_scenario_info (
+          user_id, scenario_name, financial_goal, filing_status, state_of_residence,
+          user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev, user_retirement_age_type, 
+          user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev, spouse_life_expectancy_type, spouse_life_expectancy_value, 
+          spouse_life_expectancy_mean, spouse_life_expectancy_std_dev, spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, 
+          spouse_retirement_age_std_dev
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const values = [
+        userId,
+        scenarioName || null,
+        financialGoal || null,
+        filingStatus || null,
+        stateOfResidence || null,
+        userData.lifeExpectancyType || null,
+        userData.lifeExpectancyValue || null,
+        userData.lifeExpectancyMean || null,
+        userData.lifeExpectancyStdDev || null,
+        userData.retirementAge || null,
+        userData.retirementAgeValue || null,
+        userData.retirementAgeMean || null,
+        userData.retirementAgeStdDev || null,
+        spouseData.lifeExpectancyType || null,
+        spouseData.lifeExpectancyValue || null,
+        spouseData.lifeExpectancyMean || null,
+        spouseData.lifeExpectancyStdDev || null,
+        spouseData.retirementAge || null,
+        spouseData.retirementAgeValue || null,
+        spouseData.retirementAgeMean || null,
+        spouseData.retirementAgeStdDev || null,
+      ];
+
+      // Proceed with the insertion to the database
+      await ensureConnection();
+      await createTablesIfNotExist(connection);
+
+      const [results] = await connection.execute(query, values);
+      console.log("User scenario info inserted successfully.");
+
+      res.status(200).send("Scenario info inserted successfully!");
+    } else {
+      // User is not authenticated
+      res.status(401).send("User is not authenticated.");
+    }
+  } catch (err) {
+    console.error("Error during authentication or insertion:", err);
+    res.status(500).send("Failed to insert user scenario info.");
+  }
+});
+
 // this needs to be added to temporary storage:
 router.post("/events", async (req, res) => {
   //right now this is just handeling income events

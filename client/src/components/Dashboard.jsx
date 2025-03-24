@@ -6,14 +6,20 @@ import { loadAnimation } from "../utils";
 import { handleScenarioUpload } from "../utils";
 
 export const Dashboard = () => {
-  useEffect(() => {
-    loadAnimation();
-  });
+  const [username, setUsername] = useState("undefined");
 
-  fetch("http://localhost:3000/auth/isAuth", {
-    method: "GET",
-    credentials: "include",
-  }).then((res) => console.log(res.status));
+  useEffect(() => {
+    loadAnimation();=
+      
+    fetch("http://localhost:3000/auth/isAuth", {
+      method: "GET",
+      credentials: "include",
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setUsername(data.name);
+    });
+  });
 
   return (
     <div className="container-dashboard">

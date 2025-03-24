@@ -288,7 +288,6 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
       console.log(response);
 
-
       if (response.ok) {
         console.log("User details saved successfully");
       } else {
