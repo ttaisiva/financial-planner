@@ -389,8 +389,6 @@ router.get('/get-investments', (req, res) => {
   const { taxStatus } = req.query;
   console.log(taxStatus)
 
-
-
   // Filter investments from local storage
   const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status));
 
