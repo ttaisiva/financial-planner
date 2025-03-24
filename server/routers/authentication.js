@@ -6,6 +6,7 @@ const client = new OAuth2Client();
 import { connectToDatabase } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
 
+// Provided by Google Identity Documentation
 async function verify(req) {
   // Verifies the token provided by Google for User sign-in
   const ticket = await client.verifyIdToken({
