@@ -277,16 +277,17 @@ const ScenarioInfo = forwardRef((props, ref) => {
     console.log("User Scenario Info Submitted:", formData);
 
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/user-scenario-info",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch('http://localhost:3000/api/user-scenario-info', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+
+      console.log(response);
+
 
       if (response.ok) {
         console.log("User details saved successfully");
