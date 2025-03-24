@@ -250,7 +250,7 @@ router.get('/scenarios', async (req, res) => {
   console.log(req.session.user)
   
   try{
-    //if (req.session.user){
+    if (req.session.user){
       const userId = req.session.user['id'];
       //const userId = 107981191838034384868; //i just hard coded this for now because too many issues with loggin in
       console.log("user id: ", userId)
@@ -281,10 +281,10 @@ router.get('/scenarios', async (req, res) => {
         console.error("Failed to retrieve scenarios:", err);
         res.status(500).send("Failed to retrieve scenarios");
       }
-    // } else {
-    //   // User is not authenticated
-    //   res.status(401).send("User is not authenticated.");
-    // }
+    } else {
+      // User is not authenticated
+      res.status(401).send("User is not authenticated.");
+    }
   }
   catch (err) {
     console.error("Error during authentication or insertion:", err);
