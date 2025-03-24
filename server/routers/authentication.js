@@ -105,16 +105,21 @@ router.post("/createAccount/", async (req, res) => {
 router.get("/isAuth/", async (req, res) => {
     console.log("isAuth", req.session.user);
     if (req.session.user == null) {
-        res.json({ name: "Guest" });
+        res.json({ name: "Guest", lastName: "", email: "" });
     }
     else {
         console.log("isAuth", req.session.user['id']);
         const connection = await connectToDatabase();
-        const sql = "SELECT name FROM users WHERE id=?";
+        const sql = "SELECT * FROM users WHERE id=?";
         const params = [req.session.user['id']];
         const [rows] = await connection.execute(sql, params);
-        console.log("rows", rows[0].name);
-        res.json({name: rows[0].name})
+        console.log("rows", rows);
+        const data = {
+            name: rows[0].name,
+            lastName: rows[0].lastName,
+            email: rows[0].email
+        }
+        res.json(data);
     }
 })
 

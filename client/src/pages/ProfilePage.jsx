@@ -1,14 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { Link } from "react-router-dom";
+import Profile from "../components/Profile";
+import { loadAnimation } from "../utils";
 
-const ProfilePage = () => {
+export const ProfilePage = () => {
+  useEffect(() => {
+      loadAnimation();
+    });
+
   return (
     <div>
       <Header />
-      <p> this is profile</p>
-      <Link to="/">Log Out</Link>
+      <Profile />
       <Footer />
     </div>
   );

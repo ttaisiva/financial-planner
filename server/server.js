@@ -85,6 +85,9 @@ app.use("/auth", authRouter);
 import scenarioRouter from "./routers/scenario_endpoints.js";
 app.use("/api", scenarioRouter);
 
+import userRouter from "./routers/user.js";
+app.use("/user", userRouter);
+
 
 
 
