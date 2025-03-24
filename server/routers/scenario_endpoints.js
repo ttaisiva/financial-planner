@@ -42,7 +42,7 @@ router.get('/discretionary-expenses', (req, res) => {
 
 router.post('/strategies', (req, res) => {
   eventsLocalStorage.push(req.body);
-  console.log('Strategy data stored temporarily:', req.body);
+  console.log('Strategy data stored temporarily.');
   res.status(200).json(req.body);
 });
 
