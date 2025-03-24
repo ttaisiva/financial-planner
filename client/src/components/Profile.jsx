@@ -56,16 +56,26 @@ const RenderYAML = memo(() => {
 
 
     // ChatGPT
-    return (
-        <div>
-            {yamlFiles.map((file) => (
-                <div key={file.name}>
-                <h3>File {file.name}</h3>
-                <pre>{JSON.stringify(file.content, null, 2)}</pre>
-                </div>
-            ))}
-        </div>
-    );
+
+    if (yamlFiles.length == 0) {
+        return (
+            <div>
+                No Files Found
+            </div>
+        );
+    }
+    else {
+        return (
+            <div>
+                {yamlFiles.map((file) => (
+                    <div key={file.name}>
+                    <h3>File {file.name}</h3>
+                    <pre>{JSON.stringify(file.content, null, 2)}</pre>
+                    </div>
+                ))}
+            </div>
+        );
+    }
 });
 
 const UserYAML = ({userData}) => {
