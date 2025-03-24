@@ -90,7 +90,7 @@ router.post("/user-scenario-info", async (req, res) => {
     console.log("user", req.session.user)
     if (req.session.user) {
       
-      const userId = req.session.user.id;
+      const userId = req.session.user['id'];
       console.log("Authenticated user ID:", userId);
 
 

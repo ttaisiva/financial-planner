@@ -2,10 +2,7 @@ import React from "react";
 import "../styles/HeaderFooter.css";
 // import LandingPage from "../pages/LandingPage";
 import { Link } from "react-router-dom";
-
-const handleGuest = () => {
-  
-}
+import {handleGuest} from "../pages/LoginPage"
 
 const Header = () => {
   return (

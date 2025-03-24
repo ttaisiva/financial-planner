@@ -64,14 +64,19 @@ router.post("/google/", async (req, res) => {
 
 router.get("/logout/", async (req, res) => {
     console.log("Logout", req.session.user);
-    req.session.destroy((err) => {
-        if(err) {
-            console.error(err);
-            res.status(500).send('Error logging out');
-        } else {
-            res.send('Logged out');
-        }
-    })
+    if (req.session.user) {
+        req.session.destroy((err) => {
+            if(err) {
+                console.error(err);
+                res.status(500).send('Error logging out');
+            } else {
+                res.send('Logged out');
+            }
+        })
+    }
+    else {
+        res.send("")
+    }
 })
 
 
@@ -100,11 +105,16 @@ router.post("/createAccount/", async (req, res) => {
 router.get("/isAuth/", async (req, res) => {
     console.log("isAuth", req.session.user);
     if (req.session.user == null) {
-        res.status(401).send();
+        res.json({ name: "Guest" });
     }
     else {
         console.log("isAuth", req.session.user['id']);
-        res.status(302).send();
+        const connection = await connectToDatabase();
+        const sql = "SELECT name FROM users WHERE id=?";
+        const params = [req.session.user['id']];
+        const [rows] = await connection.execute(sql, params);
+        console.log("rows", rows[0].name);
+        res.json({name: rows[0].name})
     }
 })
 

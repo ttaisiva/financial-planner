@@ -5,20 +5,26 @@ import { Link } from "react-router-dom";
 import { loadAnimation } from "../utils";
 
 export const Dashboard = () => {
+  const [username, setUsername] = useState("undefined");
+
   useEffect(() => {
     loadAnimation();
-  });
 
-fetch("http://localhost:3000/auth/isAuth", {
-  method: "GET",
-  credentials: "include",
-}).then((res) => console.log(res.status));
+    fetch("http://localhost:3000/auth/isAuth", {
+      method: "GET",
+      credentials: "include",
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setUsername(data.name);
+    });
+  });
 
   return (
     <div className="container-dashboard">
       <div className="content-dashboard">
         <h1 className="dashboard fade-in-up">
-          Welcome to your dashboard, username!
+          Welcome to your dashboard, {username}!
         </h1>
 
         <div className="header-dashboard fade-in-up">

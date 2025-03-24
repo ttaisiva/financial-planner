@@ -30,6 +30,24 @@ window.handleToken = (response) => {
     .catch((error) => console.error("Error:", error));
 };
 
+export const handleGuest = (() => {
+  // Delete any existing sessions to activate guest usage
+  fetch('http://localhost:3000/auth/logout', {
+    method: 'GET',
+    credentials: 'include',
+  })
+  .then(res => {
+    if (res.status == 500) {
+      // ERROR DISPLAY; Unexpected server error
+      window.location.href = "/";
+    }
+    else {
+      // Successful session deletion
+      window.location.href = "/dashboard";
+    }
+  })
+});
+
 const LoginPage = () => {
   useEffect(() => {
     loadAnimation();
@@ -69,7 +87,7 @@ const LoginPage = () => {
           <div id="button-google" className="fade-in-up"></div>
           <p className="fade-in-up">
             Don't want to login?
-            <Link to="/dashboard"> Continue as Guest</Link>
+            <Link onClick={handleGuest}> Continue as Guest</Link>
           </p>
         </div>
       </div>
