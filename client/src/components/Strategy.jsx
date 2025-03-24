@@ -67,14 +67,14 @@ const Strategy = ({investments}) => {
       <RothConversionSettings formData={formData} setFormData={setFormData} 
         rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
       <RMDSettings formData={formData} setFormData={setFormData} rmdAccounts={rmdAccounts}
-        setRmdAccounts={setRmdAccounts} investments={investments}/>
+        setRmdAccounts={setRmdAccounts} investments={investments} rothAccounts={rothAccounts}/>
     </div>
   );
 };
 
 export default Strategy;
 
-const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, investments }) => {
+const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, investments, rothAccounts }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -109,6 +109,10 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
     });
   };
 
+  const copyOrder = () => {
+    setRmdAccounts(rothAccounts);
+  }
+
   return (
     <>
       <h3> RMD Strategy </h3>
@@ -131,6 +135,10 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
           </DndContext>
           
         </div>
+        
+      )}
+      {rmdAccounts && formData.optimizer && (
+          <button onClick={copyOrder}>Copy order from Roth conversion</button>
       )}
 
     </>
