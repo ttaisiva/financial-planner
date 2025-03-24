@@ -9,7 +9,7 @@ export const Dashboard = () => {
   const [username, setUsername] = useState("undefined");
 
   useEffect(() => {
-    loadAnimation();=
+    loadAnimation();
       
     fetch("http://localhost:3000/auth/isAuth", {
       method: "GET",
@@ -102,7 +102,7 @@ const Popup = ({ togglePopup, isActive, toggleUpload }) => {
               existing Scenario YAML file.
             </p>
           </button>
-          <Link to="/NewScenarioPage">
+          <Link to="/create/scenario">
             <div className="button-popup">
               <h3>Create a Scenario from scratch</h3>
               <p>
@@ -164,23 +164,108 @@ export const DisplayUserScenarios = () => {
   }, []);
 
   return (
+
+    // <div className="content-dashboard fade-in">
+    //   <div className="scenarios-list">
+    //     {scenarios.length > 0 ? (
+    //       scenarios.map((scenario, index) => {
+    //         const renderField = (label, value) =>
+    //           value != null ? <p>{label}: {value}</p> : null;
+
+    //         return (
+    //           <div key={index} className="scenario-item">
+    //             <h3>{scenario.scenario_name}</h3>
+    //             <p>{scenario.financial_goal}, {scenario.filing_status}, {scenario.state_of_residence}</p>
+
+    //             <h4>User Info</h4>
+    //             {renderField("Life Expectancy Type", scenario.user_life_expectancy_type)}
+    //             {renderField("Life Expectancy Value", scenario.user_life_expectancy_value)}
+    //             {renderField("Life Expectancy Mean", scenario.user_life_expectancy_mean)}
+    //             {renderField("Life Expectancy Std Dev", scenario.user_life_expectancy_std_dev)}
+    //             {renderField("Retirement Age", scenario.user_retirement_age_type)}
+    //             {renderField("Retirement Age Value", scenario.user_retirement_age_value)}
+    //             {renderField("Retirement Age Mean", scenario.user_retirement_age_mean)}
+    //             {renderField("Retirement Age Std Dev", scenario.user_retirement_age_std_dev)}
+
+    //             {/* {scenario.spouseData && Object.values(scenario.spouseData).some(v => v != null) && (
+    //               <>
+    //                 <h4>Spouse Info</h4>
+    //                 {renderField("Life Expectancy Type", scenario.spouseData.lifeExpectancyType)}
+    //                 {renderField("Life Expectancy Value", scenario.spouseData.lifeExpectancyValue)}
+    //                 {renderField("Life Expectancy Mean", scenario.spouseData.lifeExpectancyMean)}
+    //                 {renderField("Life Expectancy Std Dev", scenario.spouseData.lifeExpectancyStdDev)}
+    //                 {renderField("Retirement Age", scenario.spouseData.retirementAge)}
+    //                 {renderField("Retirement Age Value", scenario.spouseData.retirementAgeValue)}
+    //                 {renderField("Retirement Age Mean", scenario.spouseData.retirementAgeMean)}
+    //                 {renderField("Retirement Age Std Dev", scenario.spouseData.retirementAgeStdDev)}
+    //               </>
+    //             )} */}
+    //           </div>
+    //         );
+    //       })
+    //     ) : (
+    //       <p className="fade-in">No scenarios available</p>
+    //     )}
+    //   </div>
+    // </div>
     <div className="content-dashboard fade-in">
-      {/* only show scnearios for the user that is logged in */}
       <div className="scenarios-list">
         {scenarios.length > 0 ? (
-          scenarios.map((scenario, index) => (
-            <div key={index} className="scenario-item">
-              <h3>{scenario.scenario_name}</h3>
-              <p>{scenario.financial_goal}</p>
-              <p>{scenario.filling_status}</p>
-              <p>{scenario.state_of_residence}</p>
-              {/* Add more fields as needed */}
-            </div>
-          ))
+          scenarios.map((scenario, index) => {
+            const renderFields = (fields) =>
+              fields
+                .filter(({ value }) => value != null)
+                .map(({ label, value }) => `${label}: ${value}`)
+                .join(', ');
+
+            const userFields = [
+              { label: "Life Expectancy Type", value: scenario.user_life_expectancy_type },
+              { label: "Life Expectancy Value", value: scenario.user_life_expectancy_value },
+              { label: "Life Expectancy Mean", value: scenario.user_life_expectancy_mean },
+              { label: "Life Expectancy Std Dev", value: scenario.user_life_expectancy_std_dev },
+              { label: "Retirement Age", value: scenario.user_retirement_age_type },
+              { label: "Retirement Age Value", value: scenario.user_retirement_age_value },
+              { label: "Retirement Age Mean", value: scenario.user_retirement_age_mean },
+              { label: "Retirement Age Std Dev", value: scenario.user_retirement_age_std_dev },
+            ];
+
+            const spouseFields = [
+              { label: "Life Expectancy Type", value: scenario.spouse_life_expectancy_type },
+              { label: "Life Expectancy Value", value: scenario.spouse_life_expectancy_value },
+              { label: "Life Expectancy Mean", value: scenario.spouse_life_expectancy_mean },
+              { label: "Life Expectancy Std Dev", value: scenario.spouse_life_expectancy_std_dev },
+              { label: "Retirement Age", value: scenario.spouse_retirement_age_type },
+              { label: "Retirement Age Value", value: scenario.spouse_retirement_age_value },
+              { label: "Retirement Age Mean", value: scenario.spouse_retirement_age_mean },
+              { label: "Retirement Age Std Dev", value: scenario.spouse_retirement_age_std_dev },
+            ];
+
+            const hasSpouseData = spouseFields.some(({ value }) => value != null);
+
+            return (
+              <div key={index} className="scenario-item">
+                <h3>{scenario.scenario_name}</h3>
+                <p>{scenario.financial_goal}, {scenario.filing_status}, {scenario.state_of_residence}</p>
+
+                <h4>User Info</h4>
+                <p>{renderFields(userFields)}</p>
+
+                {hasSpouseData && (
+                  <>
+                    <h4>Spouse Info</h4>
+                    <p>{renderFields(spouseFields)}</p>
+                  </>
+                )}
+              </div>
+            );
+          })
         ) : (
           <p className="fade-in">No scenarios available</p>
         )}
       </div>
     </div>
+
+
+
   );
 };
