@@ -17,9 +17,7 @@ export const Dashboard = () => {
   return (
     <div className="container-dashboard">
       <div className="content-dashboard">
-        <h1 className="dashboard fade-in">
-          Welcome to your dashboard, username!
-        </h1>
+        <h1 className="dashboard fade-in">Welcome to your dashboard!</h1>
 
         <div className="header-dashboard fade-in">
           <h6 className="dashboard">My Scenarios</h6>
@@ -73,7 +71,8 @@ export const DisplayUserScenarios = () => {
   }, []);
 
   return (
-    <div className="content-main fade-in-up">
+    <div className="content-main fade-in">
+      {/* only show scnearios for the user that is logged in */}
       <div className="scenarios-list">
         {scenarios.length > 0 ? (
           scenarios.map((scenario, index) => (
@@ -86,7 +85,7 @@ export const DisplayUserScenarios = () => {
             </div>
           ))
         ) : (
-          <p>No scenarios available</p>
+          <p className="fade-in">No scenarios available</p>
         )}
       </div>
     </div>
