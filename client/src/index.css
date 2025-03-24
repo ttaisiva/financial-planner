@@ -1,8 +1,10 @@
 * {
   --primary-color: #5ea877;
   --primary-color2: #509967;
+  --primary-color3: #ceedd3;
+  --primary-color4: #e6ffe9;
   --bg-color: white;
-  --text-color: rgb(51, 51, 51);
+  --text-color: rgb(37, 43, 36);
 }
 
 :root {
@@ -26,7 +28,7 @@ a {
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  /* color: #535bf2; */
 }
 
 body {
@@ -49,12 +51,13 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  /* background-color: #1a1a1a; */
   cursor: pointer;
-  transition: border-color 0.25s;
+  background-color: rgb(232, 235, 231);
+  transition: background-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  /* border-color: #646cff; */
+  background-color: rgb(217, 222, 216);
 }
 button:focus,
 button:focus-visible {
