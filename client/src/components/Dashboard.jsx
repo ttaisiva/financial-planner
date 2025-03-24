@@ -41,7 +41,7 @@ export const Dashboard = () => {
         <div className="user_scenarios">
           <DisplayUserScenarios />
         </div>
-      </section>
+      </div>
 
     </div>
   );
