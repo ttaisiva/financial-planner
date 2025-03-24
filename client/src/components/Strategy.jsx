@@ -16,10 +16,12 @@ const Strategy = ({ investments }) => {
     optimizer: false,
     rothConversionStrat: [],
     rmdStrat: [],
+    expenseWithdrawalStrat: [],
   });
   // for rendering investments to order
   const [rothAccounts, setRothAccounts] = useState([]);
   const [rmdAccounts, setRmdAccounts] = useState([]);
+  const [expAccounts, setExpAccounts] = useState([]);
 
   // update form before sending to server
   useEffect(() => {
@@ -28,14 +30,16 @@ const Strategy = ({ investments }) => {
         ...prevData,
         rothConversionStrat: rothAccounts,
         rmdStrat: rmdAccounts,
+        expenseWithdrawalStrat: expAccounts,
       }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
         rmdStrat: rmdAccounts,
+        expenseWithdrawalStrat: expAccounts,
       }));
     }
-  }, [rothAccounts, rmdAccounts]);
+  }, [rothAccounts, rmdAccounts, expAccounts]);
   
   // send updated settings to server whenever formData updates
   useEffect(() => {
@@ -67,7 +71,8 @@ const Strategy = ({ investments }) => {
       <h2>Strategies</h2>
 
       <SpendingStrategy setFormData={setFormData} />
-      <p> Enter Expense Withdrawal Strategy </p>
+      <ExpenseWithdrawSettings formData={formData} setFormData={setFormData}
+      expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
       <RothConversionSettings formData={formData} setFormData={setFormData} 
         rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
       <RMDSettings formData={formData} setFormData={setFormData} rmdAccounts={rmdAccounts}
@@ -76,7 +81,67 @@ const Strategy = ({ investments }) => {
   );
 };
 
-export default Strategy;
+const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccounts, setExpAccounts}) => {
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  useEffect(() => {
+    const fetchInvestments = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/investments`
+        );
+        const data = await response.json();
+        setExpAccounts(data);
+      } catch (error) {
+        console.error("Error fetching investments:", error);
+      }
+    };
+    fetchInvestments();
+  }, [investments]);
+
+  // Drag and drop functionality
+  const onDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (!active || !over) return;
+  
+    setExpAccounts((prevExpAccounts) => {
+      const newExpAccounts = switchOrder(prevExpAccounts, active.id, over.id);
+      return [...newExpAccounts]; // Ensure new array reference
+    });
+  };
+  return (
+    <>
+      <h3>Expense Withdrawal Strategy</h3>
+      <div>
+          <p>
+            If a cash account does not have enough assets for your expenses,
+            withdrawals will be made from other investment accounts to cover
+            the difference. The investments will be emptied in this order.<br></br>
+            Drag the investments into your preferred order below:
+          </p>
+          {/* Drag and drop mechanism? */}
+          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext key={expAccounts.map(a => a.id).join(",")} items={expAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
+              <ul>
+                {expAccounts.map((account) => (
+                  <SortableItem key={account.id} id={account.id} account={account} />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
+        </div>
+    </>
+  )
+}
+
 
 const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, investments, rothAccounts }) => {
 
@@ -147,35 +212,7 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
 
     </>
   )
-}
-
-// ordering on discretionary expenses
-const SpendingStrategy = ({ setFormData }) => {
-  const [expenses, setExpenses] = useState([]);
-
-  // not possible yet ****
-  // useEffect(() => {
-  //   const fetchExpenses = async () => {
-  //     try {
-  //       const response = await fetch('http://localhost:3000/api/discretionary-expenses');
-  //       const data = await response.json();
-  //       setExpenses(data);
-  //     } catch (error) {
-  //       console.error('Error fetching discretionary expenses:', error);
-  //     }
-  //   };
-
-  //   fetchExpenses();
-  // }, []);
-
-  return (
-    <div>
-      <p>Enter Spending Strategy</p>
-      {/* TODO: Fetch existing discretionary expenses from server */}
-      {/* Drag and drop mechanism? */}
-    </div>
-  );
-};
+}      
 
 // both roth and rmd are ordering on pre tax retirement rothAccounts - share drag and drop component
 const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAccounts, investments }) => {
@@ -209,11 +246,6 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
     };
     fetchPreTaxInvestments();
   }, [investments]);
-
-
-  useEffect(() => {
-    console.log("Updated rothAccounts state:", rothAccounts);
-  }, [rothAccounts]);
 
   // Drag and drop functionality
   const onDragEnd = (event) => {
@@ -291,6 +323,34 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
   );
 };
 
+// ordering on discretionary expenses
+const SpendingStrategy = ({ setFormData }) => {
+  const [expenses, setExpenses] = useState([]);
+
+  // not possible yet ****
+  // useEffect(() => {
+  //   const fetchExpenses = async () => {
+  //     try {
+  //       const response = await fetch('http://localhost:3000/api/discretionary-expenses');
+  //       const data = await response.json();
+  //       setExpenses(data);
+  //     } catch (error) {
+  //       console.error('Error fetching discretionary expenses:', error);
+  //     }
+  //   };
+
+  //   fetchExpenses();
+  // }, []);
+
+  return (
+    <div>
+      <p>Enter Spending Strategy</p>
+      {/* TODO: Fetch existing discretionary expenses from server */}
+      {/* Drag and drop mechanism? */}
+    </div>
+  );
+};
+
 // individual item for drag and drop
 const SortableItem = ({ id, account }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -309,7 +369,7 @@ const SortableItem = ({ id, account }) => {
       {...attributes}
       {...listeners}
     >
-      {account.investment_type}: ${account.dollar_value}
+      {account.investment_type}: ${account.dollar_value}, ({account.tax_status})
     </div>
   );
 };
@@ -322,4 +382,7 @@ const switchOrder = (items, activeId, overId) => {
 
   return arrayMove(items, oldIndex, newIndex); // Return the updated order
 };
+
+export default Strategy;
+
 
