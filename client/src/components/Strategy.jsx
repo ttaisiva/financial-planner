@@ -14,15 +14,17 @@ const Strategy = ({investments}) => {
     rothConversionStrat: [],
   });
   // for rendering investments to order
-  const [accounts, setAccounts] = useState([]);
+  const [rothAccounts, setRothrothAccounts] = useState([]);
 
+  // update form before sending to server
   useEffect(() => {
     setFormData((prevData) => ({
       ...prevData,
-      rothConversionStrat: accounts,
+      rothConversionStrat: rothAccounts,
     }));
-  }, [accounts]);
+  }, [rothAccounts]);
   
+  // send updated settings to server whenever formData updates
   useEffect(() => {
     const updateStrategySettings = async () => {
       try {
@@ -53,18 +55,22 @@ const Strategy = ({investments}) => {
 
   return (
     <div>
-      <h2>Spending Strategy</h2>
+      <h2>Strategies</h2>
 
       <SpendingStrategy setFormData={setFormData} />
       <p> Enter Expense Withdrawal Strategy </p>
       <RothConversionSettings formData={formData} setFormData={setFormData} 
-        accounts={accounts} setAccounts={setAccounts} investments={investments}/>
+        rothAccounts={rothAccounts} setRothrothAccounts={setRothrothAccounts} investments={investments}/>
       <p> Optional Enter RMD Strategy </p>
     </div>
   );
 };
 
 export default Strategy;
+
+const RMDSettings = ({ formData, setFormData, rothAccounts, setRothrothAccounts, investments }) => {
+
+}
 
 // ordering on discretionary expenses
 const SpendingStrategy = ({ setFormData }) => {
@@ -94,8 +100,8 @@ const SpendingStrategy = ({ setFormData }) => {
   );
 };
 
-// both roth and rmd are ordering on pre tax retirement accounts - share drag and drop component
-const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, investments }) => {
+// both roth and rmd are ordering on pre tax retirement rothAccounts - share drag and drop component
+const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothrothAccounts, investments }) => {
 
   const handleOptimizerToggle = () => {
     setFormData((prevData) => ({
@@ -117,7 +123,7 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, 
       try {
         const response = await fetch(`http://localhost:3000/api/investments-pretax`);
         const data = await response.json();
-        setAccounts(data);
+        setRothrothAccounts(data);
       } catch (error) {
         console.error('Error fetching pre-tax investments:', error);
       }
@@ -136,8 +142,8 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, 
   };
 
   useEffect(() => {
-    console.log("Updated accounts state:", accounts);
-  }, [accounts]);
+    console.log("Updated rothAccounts state:", rothAccounts);
+  }, [rothAccounts]);
 
   // Drag and drop functionality
   const onDragEnd = (event) => {
@@ -145,9 +151,9 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, 
   
     if (!active || !over) return;
   
-    setAccounts((prevAccounts) => {
-      const newAccounts = switchOrder(prevAccounts, active.id, over.id);
-      return [...newAccounts]; // Ensure new array reference
+    setRothrothAccounts((prevrothAccounts) => {
+      const newrothAccounts = switchOrder(prevrothAccounts, active.id, over.id);
+      return [...newrothAccounts]; // Ensure new array reference
     });
   };
   
@@ -191,18 +197,18 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, 
       </div>
       
       {/* Ordering Strategy */}
-      {formData.optimizer && accounts && (
+      {formData.optimizer && rothAccounts && (
         <div>
-          <p>Assets will be transferred out of your pre-tax retirement accounts into 
-            after-tax accounts in the following order. <br></br>
+          <p>Assets will be transferred out of your pre-tax retirement rothAccounts into 
+            after-tax rothAccounts in the following order. <br></br>
             Drag the investments into your preferred order below:</p>
           {/* Drag and drop mechanism? */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext key={accounts.map(a => a.id).join(",")} items={accounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext key={rothAccounts.map(a => a.id).join(",")} items={rothAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
 
             
               <ul>
-                {accounts.map((account) => (
+                {rothAccounts.map((account) => (
                   <SortableItem key={account.id} id={account.id} account={account} />
                 ))}
               </ul>
