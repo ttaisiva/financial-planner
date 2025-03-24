@@ -1,4 +1,5 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, memo} from 'react';
+import yaml from 'js-yaml';
 import "../styles/Profile.css";
 
 const UserInfo = ({userData}) => {
@@ -13,6 +14,59 @@ const UserInfo = ({userData}) => {
         </div>
     );
 }
+
+const RenderYAML = memo(() => {
+    const [yamlFiles, setYamlFiles] = useState([]);
+    // ChatGPT
+    /* Prompt
+        fileContents should have an array of objects each with buffer and data
+        Each file is 100% a yaml file and i want to display all of these yaml files in my html
+    */
+    useEffect(() => {
+        // Fetching YAML files from the server
+        console.log("in render yaml use effect");
+        fetch("http://localhost:3000/user/download/taxbrackets", {
+            method: "GET",
+            credentials: "include",  // Sending credentials (cookies, sessions, etc.)
+        })
+        .then(res => res.json())
+        .then((data) => {
+            const parsedFiles = data.map((file) => {
+                try {
+                  // Convert Uint8Array to String
+                  const yamlString = new TextDecoder().decode(new Uint8Array(file.content.data));
+                  
+                  // Parse YAML string into a JavaScript object
+                  return {
+                    name: file.file_name,
+                    content: yaml.load(yamlString), 
+                  };
+                } catch (error) {
+                  console.error("Error parsing YAML:", error);
+                  return { name: file.file_name, content: "Error parsing YAML file" };
+                }
+              });
+        
+            setYamlFiles((prev) => 
+                JSON.stringify(prev) === JSON.stringify(parsedFiles) ? prev : parsedFiles
+            );
+        })  // Set the parsed data into state
+        .catch(err => console.log(err.message));  // Handle any fetch or parsing errors
+    }, []);
+
+
+    // ChatGPT
+    return (
+        <div>
+            {yamlFiles.map((file) => (
+                <div key={file.name}>
+                <h3>File {file.name}</h3>
+                <pre>{JSON.stringify(file.content, null, 2)}</pre>
+                </div>
+            ))}
+        </div>
+    );
+});
 
 const UserYAML = ({userData}) => {
     const [file, setFile] = useState({name: ""});
@@ -41,11 +95,12 @@ const UserYAML = ({userData}) => {
         }
     }
 
-    
-
     return (
         <div className="profile_yaml">
             <h2>Uploaded State Tax Rates & Brackets</h2>
+            <div className="profile_yaml_content">
+                <RenderYAML />
+            </div>
             <form className="profile_form" onSubmit={handleSubmit}>
                 <label htmlFor="yamlupload">Upload State Tax Rates & Brackets</label>
                 <input name="yamlupload" type="file" accept=".yaml" onChange={handleFileChange}></input>
