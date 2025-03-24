@@ -33,10 +33,16 @@ router.post('/events', (req, res) => {
   console.log('Event stored temporarily:', eventsData);
   res.status(200).json(eventsData);
 });
+
+router.post('/strategies', (req, res) => {
+  eventsLocalStorage.push(req.body);
+  console.log('Strategy data stored temporarily:', req.body);
+  res.status(200).json(req.body);
+});
+
 // Route to retrieve temporary storage:
 router.get('/investments', (req, res) => {
   console.log("Received request for locally stored investments.")
-  console.log((investmentsLocalStorage))
   res.status(200).json(investmentsLocalStorage);
 });
 
@@ -44,7 +50,6 @@ router.get('/investments', (req, res) => {
 router.get('/investments-pretax', (req, res) => {
   console.log("Received request for locally stored investments of type pre-tax.")
   const filtered = investmentsLocalStorage.filter((investment) => investment.tax_status === "Pre-Tax")
-  console.log((filtered))
   res.status(200).json(filtered);
 });
 
