@@ -43,7 +43,7 @@ export const Dashboard = () => {
         <div className="user_scenarios">
           <DisplayUserScenarios />
         </div>
-      </div>
+
     </div>
   );
 };

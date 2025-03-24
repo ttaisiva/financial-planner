@@ -5,14 +5,50 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 import { useSortable } from '@dnd-kit/sortable'; // dnd for individual items
 import { CSS } from '@dnd-kit/utilities'; // apply css to dnd items
 
+
 const Strategy = ({investments}) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     optimizer: false,
     rmd: false,
+    rothConversionStrat: [],
   });
   // for rendering investments to order
   const [accounts, setAccounts] = useState([]);
+
+  useEffect(() => {
+    setFormData((prevData) => ({
+      ...prevData,
+      rothConversionStrat: accounts,
+    }));
+  }, [accounts]);
+  
+  useEffect(() => {
+    const updateStrategySettings = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/strategies', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData), // Now it uses the latest formData
+        });
+  
+        if (response.ok) {
+          console.log('Strategy settings updated successfully');
+        } else {
+          console.error('Failed to update strategy settings');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+  
+    if (formData.rothConversionStrat.length > 0) { // Prevent unnecessary API calls
+      updateStrategySettings();
+    }
+  }, [formData]); // Now it waits for formData to update before sending to the server
+
 
 
   return (
@@ -79,34 +115,42 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, 
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/investments-pretax');
+        const response = await fetch(`http://localhost:3000/api/investments-pretax`);
         const data = await response.json();
         setAccounts(data);
-        console.log('Pre-tax investments:', data);
       } catch (error) {
         console.error('Error fetching pre-tax investments:', error);
       }
     };
     fetchPreTaxInvestments();
-  }, [formData, investments]);
+  }, [investments]);
+
+
+  const switchOrder = (items, activeId, overId) => {
+    const oldIndex = items.findIndex((item) => item.id === activeId);
+    const newIndex = items.findIndex((item) => item.id === overId);
+  
+    if (oldIndex === newIndex) return items; // Avoid unnecessary updates
+  
+    return arrayMove(items, oldIndex, newIndex); // Return the updated order
+  };
+
+  useEffect(() => {
+    console.log("Updated accounts state:", accounts);
+  }, [accounts]);
 
   // Drag and drop functionality
   const onDragEnd = (event) => {
     const { active, over } = event;
-
-    if(!active || !over) {
-      console.log("No active or over item");
-      return;
-    }
-
-    if (active.id !== over.id) {
-      setAccounts((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
+  
+    if (!active || !over) return;
+  
+    setAccounts((prevAccounts) => {
+      const newAccounts = switchOrder(prevAccounts, active.id, over.id);
+      return [...newAccounts]; // Ensure new array reference
+    });
   };
+  
 
   return (
     <>
@@ -154,7 +198,9 @@ const RothConversionSettings = ({ formData, setFormData, accounts, setAccounts, 
             Drag the investments into your preferred order below:</p>
           {/* Drag and drop mechanism? */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={accounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext key={accounts.map(a => a.id).join(",")} items={accounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
+
+            
               <ul>
                 {accounts.map((account) => (
                   <SortableItem key={account.id} id={account.id} account={account} />
