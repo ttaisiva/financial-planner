@@ -305,56 +305,14 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
 
 
 
-// export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
 
-//   console.log("investments", investments);
-//   console.log("investmentTypes", investmentTypes);
-//   return (
-//     <div className="p-4 border rounded-md mt-6">
-//       <h3> Your Investment Types</h3>
-//       {investmentTypes.length > 0 ? (
-//         <ul >
-//           {investmentTypes.map((item, idx) => (
-//             <ul key={idx}>
-//               <strong>{item.name} </strong>: 
-//                {item.description}, Expected Annual Return: {item.expAnnReturnType === "fixed" ? `$${item.expAnnReturnValue}` : `Mean: ${item.expAnnReturnMean}, Std Dev: ${item.expAnnReturnStdDev}`}
-//                , Expense Ratio: {item.expenseRatio}%
-//               , Expected Annual Income: {item.expAnnIncomeType === "fixed" ? `$${item.expAnnIncomeValue}` : `Mean: ${item.expAnnIncomeMean}, Std Dev: ${item.expAnnIncomeStdDev}`}  
-//                 , Taxability: {item.taxability} 
-
-//             </ul>
-//           ))}
-//         </ul>
-//       ) : (
-//         null
-//       )}
-
-//       <h3> Your Investments </h3> 
-//       {investments.length > 0 ? (
-//         <ul >
-          
-//           {investments.map((item, idx) => (
-//             <ul key={idx}>
-//               <strong>{item.investment_type}</strong>: ${item.dollar_value}, ({item.tax_status})
-//             </ul>
-//           ))}
-//         </ul>
-//       ) : (
-//         null
-//       )}
-//     </div>
-//   );
-// };
 
 export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
 
   useEffect(() => {
     console.log("investments", investments);
-  }, [investments]); // Logs when investments change
-
-  useEffect(() => {
     console.log("investmentTypes", investmentTypes);
-  }, [investmentTypes]); // Logs when investmentTypes change
+  }, [investments, investmentTypes]);
 
   return (
     <div className="p-4 border rounded-md mt-6">
@@ -362,12 +320,17 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
       {investmentTypes.length > 0 ? (
         <ul>
           {investmentTypes.map((item, idx) => (
-            <ul key={idx}>
-              <strong>{item.name}</strong>: 
-              {item.description}, Expected Annual Return: {item.expAnnReturnType === "fixed" ? `$${item.expAnnReturnValue}` : `Mean: ${item.expAnnReturnMean}, Std Dev: ${item.expAnnReturnStdDev}`}
-              , Expense Ratio: {item.expenseRatio}%, Expected Annual Income: {item.expAnnIncomeType === "fixed" ? `$${item.expAnnIncomeValue}` : `Mean: ${item.expAnnIncomeMean}, Std Dev: ${item.expAnnIncomeStdDev}`}  
+            <li key={idx}>
+              <strong>{item.name}</strong>: {item.description}, Expected Annual Return:{" "}
+              {item.expAnnReturnType === "fixed"
+                ? `$${item.expAnnReturnValue}`
+                : `Mean: ${item.expAnnReturnMean}, Std Dev: ${item.expAnnReturnStdDev}`}
+              , Expense Ratio: {item.expenseRatio}%, Expected Annual Income:{" "}
+              {item.expAnnIncomeType === "fixed"
+                ? `$${item.expAnnIncomeValue}`
+                : `Mean: ${item.expAnnIncomeMean}, Std Dev: ${item.expAnnIncomeStdDev}`}
               , Taxability: {item.taxability}
-            </ul>
+            </li>
           ))}
         </ul>
       ) : null}
@@ -376,13 +339,18 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
       {investments.length > 0 ? (
         <ul>
           {investments.map((item, idx) => (
-            <ul key={idx}>
-              <strong>{item.investment_type}</strong>: ${item.dollar_value}, ({item.tax_status})
-            </ul>
+            <li key={idx}>
+              <strong>{item.investment_type}</strong>: ${item.dollar_value} ({item.tax_status})
+            </li>
           ))}
         </ul>
       ) : null}
     </div>
   );
 };
+
+
+
+
+
 
