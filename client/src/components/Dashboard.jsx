@@ -8,6 +8,7 @@ import { handleScenarioUpload } from "../utils";
 export const Dashboard = () => {
   const [username, setUsername] = useState("undefined");
 
+
   useEffect(() => {
     loadAnimation();
       
@@ -146,7 +147,11 @@ export const DisplayUserScenarios = () => {
 
   const fetchScenarios = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/scenarios");
+      setScenarios([]); // Reset existing data before fetching new
+      const response = await fetch("http://localhost:3000/api/scenarios", {
+        method: "GET",
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         setScenarios(data);
