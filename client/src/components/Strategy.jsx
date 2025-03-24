@@ -70,7 +70,7 @@ const Strategy = ({ investments }) => {
     <div>
       <h2>Strategies</h2>
 
-      <SpendingStrategy setFormData={setFormData} />
+      <SpendingSettings setFormData={setFormData} />
       <ExpenseWithdrawSettings formData={formData} setFormData={setFormData}
       expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
       <RothConversionSettings formData={formData} setFormData={setFormData} 
@@ -324,27 +324,29 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
 };
 
 // ordering on discretionary expenses
-const SpendingStrategy = ({ setFormData }) => {
-  const [expenses, setExpenses] = useState([]);
+const SpendingSettings = ({ setFormData }) => {
+  // const [expenses, setExpenses] = useState([]);
 
-  // not possible yet ****
-  // useEffect(() => {
-  //   const fetchExpenses = async () => {
-  //     try {
-  //       const response = await fetch('http://localhost:3000/api/discretionary-expenses');
-  //       const data = await response.json();
-  //       setExpenses(data);
-  //     } catch (error) {
-  //       console.error('Error fetching discretionary expenses:', error);
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/discretionary-expenses');
+        const data = await response.json();
+        // setExpenses(data);
+      } catch (error) {
+        console.error('Error fetching discretionary expenses:', error);
+      }
+    };
 
-  //   fetchExpenses();
-  // }, []);
+    fetchExpenses();
+  }, []);
 
   return (
     <div>
-      <p>Enter Spending Strategy</p>
+      <h3>Spending Strategy</h3>
+      <p>Discretionary expenses will be paid one at a time, in the following order.
+        <br></br>Drag the expenses into your preferred order below:
+      </p>
       {/* TODO: Fetch existing discretionary expenses from server */}
       {/* Drag and drop mechanism? */}
     </div>
