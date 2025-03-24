@@ -43,7 +43,7 @@ export const Dashboard = () => {
         <div className="user_scenarios">
           <DisplayUserScenarios />
         </div>
-
+      </div>
     </div>
   );
 };
@@ -71,7 +71,7 @@ export const DisplayUserScenarios = () => {
   }, []);
 
   return (
-    <div className="content-main fade-in">
+    <div className="content-dashboard fade-in">
       {/* only show scnearios for the user that is logged in */}
       <div className="scenarios-list">
         {scenarios.length > 0 ? (
