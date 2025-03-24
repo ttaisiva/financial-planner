@@ -4,6 +4,7 @@ import { OAuth2Client } from "google-auth-library";
 const client = new OAuth2Client();
 
 import { connectToDatabase } from "../server.js";
+import { createTablesIfNotExist } from "../db_tables.js";
 
 async function verify(req) {
   // Verifies the token provided by Google for User sign-in
@@ -25,17 +26,15 @@ async function createAccount(connection, payload, names) {
     lastName: names.last,
     email: payload["email"],
   };
-  const sql =
-    "INSERT INTO users VALUES ('" +
-    newUser.id +
-    "','" +
-    newUser.name +
-    "','" +
-    newUser.lastName +
-    "','" +
-    newUser.email +
-    "')";
-  const cmd = await connection.execute(sql);
+  try {
+    //await createTablesIfNotExist(connection);
+    const sql =
+      "INSERT INTO users (id, name, lastName, email) VALUES (?, ?, ?, ?)";
+    const values = [newUser.id, newUser.name, newUser.lastName, newUser.email];
+    await connection.execute(sql, values);
+  } catch (err) {
+    console.error("Error creating account:", err);
+  }
 }
 
 router.post("/google/", async (req, res) => {
@@ -103,6 +102,7 @@ router.post("/createAccount/", async (req, res) => {
 });
 
 router.get("/isAuth/", async (req, res) => {
+  console.log("isAuth", req.session.user);
   if (req.session.user == null) {
     res.status(401).send();
   } else {

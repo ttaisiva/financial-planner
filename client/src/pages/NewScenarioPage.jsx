@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import ScenarioInfo from "../components/ScenarioInfo";
 import { handleScenarioUpload, loadAnimation } from "../utils";
@@ -10,35 +11,27 @@ const NewScenarioPage = () => {
 
   const scenarioInfoRef = useRef();
   const [formData, setFormData] = useState({});
+  const navigate = useNavigate();
 
   const handleRunSimulation = async () => {
     // Trigger the form submission in ScenarioInfo component
     if (scenarioInfoRef.current) {
       scenarioInfoRef.current.handleSubmitUserInfo();
-    }
+    } // scenario endpoint also pushes all local storage to database
 
-    try {
-      const response = await fetch("http://localhost:3000/api/run-simulation", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        console.log("Simulation run and data saved to the database");
-      } else {
-        console.error("Failed to run simulation");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-
-    // move to dashboard page? or view scenario page?
+    navigate("/ViewScenarioPage");
   };
 
   const handleFileChange = (event) => {
     handleScenarioUpload(setFormData, event);
+  };
+
+  const onChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      [name]: value,
+    }));
   };
 
   return (

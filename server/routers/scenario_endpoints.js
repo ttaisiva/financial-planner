@@ -4,8 +4,10 @@ import { createTablesIfNotExist } from "../db_tables.js";
 
 const router = express.Router();
 
+
 let investmentsLocalStorage = [];
 let investmentTypesLocalStorage = [];
+// let eventsLocalStorage = [];
 
 // Route to handle temporary storage: 
 router.post('/investment-type', (req, res) => {
@@ -43,126 +45,118 @@ router.get('/investment-types', (req, res) => {
   res.status(200).json(investmentTypes);
 });
 
+router.get('/scenarios', async (req, res) => {
+  console.log("Display scenarios in server")
 
 
-router.post("/user-scenario-info", async (req, res) => {
-  console.log("Server received user info request from client..");
-  const {
-    financialGoal,
-    filingStatus,
-    stateOfResidence,
-    userData,
-    spouseData,
-  } = req.body;
+  let userId = null;
+  if (req.session.user) {
+    userId = req.session.user.id;
+  }
+  
+  // TODO: need to add code for when user is not authenticated
 
   const query = `
-    INSERT INTO user_scenario_info (
-      financial_goal, filing_status, state_of_residence,
-      user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev,
-      user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev,
-      spouse_life_expectancy_type, spouse_life_expectancy_value, spouse_life_expectancy_mean, spouse_life_expectancy_std_dev,
-      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    SELECT  
+      usi.*, 
+      it.*, 
+      i.* 
+    FROM 
+      user_scenario_info usi
+    LEFT JOIN 
+      investment_types it ON usi.id = it.scenario_id
+    LEFT JOIN 
+      investments i ON usi.id = i.scenario_id
+    WHERE 
+      usi.user_id = ?
   `;
-
-  const values = [
-    financialGoal,
-    filingStatus,
-    stateOfResidence,
-    userData.lifeExpectancyType,
-    userData.lifeExpectancyValue,
-    userData.lifeExpectancyMean,
-    userData.lifeExpectancyStdDev,
-    userData.retirementAge,
-    userData.retirementAgeValue,
-    userData.retirementAgeMean,
-    userData.retirementAgeStdDev,
-    spouseData.lifeExpectancyType,
-    spouseData.lifeExpectancyValue,
-    spouseData.lifeExpectancyMean,
-    spouseData.lifeExpectancyStdDev,
-    spouseData.retirementAge,
-    spouseData.retirementAgeValue,
-    spouseData.retirementAgeMean,
-    spouseData.retirementAgeStdDev,
-  ];
-
-  console.log("Send to database..");
-
   try {
     await ensureConnection();
     await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, values);
-    res.status(201).send("User scenario info saved successfully");
+    const [results] = await connection.execute(query, [userId]);
+    console.log("Retrieved scenarios:", results);
+    res.status(200).json(results);
   } catch (err) {
-    console.error("Failed to insert user scenario info:", err);
-    res.status(500).send("Failed to save user scenario info");
+    console.error("Failed to retrieve scenarios:", err);
+    res.status(500).send("Failed to retrieve scenarios");
   }
 });
 
-router.post("/run-simulation", async (req, res) => {
-  console.log("Running simulation and saving temporary data to database...");
-  console.log("Local storage investment type: ", investmentTypesLocalStorage);
-  console.log("Local storage investment: ", investmentsLocalStorage);
 
-  // Inserting investment types
-  for (const investmentType of investmentTypesLocalStorage) {
-    console.log("Inserting investment type:", investmentType);
-    const query = `
-      INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue, taxability) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const values = [
-      investmentType.name,
-      investmentType.description,
-      investmentType.expAnnReturnType,
-      investmentType.expAnnReturnValue,
-      investmentType.expenseRatio,
-      investmentType.expAnnIncomeType,
-      investmentType.expAnnIncomeValue,
-      investmentType.taxability,
-    ];
 
-    try {
+
+router.post("/user-scenario-info", async (req, res) => {
+  try {
+   
+    const authResponse = await fetch('http://localhost:3000/auth/isAuth/', {credentials: 'include',});
+    console.log("Auth response:", authResponse.status);
+    if (authResponse.status === 302) {
+      
+      const userId = req.session.user.id;
+      console.log("Authenticated user ID:", userId);
+      
+
+      const {
+        scenarioName,
+        financialGoal,
+        filingStatus,
+        stateOfResidence,
+        userData,
+        spouseData,
+      } = req.body;
+
+      const query = `
+        INSERT INTO user_scenario_info (
+          user_id, scenario_name, financial_goal, filing_status, state_of_residence,
+          user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev, user_retirement_age_type, 
+          user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev, spouse_life_expectancy_type, spouse_life_expectancy_value, 
+          spouse_life_expectancy_mean, spouse_life_expectancy_std_dev, spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, 
+          spouse_retirement_age_std_dev
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const values = [
+        userId,
+        scenarioName || null,
+        financialGoal || null,
+        filingStatus || null,
+        stateOfResidence || null,
+        userData.lifeExpectancyType || null,
+        userData.lifeExpectancyValue || null,
+        userData.lifeExpectancyMean || null,
+        userData.lifeExpectancyStdDev || null,
+        userData.retirementAge || null,
+        userData.retirementAgeValue || null,
+        userData.retirementAgeMean || null,
+        userData.retirementAgeStdDev || null,
+        spouseData.lifeExpectancyType || null,
+        spouseData.lifeExpectancyValue || null,
+        spouseData.lifeExpectancyMean || null,
+        spouseData.lifeExpectancyStdDev || null,
+        spouseData.retirementAge || null,
+        spouseData.retirementAgeValue || null,
+        spouseData.retirementAgeMean || null,
+        spouseData.retirementAgeStdDev || null,
+      ];
+
+      // Proceed with the insertion to the database
       await ensureConnection();
       await createTablesIfNotExist(connection);
-      console.log("Executing query:", query, "with values:", values);
-      await connection.execute(query, values);
-      console.log(`Investment type ${investmentType.name} saved to the database.`);
-    } catch (err) {
-      console.error("Failed to insert investment type:", err);
+
+      const [results] = await connection.execute(query, values);
+      console.log("User scenario info inserted successfully.");
+
+      res.status(200).send("Scenario info inserted successfully!");
+    } else {
+      // User is not authenticated
+      res.status(401).send("User is not authenticated.");
     }
+  } catch (err) {
+    console.error("Error during authentication or insertion:", err);
+    res.status(500).send("Failed to insert user scenario info.");
   }
-
-  // Inserting investments
-  for (const investment of investmentsLocalStorage) {
-    const query = `
-      INSERT INTO investments (investment_type, dollar_value, tax_status) 
-      VALUES (?, ?, ?)
-    `;
-    const values = [
-      investment.investment_type,
-      investment.dollar_value,
-      investment.tax_status,
-    ];
-
-    try {
-      await ensureConnection();
-      await createTablesIfNotExist(connection);
-      await connection.execute(query, values);
-      console.log(`Investment ${investment.investment_type} saved to the database.`);
-    } catch (err) {
-      console.error("Failed to insert investment:", err);
-    }
-  }
-
-  // Clear temporary data after insertion
-  investmentsLocalStorage = [];
-  investmentTypesLocalStorage = [];
-
-  console.log("All temporary data has been saved to the database.");
-  res.status(200).send("Simulation run and data saved to the database.");
 });
+
 
 
 
@@ -222,67 +216,13 @@ router.post("/events", async (req, res) => {
     await ensureConnection();
     await createTablesIfNotExist(connection);
     const [results] = await connection.execute(query, values);
-    res.status(201).send("Income event saved successfully");
+    res.status(201).send("Event saved successfully");
   } catch (err) {
-    console.error("Failed to insert income event:", err);
-    res.status(500).send("Failed to save income event");
+    console.error("Failed to insert event:", err);
+    res.status(500).send("Failed to save event");
   }
 });
 
-router.post("/user-scenario-info", async (req, res) => {
-  console.log("Server received user info request from client..");
-  const {
-    financialGoal,
-    filingStatus,
-    stateOfResidence,
-    userData,
-    spouseData,
-  } = req.body;
-
-  const query = `
-    INSERT INTO user_scenario_info (
-      financial_goal, filing_status, state_of_residence,
-      user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev,
-      user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev,
-      spouse_life_expectancy_type, spouse_life_expectancy_value, spouse_life_expectancy_mean, spouse_life_expectancy_std_dev,
-      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  const values = [
-    financialGoal,
-    filingStatus,
-    stateOfResidence,
-    userData.lifeExpectancyType,
-    userData.lifeExpectancyValue,
-    userData.lifeExpectancyMean,
-    userData.lifeExpectancyStdDev,
-    userData.retirementAge,
-    userData.retirementAgeValue,
-    userData.retirementAgeMean,
-    userData.retirementAgeStdDev,
-    spouseData.lifeExpectancyType,
-    spouseData.lifeExpectancyValue,
-    spouseData.lifeExpectancyMean,
-    spouseData.lifeExpectancyStdDev,
-    spouseData.retirementAge,
-    spouseData.retirementAgeValue,
-    spouseData.retirementAgeMean,
-    spouseData.retirementAgeStdDev,
-  ];
-
-  console.log("Send to database..");
-
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, values);
-    res.status(201).send("User scenario info saved successfully");
-  } catch (err) {
-    console.error("Failed to insert user scenario info:", err);
-    res.status(500).send("Failed to save user scenario info");
-  }
-});
 
 router.post("/investments", async (req, res) => {
   console.log("Server received investment request from client..");

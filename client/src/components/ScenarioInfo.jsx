@@ -164,6 +164,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
   // State to manage form data
   const [formData, setFormData] = useState({
+    scenarioName: "",
     financialGoal: "",
     filingStatus: "single",
     stateOfResidence: "",
@@ -333,6 +334,18 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
           <label>Financial goal (in $):</label>
           <div>
+            <label>
+              Scenario Name:
+              <input
+                type="text"
+                name="scenarioName"
+                value={formData.scenarioName}
+                placeholder="Enter scenario name"
+                onChange={handleChange}
+                required
+              />
+            </label>
+
             <input
               type="number"
               min="0"

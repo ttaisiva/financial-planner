@@ -45,6 +45,7 @@ export const handleFileUpload = (e) => {
 export const handleScenarioUpload = (e) => {
   handleFileUpload(e);
   //TODO: send scenario to database
+  
 };
 
 export const resetTypes = (type) => {
