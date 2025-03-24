@@ -47,19 +47,21 @@ const NewScenarioPage = () => {
       <div className="container-new-scenario">
         <div className="content-new-scenario">
           <div className="section-new-scenario">
-            <h2 className="colorthis fade-in">Upload Scenario</h2>
-            <p className="colorthis">
-              If you have a scenario stored in a yaml file, you may import it
-              here.
-            </p>
-            <input
-              type="file"
-              accept=".yaml,.yml"
-              onChange={handleFileChange}
-            />
+            <h2 className="fade-in">Upload Scenario</h2>
+            <div className="fade-in">
+              <p>
+                Already have a scenario saved? If you have a scenario stored in
+                a yaml file, you may import it here.
+              </p>
+              <input
+                type="file"
+                accept=".yaml,.yml"
+                onChange={handleFileChange}
+              />
+            </div>
           </div>
 
-          <button>Export Scenario</button>
+          <button className="fade-in">Export Scenario</button>
 
           {/* Pass the ref to ScenarioInfo */}
           <ScenarioInfo

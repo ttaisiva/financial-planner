@@ -1,5 +1,10 @@
 import "../styles/NewScenario.css";
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+} from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
 import {
@@ -7,16 +12,23 @@ import {
   Investment,
   ViewInvestmentDetails,
 } from "./InvestmentDetails";
-import { states, tooltipContent, handleFileUpload } from "../utils";
+import {
+  states,
+  tooltipContent,
+  handleFileUpload,
+  loadAnimation,
+} from "../utils";
 import Strategy from "./Strategy";
 
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
   <div className="section-new-scenario">
     <label>
-      {" "}
-      {(prefix === "user" && "Your") ||
-        (prefix === "spouse" && "Spouse's")}{" "}
-      life expectancy:{" "}
+      <h4>
+        {" "}
+        {(prefix === "user" && "Your") ||
+          (prefix === "spouse" && "Spouse's")}{" "}
+        life expectancy:{" "}
+      </h4>
     </label>
 
     <div>
@@ -80,10 +92,12 @@ const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
 const RetirementAgeForm = ({ prefix, data, handleChange }) => (
   <div className="section-new-scenario">
     <label>
-      {" "}
-      {(prefix === "user" && "Your") ||
-        (prefix === "spouse" && "Spouse's")}{" "}
-      retirement age:{" "}
+      <h4>
+        {" "}
+        {(prefix === "user" && "Your") ||
+          (prefix === "spouse" && "Spouse's")}{" "}
+        retirement age:{" "}
+      </h4>
     </label>
 
     <div>
@@ -144,6 +158,10 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
 );
 
 const ScenarioInfo = forwardRef((props, ref) => {
+  useEffect(() => {
+    loadAnimation();
+  });
+
   // State to manage form data
   const [formData, setFormData] = useState({
     financialGoal: "",
@@ -295,40 +313,40 @@ const ScenarioInfo = forwardRef((props, ref) => {
   };
 
   return (
-    <div className="">
-      <div className="">
-        <h2>Financial goal</h2>
-        <p className="colorthis">
-          Your financial goal is the extra amount you would like to have left
-          over after meeting all expenses. <br />A zero financial goal means you
-          will meet all of your expenses without a safety margin.
-          <span
-            data-tooltip-id="tooltip"
-            data-tooltip-html={tooltipContent.financialGoal}
-            className="info-icon"
-          >
-            ⚠️
-          </span>
-        </p>
-        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+    <div className="section-new-scenario">
+      <form onSubmit={handleSubmitUserInfo}>
+        <h2 className="fade-in">Financial goal</h2>
+        <div className="fade-in">
+          <p>
+            Your financial goal is the extra amount you would like to have left
+            over after meeting all expenses. <br />A zero financial goal means
+            you will meet all of your expenses without a safety margin.
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.financialGoal}
+              className="info-icon"
+            >
+              ⚠️
+            </span>
+          </p>
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
-        <form onSubmit={handleSubmitUserInfo}>
-          <div className="colorthis">
-            <label>
-              Financial goal: $
-              <input
-                type="number"
-                min="0"
-                name="financialGoal"
-                value={formData.financialGoal}
-                onChange={handleChange}
-                placeholder="0.00"
-                required
-              />
-            </label>
+          <label>Financial goal (in $):</label>
+          <div>
+            <input
+              type="number"
+              min="0"
+              name="financialGoal"
+              value={formData.financialGoal}
+              onChange={handleChange}
+              placeholder="0.00"
+              required
+            />
           </div>
+        </div>
 
-          <h2>Tax Information</h2>
+        <h2 className="fade-in">Tax Information</h2>
+        <div className="fade-in">
           <p>
             Your tax information will be used to compute federal and state
             income taxes, capital gains taxes, and early withdrawal taxes where
@@ -344,7 +362,10 @@ const ScenarioInfo = forwardRef((props, ref) => {
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
           <label>
-            Choose your state of residence (optional)
+            <h4>Choose your state of residence (optional):</h4>
+          </label>
+
+          <div>
             <select
               name="stateOfResidence"
               value={formData.stateOfResidence}
@@ -364,13 +385,9 @@ const ScenarioInfo = forwardRef((props, ref) => {
             >
               ℹ️
             </span>
-            <ReactTooltip
-              id="tooltip"
-              place="right"
-              type="info"
-              effect="solid"
-            />
-          </label>
+          </div>
+
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
           <input
             type="file"
@@ -378,90 +395,89 @@ const ScenarioInfo = forwardRef((props, ref) => {
             onChange={(e) => handleFileUpload(e)}
           />
 
-          <div>
-            <label>
-              Filing Status:
-              <select
-                name="filingStatus"
-                value={formData.filingStatus}
-                onChange={handleChange}
-                required
-              >
-                <option value="single">Single</option>
-                <option value="married">Married</option>
-              </select>
-              <span
-                data-tooltip-id="tooltip"
-                data-tooltip-html={tooltipContent.filingStatus}
-                className="info-icon"
-              >
-                ℹ️
-              </span>
-              <ReactTooltip
-                id="tooltip"
-                place="right"
-                type="info"
-                effect="solid"
-              />
-            </label>
-          </div>
+          <label>
+            <h4>Filing Status:</h4>
+          </label>
 
           <div>
-            <h2>Major Life Events </h2>
-            <p>
-              Event simulation will begin in the current year. <br />
-              Please estimate your desired retirement age and lifespan in years.
-              <span
-                data-tooltip-id="tooltip"
-                data-tooltip-html={tooltipContent.startYearTax}
-                className="info-icon"
-              >
-                ⚠️
-              </span>
-            </p>
+            <select
+              name="filingStatus"
+              value={formData.filingStatus}
+              onChange={handleChange}
+              required
+            >
+              <option value="single">Single</option>
+              <option value="married">Married</option>
+            </select>
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.filingStatus}
+              className="info-icon"
+            >
+              ℹ️
+            </span>
             <ReactTooltip
               id="tooltip"
               place="right"
               type="info"
               effect="solid"
             />
+          </div>
+        </div>
 
+        <h2 className="fade-in">Major Life Events </h2>
+        <div className="fade-in">
+          <p>
+            Event simulation will begin in the current year. <br />
+            Please estimate your desired retirement age and lifespan in years.
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.startYearTax}
+              className="info-icon"
+            >
+              ⚠️
+            </span>
+          </p>
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+
+          <LifeExpectancyForm
+            prefix="user"
+            data={formData.userData}
+            handleChange={handleChange}
+          />
+          <RetirementAgeForm
+            prefix="user"
+            data={formData.userData}
+            handleChange={handleChange}
+          />
+        </div>
+
+        <h2 className="fade-in">Add Spouse</h2>
+        <div className="fade-in">
+          <button type="button" onClick={handleAddSpouse}>
+            {showSpouseForm ? "Remove Spouse" : "Add Spouse"}
+          </button>
+        </div>
+
+        {showSpouseForm && (
+          <div>
+            <h3>Spouse Information</h3>
             <LifeExpectancyForm
-              prefix="user"
-              data={formData.userData}
+              prefix="spouse"
+              data={formData.spouseData}
               handleChange={handleChange}
             />
             <RetirementAgeForm
-              prefix="user"
-              data={formData.userData}
+              prefix="spouse"
+              data={formData.spouseData}
               handleChange={handleChange}
             />
           </div>
+        )}
+      </form>
 
-          <div>
-            <button type="button" onClick={handleAddSpouse}>
-              {showSpouseForm ? "Remove Spouse" : "Add Spouse"}
-            </button>
-          </div>
-
-          {showSpouseForm && (
-            <div>
-              <h3>Spouse Information</h3>
-              <LifeExpectancyForm
-                prefix="spouse"
-                data={formData.spouseData}
-                handleChange={handleChange}
-              />
-              <RetirementAgeForm
-                prefix="spouse"
-                data={formData.spouseData}
-                handleChange={handleChange}
-              />
-            </div>
-          )}
-        </form>
-
-        <h2>Investment Types and Investments</h2>
+      <h2 className="fade-in">Investment Types and Investments</h2>
+      <div className="fade-in">
         <button onClick={handleInvestmentType}>New Investment Type</button>
         {showInvestmentTypeForm && (
           <InvestmentType
@@ -470,7 +486,9 @@ const ScenarioInfo = forwardRef((props, ref) => {
             setShowInvestmentTypeForm={setShowInvestmentTypeForm}
           />
         )}
+      </div>
 
+      <div className="fade-in">
         <button onClick={handleInvestment}>New Investment</button>
         {showInvestmentForm && (
           <Investment
@@ -479,13 +497,17 @@ const ScenarioInfo = forwardRef((props, ref) => {
             setShowInvestmentForm={setShowInvestmentForm}
           />
         )}
+      </div>
 
+      <div className="fade-in">
         <ViewInvestmentDetails
           investments={investments}
           investmentTypes={investmentTypes}
         />
         {showEventsForm && <EventsForm />}
+      </div>
 
+      <div className="fade-in">
         <Strategy investments={investments} />
       </div>
     </div>
