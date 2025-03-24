@@ -12,11 +12,11 @@ const Dashboard = () => {
   return (
     <div className="container-dashboard">
       <div className="content-dashboard">
-        <h1 className="dashboard fade-in-up">
+        <h1 className="dashboard fade-in">
           Welcome to your dashboard, username!
         </h1>
 
-        <div className="header-dashboard fade-in-up">
+        <div className="header-dashboard fade-in">
           <h6 className="dashboard">My Scenarios</h6>
           <Link to="/NewScenarioPage" className="create-scenario">
             <img src="client\public\plus.png" className="icon"></img>
@@ -28,7 +28,7 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        <div className="filter-options fade-in-up">
+        <div className="filter-options fade-in">
           <label>
             <input type="checkbox" checked /> Created by me
           </label>
@@ -37,7 +37,7 @@ const Dashboard = () => {
           </label>
         </div>
 
-        <section className="scenarios fade-in-up">
+        <section className="scenarios fade-in">
           <div className="user_scenarios">
             <p> show scenarios here...</p>
           </div>
