@@ -15,10 +15,9 @@ export const Dashboard = () => {
   }).then((res) => console.log(res.status));
 
   return (
-
-    <div className="content-main fade-in-up">
-      <h1>Welcome to your dashboard!</h1>
-
+    <div className="container-dashboard">
+      <div className="content-dashboard">
+        <h1 className="dashboard fade-in">Welcome to your dashboard!</h1>
 
         <div className="header-dashboard fade-in">
           <h6 className="dashboard">My Scenarios</h6>
@@ -44,7 +43,7 @@ export const Dashboard = () => {
         <div className="user_scenarios">
           <DisplayUserScenarios />
         </div>
-
+      </div>
     </div>
   );
 };
@@ -72,7 +71,7 @@ export const DisplayUserScenarios = () => {
   }, []);
 
   return (
-    <div className="content-main fade-in-up">
+    <div className="content-dashboard fade-in">
       {/* only show scnearios for the user that is logged in */}
       <div className="scenarios-list">
         {scenarios.length > 0 ? (
@@ -86,7 +85,7 @@ export const DisplayUserScenarios = () => {
             </div>
           ))
         ) : (
-          <p>No scenarios available</p>
+          <p className="fade-in">No scenarios available</p>
         )}
       </div>
     </div>

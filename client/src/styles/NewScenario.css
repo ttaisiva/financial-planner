@@ -25,6 +25,20 @@
   margin: 0 0 1rem 0;
 }
 
-.colorthis {
-  background-color: aqua;
+.drag {
+  border-radius: 25px;
+  margin: 1rem 0;
+  padding: 0.6em 1.2em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  color: var(--text-color);
+  background-color: var(--primary-color3);
+  transition: background-color 0.25s;
+}
+.drag:hover {
+  cursor: grab;
+  color: white;
+  background-color: var(--primary-color);
 }

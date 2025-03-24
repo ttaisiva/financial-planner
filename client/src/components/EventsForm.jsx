@@ -50,7 +50,7 @@ const EventsForm = ({ setShowEventsForm }) => {
 
     try {
    
-      if (formData.eventType === 'income') {
+      
         console.log("Event Type: Income event");
         const response = await fetch('http://localhost:3000/api/events', {
           method: 'POST',
@@ -67,7 +67,7 @@ const EventsForm = ({ setShowEventsForm }) => {
           console.error('Failed to save events details');
         }
 
-      } //TODO: not sure if this is the best way to handle this -> discuss with tai
+       //TODO: not sure if this is the best way to handle this -> discuss with tai
 
 
     } catch (error) {
@@ -149,9 +149,9 @@ const EventsForm = ({ setShowEventsForm }) => {
           </>
         )}
 
-      {(formData.eventType === 'invest' || formData.eventType === 'rebalance') && (
+      {(formData.eventType === 'invest') && (
         <>
-          <InvestRebalanceEvent formData={formData} handleChange={handleChange} /> {/* pass as props */}
+          <InvestEvent formData={formData} handleChange={handleChange} /> {/* pass as props */}
         </>
       )}
 
@@ -217,7 +217,7 @@ const IncomeEvent = ({ formData, handleChange }) => {
   };
   
 // invest and rebalance are both asset allocation to investment accounts, so they can be combined into one component
-const InvestRebalanceEvent = ({ formData, handleChange }) => {
+const InvestEvent = ({ formData, handleChange }) => {
   const [accounts, setAccounts] = useState([]);
   const [allocationPercentages, setAllocationPercentages] = useState({});
 
@@ -229,7 +229,13 @@ const InvestRebalanceEvent = ({ formData, handleChange }) => {
         const queryString = taxStatus.map(status => `taxStatus=${status}`).join('&');
         const response = await fetch(`http://localhost:3000/api/get-investments?${queryString}`);
         
-        const data = await response.json();
+        if (!response.ok) {
+          console.error('Failed to fetch investments:', response.status);
+          return;
+        }
+
+        const data = await response.json()
+        console.log("Data: ", data )
         setAccounts(data);
         console.log(`${taxStatus} investments:`, data);
       } catch (error) {
@@ -245,42 +251,21 @@ const InvestRebalanceEvent = ({ formData, handleChange }) => {
   // Handle fixed percentage allocation
   const handleFixedPercentageChange = (investmentId, percentage) => {
     setAllocationPercentages((prevState) => {
-      const newAllocations = { ...prevState, [investmentId]: parseFloat(percentage) };
-      // Ensure that the sum of percentages is 100
-      const totalPercentage = Object.values(newAllocations).reduce((sum, val) => sum + val, 0);
-      if (totalPercentage > 100) {
-        alert('The total allocation must sum to 100%.');
-        return prevState;
-      }
+      const newAllocations = { ...prevState, [investmentId]: { start: percentage } };
       return newAllocations;
     });
   };
 
-  // Handle glide path calculation
-  const calculateGlidePathPercentages = (currentYear) => {
-    const yearRange = endYear - startYear;
-    const progress = (currentYear - startYear) / yearRange;
-
-    const startPercentages = formData.startPercentages; // Start percentages for glide path
-    const endPercentages = formData.endPercentages; // End percentages for glide path
-
-    return accounts.map((account) => {
-      const startPercent = startPercentages[account.id] || 0;
-      const endPercent = endPercentages[account.id] || 0;
-      const interpolatedPercent = startPercent + (endPercent - startPercent) * progress;
-      return {
-        id: account.id,
-        name: account.name,
-        percentage: interpolatedPercent,
-      };
+  // Handle glide path allocation
+  const handleGlidePathChange = (investmentId, type, percentage) => {
+    setAllocationPercentages((prevState) => {
+      const newAllocations = { ...prevState };
+      if (!newAllocations[investmentId]) {
+        newAllocations[investmentId] = { start: 0, end: 0 };
+      }
+      newAllocations[investmentId][type] = percentage;
+      return newAllocations;
     });
-  };
-
-  // Handle year change for glide path
-  const handleYearChange = (e) => {
-    const year = parseInt(e.target.value, 10);
-    const updatedPercentages = calculateGlidePathPercentages(year);
-    setAllocationPercentages(updatedPercentages);
   };
 
   return (
@@ -304,45 +289,62 @@ const InvestRebalanceEvent = ({ formData, handleChange }) => {
         /> 
         Glide path
       </div>
-      
+
       {formData.allocationMethod === 'fixed_percentage' && (
         <div>
           <label>Fixed percentage allocations:</label>
           {accounts.map((account) => (
-            <div key={account.id}>
-              <label>{account.name}</label>
+            <div >
+              <label>Investment Type: {account.investment_type}, $ {account.dollar_value}</label>
               <input
                 type="number"
-                value={allocationPercentages[account.id] || 0}
+                value={allocationPercentages[account.id]?.start}
                 onChange={(e) => handleFixedPercentageChange(account.id, e.target.value)}
+                min={0}
+                required
               />
               <span>%</span>
             </div>
           ))}
         </div>
       )}
-      
+
       {formData.allocationMethod === 'glide_path' && (
         <div>
-          
-        
-          <div>
-            <label>Glide Path Allocations:</label>
-            {accounts.map((account) => {
-              const percentage = allocationPercentages[account.id]?.percentage || 0;
-              return (
-                <div key={account.id}>
-                  <label>{account.name}</label>
-                  <span>{percentage.toFixed(2)}%</span>
-                </div>
-              );
-            })}
-          </div>
+          <label>Glide Path Allocations:</label>
+          {accounts.map((account) => (
+            <div >
+              <label>Investment Type: {account.investment_type}, $ {account.dollar_value} </label>
+
+              <div>
+                <label>Start Allocation:</label>
+                <input
+                  type="number"
+                  value={allocationPercentages[account.id]?.start}
+                  onChange={(e) => handleGlidePathChange(account.id, 'start', e.target.value)}
+                  min={0}
+                  required
+                />
+                <span>%</span>
+              </div>
+
+              <div>
+                <label>End Allocation:</label>
+                <input
+                  type="number"
+                  value={allocationPercentages[account.id]?.end}
+                  onChange={(e) => handleGlidePathChange(account.id, 'end', e.target.value)}
+                  min={0}
+                  required
+                />
+                <span>%</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </>
   );
 };
-
 
 

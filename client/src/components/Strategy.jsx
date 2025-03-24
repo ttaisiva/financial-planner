@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-import { DndContext, closestCenter } from '@dnd-kit/core'; // drag and collision detection
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'; // modify array order after dnd
-import { useSortable } from '@dnd-kit/sortable'; // dnd for individual items
-import { CSS } from '@dnd-kit/utilities'; // apply css to dnd items
+import { DndContext, closestCenter } from "@dnd-kit/core"; // drag and collision detection
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"; // modify array order after dnd
+import { useSortable } from "@dnd-kit/sortable"; // dnd for individual items
+import { CSS } from "@dnd-kit/utilities"; // apply css to dnd items
+import "../styles/NewScenario.css";
 
-
-const Strategy = ({investments}) => {
+const Strategy = ({ investments }) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     optimizer: false,
@@ -37,21 +41,21 @@ const Strategy = ({investments}) => {
   useEffect(() => {
     const updateStrategySettings = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/strategies', {
-          method: 'POST',
+        const response = await fetch("http://localhost:3000/api/strategies", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(formData), // Now it uses the latest formData
         });
-  
+
         if (response.ok) {
-          console.log('Strategy settings updated successfully');
+          console.log("Strategy settings updated successfully");
         } else {
-          console.error('Failed to update strategy settings');
+          console.error("Failed to update strategy settings");
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
       }
     };
   
@@ -194,11 +198,13 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/investments-pretax`);
+        const response = await fetch(
+          `http://localhost:3000/api/investments-pretax`
+        );
         const data = await response.json();
         setRothAccounts(data);
       } catch (error) {
-        console.error('Error fetching pre-tax investments:', error);
+        console.error("Error fetching pre-tax investments:", error);
       }
     };
     fetchPreTaxInvestments();
@@ -212,7 +218,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
   // Drag and drop functionality
   const onDragEnd = (event) => {
     const { active, over } = event;
-  
+
     if (!active || !over) return;
   
     setRothAccounts((prevrothAccounts) => {
@@ -220,7 +226,6 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
       return [...newrothAccounts]; // Ensure new array reference
     });
   };
-  
 
   return (
     <>
@@ -259,13 +264,15 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
             </div>
           )}
       </div>
-      
+
       {/* Ordering Strategy */}
       {formData.optimizer && rothAccounts && (
         <div>
-          <p>Assets will be transferred out of your pre-tax retirement accounts into 
-            after-tax accounts in the following order. <br></br>
-            Drag the investments into your preferred order below:</p>
+          <p>
+            Assets will be transferred out of your pre-tax retirement accounts
+            into after-tax accounts in the following order. <br></br>
+            Drag the investments into your preferred order below:
+          </p>
           {/* Drag and drop mechanism? */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext key={rothAccounts.map(a => a.id).join(",")} items={rothAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
@@ -275,20 +282,19 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
                 {rothAccounts.map((account) => (
                   <SortableItem key={account.id} id={account.id} account={account} />
                 ))}
-              </ul>
+              </div>
             </SortableContext>
           </DndContext>
-          
         </div>
       )}
- 
     </>
   );
 };
 
 // individual item for drag and drop
 const SortableItem = ({ id, account }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -296,9 +302,15 @@ const SortableItem = ({ id, account }) => {
   };
 
   return (
-    <li ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      className="drag"
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
       {account.investment_type}: ${account.dollar_value}
-    </li>
+    </div>
   );
 };
 
