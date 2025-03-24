@@ -24,7 +24,7 @@ async function createAccount(connection, payload, names) {
         lastName: names.last,
         email: payload['email']
     }
-    const sql = "INSERT INTO users VALUES ('" + newUser.id + "','" + newUser.name + "','" + newUser.lastName + "','" + newUser.email + "')";
+    const sql = "INSERT INTO users (id, name, lastName, email) VALUES ('" + newUser.id + "','" + newUser.name + "','" + newUser.lastName + "','" + newUser.email + "')";
     const cmd = await connection.execute(sql);
 }
 
@@ -90,10 +90,10 @@ router.post("/createAccount/", async (req, res) => {
 
 router.get("/isAuth/", async (req, res) => {
     if (req.session.user == null) {
-        req.status(401).send();
+        res.status(401).send();
     }
     else {
-        req.status(302).send();
+        res.status(302).send();
     }
 })
 

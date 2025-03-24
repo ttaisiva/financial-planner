@@ -9,6 +9,11 @@ const Dashboard = () => {
     loadAnimation();
   });
 
+fetch("http://localhost:3000/auth/isAuth", {
+  method: "GET",
+  credentials: "include",
+}).then((res) => console.log(res.status));
+
   return (
     <div className="container-dashboard">
       <div className="content-dashboard">
