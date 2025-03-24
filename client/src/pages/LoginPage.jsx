@@ -65,9 +65,9 @@ const LoginPage = () => {
     <>
       <div className="container-landing">
         <div className="content-landing">
-          <h1 className="fade-in-up">Login to Manatee Planner</h1>
-          <div id="button-google" className="fade-in-up"></div>
-          <p className="fade-in-up">
+          <h1 className="fade-in">Login to Manatee Planner</h1>
+          <div id="button-google" className="fade-in"></div>
+          <p className="fade-in">
             Don't want to login?
             <Link to="/DashboardPage"> Continue as Guest</Link>
           </p>

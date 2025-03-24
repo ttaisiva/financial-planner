@@ -14,15 +14,15 @@ const LandingPage = () => {
       <LandingHeader />
       <div className="container-landing">
         <div className="content-landing">
-          <h1 className="fade-in-up">Start planning your life today</h1>
-          <p className="landing fade-in-up">
+          <h1 className="fade-in">Start planning your life today</h1>
+          <p className="landing fade-in">
             Monitor investments and major life events.
             <br />
             Create simulations and view informational charts.
             <br />
             Be in control of your future.
           </p>
-          <Link to="/LoginPage" className="button-action fade-in-up">
+          <Link to="/LoginPage" className="button-action fade-in">
             Try it Out!
           </Link>
         </div>
