@@ -23,6 +23,7 @@ router.post('/investments', (req, res) => {
   investmentsLocalStorage.push(investmentData);
   console.log('Investment stored temporarily:', investmentData);
   res.status(200).json(investmentData);
+  console.log("All investments: ", investmentsLocalStorage)
 });
 
 router.post('/events', (req, res) => {
@@ -383,20 +384,19 @@ router.get('/pre-tax-investments', async (req, res) => {
   }
 });
 
-router.get('/get-investments', async (req, res) => {
+router.get('/get-investments', (req, res) => {
   console.log("Server received request for investments..");
   const { taxStatus } = req.query;
-  const query = "SELECT * FROM investments WHERE tax_status != ?";
 
-  try {
-    await ensureConnection();
-    const [rows] = await connection.execute(query, [taxStatus]);
-    res.json(rows);
-    console.log(`Sent ${taxStatus} investments to client:`, rows);
-  } catch (err) {
-    console.error(`Failed to fetch ${taxStatus} investments:`, err);
-    res.status(500).send(`Failed to fetch ${taxStatus} investments`);
-  }
+  // Convert taxStatus to an array if it's not already
+  const taxStatusList = taxStatus ? taxStatus.split(',') : [];
+  console.log(taxStatusList);
+
+  // Filter investments from local storage
+  const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatusList.includes(investment.tax_status));
+
+  res.json(filteredInvestments);
+  console.log(`Sent investments tax statuses ${taxStatusList.join(', ')} to client:`, filteredInvestments);
 });
 
 // *** don't have expenses yet

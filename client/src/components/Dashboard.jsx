@@ -9,16 +9,18 @@ export const Dashboard = () => {
     loadAnimation();
   });
 
-fetch("http://localhost:3000/auth/isAuth", {
-  method: "GET",
-  credentials: "include",
-}).then((res) => console.log(res.status));
+  fetch("http://localhost:3000/auth/isAuth", {
+    method: "GET",
+    credentials: "include",
+  }).then((res) => console.log(res.status));
 
   return (
+
     <div className="content-main fade-in-up">
       <h1>Welcome to your dashboard!</h1>
 
-        <div className="header-dashboard fade-in-up">
+
+        <div className="header-dashboard fade-in">
           <h6 className="dashboard">My Scenarios</h6>
           <Link to="/NewScenarioPage" className="create-scenario">
             <img src="client\public\plus.png" className="icon"></img>
@@ -30,7 +32,7 @@ fetch("http://localhost:3000/auth/isAuth", {
           </Link>
         </div>
 
-        <div className="filter-options fade-in-up">
+        <div className="filter-options fade-in">
           <label>
             <input type="checkbox" checked /> Created by me
           </label>
@@ -38,7 +40,6 @@ fetch("http://localhost:3000/auth/isAuth", {
             <input type="checkbox" /> Shared with me
           </label>
         </div>
-
 
         <div className="user_scenarios">
           <DisplayUserScenarios />
@@ -48,24 +49,20 @@ fetch("http://localhost:3000/auth/isAuth", {
   );
 };
 
-
-
-
 export const DisplayUserScenarios = () => {
   const [scenarios, setScenarios] = useState([]);
-  
-  
+
   const fetchScenarios = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/scenarios');
+      const response = await fetch("http://localhost:3000/api/scenarios");
       if (response.ok) {
         const data = await response.json();
         setScenarios(data);
       } else {
-        console.error('Failed to fetch scenarios');
+        console.error("Failed to fetch scenarios");
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   };
 
@@ -74,14 +71,11 @@ export const DisplayUserScenarios = () => {
     fetchScenarios();
   }, []);
 
-
-
   return (
     <div className="content-main fade-in-up">
       {/* only show scnearios for the user that is logged in */}
       <div className="scenarios-list">
         {scenarios.length > 0 ? (
-          
           scenarios.map((scenario, index) => (
             <div key={index} className="scenario-item">
               <h3>{scenario.scenario_name}</h3>
@@ -98,4 +92,3 @@ export const DisplayUserScenarios = () => {
     </div>
   );
 };
-
