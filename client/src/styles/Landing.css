@@ -1,0 +1,25 @@
+.container-landing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute; /* Positioned within root */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.content-landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 50px 0;
+}
+.content-landing > * {
+  margin: 20px;
+}
+
+p.landing {
+  font-size: large;
+}
