@@ -282,7 +282,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
                 {rothAccounts.map((account) => (
                   <SortableItem key={account.id} id={account.id} account={account} />
                 ))}
-              </div>
+              </ul>
             </SortableContext>
           </DndContext>
         </div>
