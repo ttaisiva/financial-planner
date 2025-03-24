@@ -18,8 +18,7 @@ const NewScenarioPage = () => {
     if (scenarioInfoRef.current) {
       scenarioInfoRef.current.handleSubmitUserInfo();
     } // scenario endpoint also pushes all local storage to database
-
-    navigate("/ViewScenarioPage");
+    navigate("/scenario");
   };
 
   const handleFileChange = (event) => {

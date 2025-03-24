@@ -40,6 +40,7 @@ async function createAccount(connection, payload, names) {
 router.post("/google/", async (req, res) => {
   const ticket = await verify(req).catch(console.error);
 
+
   // Once token is verified; Will create a session for user if account exists; create account then create session otherwise
   const connection = await connectToDatabase();
   // Logic for checking if account exists; Done using id (unique Google ID)
@@ -64,17 +65,23 @@ router.post("/google/", async (req, res) => {
   }
 });
 
+
 router.get("/logout/", async (req, res) => {
-  console.log("Logout", req.session.user);
-  req.session.destroy((err) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Error logging out");
-    } else {
-      res.send("Logged out");
+    console.log("Logout", req.session.user);
+    if (req.session.user) {
+        req.session.destroy((err) => {
+            if(err) {
+                console.error(err);
+                res.status(500).send('Error logging out');
+            } else {
+                res.send('Logged out');
+            }
+        })
     }
-  });
-});
+    else {
+        res.send("")
+    }
+})
 
 router.post("/createAccount/", async (req, res) => {
   const ticket = await verify(req).catch(console.error);
@@ -102,13 +109,25 @@ router.post("/createAccount/", async (req, res) => {
 });
 
 router.get("/isAuth/", async (req, res) => {
-  console.log("isAuth", req.session.user);
-  if (req.session.user == null) {
-    res.status(401).send();
-  } else {
-    res.status(302).send();
-  }
-});
+    console.log("isAuth", req.session.user);
+    if (req.session.user == null) {
+        res.json({ name: "Guest", lastName: "", email: "" });
+    }
+    else {
+        console.log("isAuth", req.session.user['id']);
+        const connection = await connectToDatabase();
+        const sql = "SELECT * FROM users WHERE id=?";
+        const params = [req.session.user['id']];
+        const [rows] = await connection.execute(sql, params);
+        console.log("rows", rows);
+        const data = {
+            name: rows[0].name,
+            lastName: rows[0].lastName,
+            email: rows[0].email
+        }
+        res.json(data);
+    }
+})
 
 async function authorize(req) {
   // Checks permissions

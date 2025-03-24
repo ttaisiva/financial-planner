@@ -21,14 +21,32 @@ window.handleToken = (response) => {
         // Need to finish account creation
         sessionStorage.setItem("userData", JSON.stringify(data.userdata));
         sessionStorage.setItem("credential", response.credential);
-        window.location.href = "/CreateAccount";
+        window.location.href = "/create/account";
       } else if (data.status == 200) {
         // Logged in
-        window.location.href = "/DashboardPage";
+        window.location.href = "/dashboard";
       }
     })
     .catch((error) => console.error("Error:", error));
 };
+
+export const handleGuest = (() => {
+  // Delete any existing sessions to activate guest usage
+  fetch('http://localhost:3000/auth/logout', {
+    method: 'GET',
+    credentials: 'include',
+  })
+  .then(res => {
+    if (res.status == 500) {
+      // ERROR DISPLAY; Unexpected server error
+      window.location.href = "/";
+    }
+    else {
+      // Successful session deletion
+      window.location.href = "/dashboard";
+    }
+  })
+});
 
 const LoginPage = () => {
   useEffect(() => {
@@ -69,7 +87,7 @@ const LoginPage = () => {
           <div id="button-google" className="fade-in"></div>
           <p className="fade-in">
             Don't want to login?
-            <Link to="/DashboardPage"> Continue as Guest</Link>
+            <Link onClick={handleGuest}> Continue as Guest</Link>
           </p>
         </div>
       </div>

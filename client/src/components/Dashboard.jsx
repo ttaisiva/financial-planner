@@ -6,14 +6,21 @@ import { loadAnimation } from "../utils";
 import { handleScenarioUpload } from "../utils";
 
 export const Dashboard = () => {
+  const [username, setUsername] = useState("undefined");
+
+
   useEffect(() => {
     loadAnimation();
+      
+    fetch("http://localhost:3000/auth/isAuth", {
+      method: "GET",
+      credentials: "include",
+    })
+    .then((res) => res.json())
+    .then((data) => {
+      setUsername(data.name);
+    });
   });
-
-  fetch("http://localhost:3000/auth/isAuth", {
-    method: "GET",
-    credentials: "include",
-  }).then((res) => console.log(res.status));
 
   return (
     <div className="container-dashboard">
@@ -104,7 +111,7 @@ const Popup = ({ togglePopup, isActive, toggleUpload }) => {
               existing Scenario YAML file.
             </p>
           </button>
-          <Link to="/NewScenarioPage">
+          <Link to="/create/scenario">
             <div className="button-popup">
               <h3>Create a Scenario from scratch</h3>
               <p>
@@ -148,7 +155,11 @@ export const DisplayUserScenarios = () => {
 
   const fetchScenarios = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/scenarios");
+      setScenarios([]); // Reset existing data before fetching new
+      const response = await fetch("http://localhost:3000/api/scenarios", {
+        method: "GET",
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         setScenarios(data);
@@ -166,23 +177,33 @@ export const DisplayUserScenarios = () => {
   }, []);
 
   return (
+
     <div className="content-dashboard fade-in">
-      {/* only show scnearios for the user that is logged in */}
       <div className="scenarios-list">
-        {scenarios.length > 0 ? (
-          scenarios.map((scenario, index) => (
+      {scenarios.length > 0 ? (
+          scenarios.map((scenario, index) => {
+            const renderFields = (fields) =>
+              fields
+                .filter(({ value }) => value != null)
+                .map(({ label, value }) => `${label}: ${value}`)
+                .join(', ');
+
+    
+          return (
             <div key={index} className="scenario-item">
-              <h3>{scenario.scenario_name}</h3>
-              <p>{scenario.financial_goal}</p>
-              <p>{scenario.filling_status}</p>
-              <p>{scenario.state_of_residence}</p>
-              {/* Add more fields as needed */}
+            <h3><strong>Scenario Name: </strong>{scenario.scenario_name}</h3>
+                
             </div>
-          ))
+            );
+        
+          })
         ) : (
           <p className="fade-in">No scenarios available</p>
-        )}
-      </div>
+      )}
     </div>
+    </div>
+
+
+
   );
 };
