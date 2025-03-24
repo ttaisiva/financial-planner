@@ -146,7 +146,7 @@ const EventsForm = ({ setShowEventsForm }) => {
         {formData.eventType === 'expense' && (
           <>
             <label>Discretionary</label>
-            <input type="checkbox" name="discretionaryExpense" value={formData.discretionaryExpense || ''} onChange={handleChange} />
+            <input type="checkbox" name="discretionary" value={formData.discretionary || ''} onChange={handleChange} />
           </>
         )}
 

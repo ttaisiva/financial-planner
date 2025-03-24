@@ -10,7 +10,7 @@ import { useSortable } from "@dnd-kit/sortable"; // dnd for individual items
 import { CSS } from "@dnd-kit/utilities"; // apply css to dnd items
 import "../styles/NewScenario.css";
 
-const Strategy = ({ investments }) => {
+const Strategy = ({ investments, showEventsForm }) => {
   // State to manage form data
   const [formData, setFormData] = useState({
     optimizer: false,
@@ -74,7 +74,8 @@ const Strategy = ({ investments }) => {
     <div>
       <h2>Strategies</h2>
 
-      <SpendingSettings setFormData={setFormData} expenses={expenses} setExpenses={setExpenses} />
+      <SpendingSettings setFormData={setFormData} expenses={expenses} setExpenses={setExpenses}
+        showEventsForm={showEventsForm} />
       <ExpenseWithdrawSettings formData={formData} setFormData={setFormData}
       expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
       <RothConversionSettings formData={formData} setFormData={setFormData} 
@@ -328,7 +329,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
 };
 
 // ordering on discretionary expenses
-const SpendingSettings = ({ setFormData, expenses, setExpenses }) => {
+const SpendingSettings = ({ setFormData, expenses, setExpenses, showEventsForm }) => {
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -342,7 +343,11 @@ const SpendingSettings = ({ setFormData, expenses, setExpenses }) => {
     };
 
     fetchExpenses();
-  }, []);
+  }, [showEventsForm]);
+
+  useEffect(() => {
+    console.log("expenses state updated", expenses)
+    }, [expenses]);
 
   // Drag and drop functionality
   const onDragEnd = (event) => {

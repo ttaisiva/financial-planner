@@ -34,6 +34,12 @@ router.post('/events', (req, res) => {
   res.status(200).json(eventsData);
 });
 
+router.get('/discretionary-expenses', (req, res) => {
+  console.log('Received request for locally stored discretionary expenses.')
+  const filtered = eventsLocalStorage.filter((event) => event.discretionary == true)
+  res.status(200).json(filtered);
+});
+
 router.post('/strategies', (req, res) => {
   eventsLocalStorage.push(req.body);
   console.log('Strategy data stored temporarily:', req.body);
