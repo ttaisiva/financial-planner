@@ -35,11 +35,21 @@ const EventsForm = ({ setShowEventsForm }) => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
+    // if (name === "startType" || name === "durationType") {
+    //   const prefix = name === "startType" ? "start" : "duration";
+    //   setFormData((prev) => ({
+    //     ...prev,
+    //     ...resetTypes(value, prefix),
+    //   }));
+    // }
     if (name === "startType" || name === "durationType") {
       const prefix = name === "startType" ? "start" : "duration";
+      const updatedFields = resetTypes(value, prefix);
+    
       setFormData((prev) => ({
         ...prev,
-        ...resetTypes(value, prefix),
+        [name]: value, // Save the type itself
+        ...updatedFields, // Reset only fields related to that prefix
       }));
     }
 
