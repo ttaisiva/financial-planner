@@ -28,8 +28,8 @@
 }
 
 .button-action {
-  border-radius: 8px !important;
-  padding: 0.6em 1.2em !important;
+  border-radius: 8px;
+  padding: 0.6em 1.2em;
   font-size: 1.25em;
   font-weight: 500;
   font-family: inherit;
@@ -43,7 +43,7 @@
   color: white;
 }
 
-.fade-in-up {
+.fade-in {
   opacity: 0;
   transform: translateY(20px);
   animation: fadeInUp 1s forwards;

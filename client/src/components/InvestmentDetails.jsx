@@ -5,7 +5,7 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
   const [formData, setFormData] = useState({
     investment_type: "",
     dollar_value: "",
-    tax_status: "Pre_Tax",
+    tax_status: "",
   });
 
 
@@ -96,10 +96,12 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
             name="tax_status"
             value={formData.tax_status}
             onChange={handleChange}
+            required
           >
-            <option value="Pre_Tax">Pre Tax</option>
-            <option value="Non_Retirement">Non Retirement</option>
-            <option value="After_Tax">After Tax</option>
+            <option value="" disabled>Select Tax Status</option>
+            <option value="Pre-Tax">Pre Tax</option>
+            <option value="Non-Retirement">Non Retirement</option>
+            <option value="After-Tax">After Tax</option>
           </select>
         </div>
         <button type="button" onClick={handleBack}>Back</button>
@@ -116,6 +118,7 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
     name: "",
     description: "",
     expAnnReturnType: "fixed",
+    expAnnReturnTypeAmtOrPct:"Amount",
     expAnnReturnValue: "",
     expAnnReturnStdDev: "",
     expAnnReturnMean: "",
@@ -123,6 +126,7 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
     expAnnIncomeType: "fixed",
     expAnnIncomeValue: "",
     expAnnIncomeStdDev: "",
+    expAnnIncomeTypeAmtOrPct:"Amount",
     expAnnIncomeMean: "",
     taxability: "taxable",
   });
@@ -230,7 +234,17 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
           </select>
         
           {formData.expAnnReturnType === "fixed" ? (
+
+              <>
+              
               <input type="number" min = "0" name="expAnnReturnValue" placeholder="0.0" value={formData.expAnnReturnValue} onChange={handleChange} required />
+                <select name="expAnnReturnAmtOrPct" value={formData.expAnnReturnAmtOrPct} onChange={handleChange} required>
+                  <option>Amount</option>
+                  <option>Percentage</option>
+                </select> 
+              </>
+            
+
               ) : formData.expAnnReturnType === "normal_distribution" ? (
               <>
                 <input type="number" min = "0" name= "expAnnReturnMean" placeholder="Enter mean" value={formData.expAnnReturnMean} onChange={handleChange} required />
@@ -255,7 +269,15 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
             <option value="normal_distribution">Normal Distribution</option>
           </select>
           {formData.expAnnIncomeType === "fixed" ? (
-              <input type="number" min = "0" name="expAnnIncomeValue" placeholder="0.0" value={formData.expAnnIncomeValue} onChange={handleChange} required />
+              <>
+                <input type="number" min = "0" name="expAnnIncomeValue" placeholder="0.0" value={formData.expAnnIncomeValue} onChange={handleChange} required />
+                <select name="expAnnIncomeAmtOrPct" value={formData.expAnnIncomeAmtOrPct} onChange={handleChange} required>
+                  <option>Amount</option>
+                  <option>Percentage</option>
+                </select> 
+              </>
+             
+
               ) : formData.expAnnIncomeType === "normal_distribution" ? (
               <>
                 <input type="number" min = "0" name= "expAnnIncomeMean" placeholder="Enter mean" value={formData.expAnnIncomeMean} onChange={handleChange} required />
@@ -283,46 +305,45 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
 
 
 
+
+
 export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
 
-  console.log("investments", investments);
-  console.log("investmentTypes", investmentTypes);
+  useEffect(() => {
+    console.log("investments", investments);
+  }, [investments]); // Logs when investments change
+
+  useEffect(() => {
+    console.log("investmentTypes", investmentTypes);
+  }, [investmentTypes]); // Logs when investmentTypes change
+
   return (
     <div className="p-4 border rounded-md mt-6">
-      <h3> Your Investment Types</h3>
+      <h3>Your Investment Types</h3>
       {investmentTypes.length > 0 ? (
-        <ul >
+        <ul>
           {investmentTypes.map((item, idx) => (
             <ul key={idx}>
-              <strong>{item.name} </strong>: 
-               {item.description}, Expected Annual Return: {item.expAnnReturnType === "fixed" ? `$${item.expAnnReturnValue}` : `Mean: ${item.expAnnReturnMean}, Std Dev: ${item.expAnnReturnStdDev}`}
-               , Expense Ratio: {item.expenseRatio}%
-              , Expected Annual Income: {item.expAnnIncomeType === "fixed" ? `$${item.expAnnIncomeValue}` : `Mean: ${item.expAnnIncomeMean}, Std Dev: ${item.expAnnIncomeStdDev}`}  
-                , Taxability: {item.taxability} 
-
+              <strong>{item.name}</strong>: 
+              {item.description}, Expected Annual Return: {item.expAnnReturnType === "fixed" ? `$${item.expAnnReturnValue}` : `Mean: ${item.expAnnReturnMean}, Std Dev: ${item.expAnnReturnStdDev}`}
+              , Expense Ratio: {item.expenseRatio}%, Expected Annual Income: {item.expAnnIncomeType === "fixed" ? `$${item.expAnnIncomeValue}` : `Mean: ${item.expAnnIncomeMean}, Std Dev: ${item.expAnnIncomeStdDev}`}  
+              , Taxability: {item.taxability}
             </ul>
           ))}
         </ul>
-      ) : (
-        null
-      )}
+      ) : null}
 
-      <h3> Your Investments </h3> 
+      <h3>Your Investments</h3>
       {investments.length > 0 ? (
-        <ul >
-          
+        <ul>
           {investments.map((item, idx) => (
             <ul key={idx}>
               <strong>{item.investment_type}</strong>: ${item.dollar_value}, ({item.tax_status})
             </ul>
           ))}
         </ul>
-      ) : (
-        null
-      )}
+      ) : null}
     </div>
   );
 };
-
-
 

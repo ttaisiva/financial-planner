@@ -45,7 +45,6 @@ export const handleFileUpload = (e) => {
 export const handleScenarioUpload = (e) => {
   handleFileUpload(e);
   //TODO: send scenario to database
-  
 };
 
 export const resetTypes = (type) => {
@@ -232,11 +231,16 @@ export const tooltipContent = {
 };
 
 /**
- * Staggers loading of elements based on vertical position on page. Give elements the "fade-in-up" class to make it apply
+ * Staggers loading of elements based on vertical position on page.
+ *
+ * How to use:
+ * - Put this in the code: useEffect(() => {loadAnimation()});
+ * - Then give elements the "fade-in" class to make it apply
+ *
  * TP: GitHub Copilot GPT-4o, prompt - "how to make elements fade in and up when page loads", "how can i make higher elements on the page load before lower elements"
  */
 export const loadAnimation = () => {
-  const elements = document.querySelectorAll(".fade-in-up");
+  const elements = document.querySelectorAll(".fade-in");
   elements.forEach((element) => {
     const rect = element.getBoundingClientRect();
     const delay = rect.top / window.innerHeight;

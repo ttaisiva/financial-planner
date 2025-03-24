@@ -6,16 +6,15 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
 }
 
 .content-dashboard {
   display: flex;
   width: 100%;
-  height: 80%;
+  height: 100%;
   flex-direction: column;
-  align-items: start;
-  margin: 0 2rem;
+  align-items: flex-start;
+  margin: 60px 2rem 0 2rem;
 }
 
 .header-dashboard {
@@ -25,13 +24,11 @@
   height: 3em;
   margin: 1rem 0 0 0;
   box-sizing: border-box;
-  /* background-color: aqua; */
 }
 
 h1.dashboard {
   font-weight: 200;
   font-size: 2.25rem;
-  /* background-color: red; */
 }
 
 h6.dashboard {
@@ -48,11 +45,13 @@ h6.dashboard {
   border-radius: 8px;
   border: 3px solid var(--primary-color);
   box-sizing: border-box;
+  background-color: var(--primary-color4);
 }
 .create-scenario:hover {
   background-color: var(--primary-color);
   color: white;
   transition: background-color 0.25s;
+  border: 3px solid var(--primary-color);
 }
 .create-scenario:hover .icon {
   display: none;
@@ -78,7 +77,115 @@ h6.dashboard {
   display: none;
 }
 
-.scenarios {
-  margin-top: 20px;
-  /* background-color: blueviolet; */
+.container-popup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute; /* Positioned within root */
+  width: 100%;
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  background-color: var(--bg-color);
+  opacity: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border-radius: 20px;
+  z-index: 9997;
+  transition: opacity 0.3s ease-in-out, transform 0.25s ease-in-out;
+  pointer-events: none;
+}
+.popup.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.content-popup {
+  display: flex;
+  flex-direction: column;
+}
+
+.button-popup {
+  border: 2px solid var(--primary-color3);
+  color: var(--text-color);
+  padding: 0.5rem;
+  align-items: center;
+  border-radius: 8px;
+  box-sizing: border-box;
+  background-color: var(--bg-color);
+  margin: 0.5rem;
+}
+.button-popup:hover {
+  background-color: var(--primary-color4);
+  transition: background-color 0.25s;
+}
+
+.btn-action-popup {
+  display: inline-block;
+  width: auto;
+  padding: 1rem 2rem;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 9996; /* overlay below popup (9998) and upload overlay (9999) */
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+.overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.popup-upload {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  background-color: var(--bg-color);
+  opacity: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border-radius: 20px;
+  z-index: 9999;
+  transition: opacity 0.3s ease-in-out, transform 0.25s ease-in-out;
+  pointer-events: none;
+}
+.popup-upload.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.upload-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 9998; /* overlay below upload which is 9999 */
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+.upload-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
 }
