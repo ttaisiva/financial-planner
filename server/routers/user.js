@@ -4,7 +4,7 @@ import fs from "fs";
 import multer from 'multer';
 import path from 'path';
 
-// ChatGPT; __dirname is not available
+// ChatGPT; __dirname is not available; prompt below
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -17,6 +17,17 @@ const __dirname = dirname(__filename);
 import { connectToDatabase } from "../server.js";
 
 // ChatGPT
+/*
+    Prompt 1:
+    how can i upload a file received from a client into the directory "upload" in the hierarchy
+    Server
+        Routers
+            user.js (called from here)
+        Upload (upload files here)
+
+    Prompt 2:
+        I am receiving an error that says __dirname is not defined, why is this happening
+*/
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -53,12 +64,15 @@ router.post("/upload/statetax/",  upload.single('file'), async (req, res) => {
         const [rows] = await connection.execute(sql, params);
        
         // ChatGPT
+        /*
+            i would like to rename this file using fs
+            i want the new file name to be req.session.user['id'] + "-taxbracket-" + (rows.length + 1) + ".yaml"
+        */
         const uniqueFileName = req.session.user['id'] + "-taxbracket-" + (rows.length + 1) + ".yaml"
         const newFileName = path.join(__dirname, '..', 'upload', uniqueFileName);
 
         console.log("NEW FILE NAME", newFileName)
 
-        // ChatGPT
         fs.rename(oldFileName, newFileName, function(err) {
             if (err) throw err;
             console.log('File renamed successfully');
@@ -88,9 +102,21 @@ router.get("/download/taxbrackets", async (req, res) => {
     await connection.end();
     console.log("file_name", file_names);
 
+    // ChatGPT
+    /*
+        Prompt 1:
+        im in a router, give me code that will retrieve all the files from file_paths and return it to client
+
+        Prompt 2:
+        can you do it without using promise.all
+
+        Prompt 3:
+        (copy pasted an error message regarding cb in fs.readFile)
+
+        At this point it was giving me more and more broken code when the only problem was i needed to change fs.readFile to fs.readFileSync
+    */
     const fileContents = [];
 
-        // Read files sequentially (one by one)
     for (const file of file_names) {
         try {
             const filePath = path.join(__dirname, '..', 'upload', file.file_name);

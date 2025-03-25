@@ -515,8 +515,18 @@ router.get('/get-investments', (req, res) => {
   const { taxStatus } = req.query;
   console.log(taxStatus)
 
-  // Filter investments from local storage
-  const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status));
+  
+  // Check if there's at least one investment with a tax status from taxStatus
+  const hasMatchingInvestments = investmentsLocalStorage.some(investment =>
+    taxStatus && investment.tax_status && taxStatus.includes(investment.tax_status)
+  );
+
+  // If there are matching investments, proceed with filtering; otherwise, return an empty array
+  const filteredInvestments = hasMatchingInvestments
+    ? investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status))
+    : [];
+    
+  //const filteredInvestments = investmentsLocalStorage.filter(investment => taxStatus.includes(investment.tax_status));
 
   res.json(filteredInvestments);
   console.log(`Sent investments tax statuses ${taxStatus} to client:`, filteredInvestments);

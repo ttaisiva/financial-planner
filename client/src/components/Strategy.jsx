@@ -9,6 +9,8 @@ import {
 import { useSortable } from "@dnd-kit/sortable"; // dnd for individual items
 import { CSS } from "@dnd-kit/utilities"; // apply css to dnd items
 import "../styles/NewScenario.css";
+import { Tooltip as ReactTooltip } from "react-tooltip";
+import {tooltipContent} from "../utils";
 
 const Strategy = ({ investments, showEventsForm }) => {
   // State to manage form data
@@ -195,7 +197,16 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
         <div>
           <p>To meet required minimum distributions, assets will be transferred out of 
           your pre-tax retirement accounts into after-tax accounts in the following 
-          order. <br></br> Drag the investments into your preferred order below:</p>
+          order. <br></br> Drag the investments into your preferred order below:
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.rmdStrategy}
+              className="info-icon"
+            >
+              ℹ️
+            </span>
+            <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />  
+          </p>
           {/* Drag and drop mechanism */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext key={rmdAccounts.map(a => a.id).join(",")} items={rmdAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
@@ -270,6 +281,10 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
       <div>
         <div>
             <h3> Roth Conversion Optimizer</h3>
+            <p>Roth conversion is a strategic movement of assets from pre-tax to after-tax
+              investment accounts that may help to minimize your cumulative income tax. 
+              <br></br>Enable the Roth Conversion Optimizer to see if this strategy may benefit you.
+            </p>
             <button type="button" onClick={handleOptimizerToggle}>
               {formData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
             </button>
