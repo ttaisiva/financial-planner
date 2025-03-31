@@ -104,11 +104,33 @@ export async function createTablesIfNotExist(connection) {
     );
   `;
 
+
   //allocation_type VARCHAR(255) CHECK (allocation_type IN ('fixed', 'glide_path')), <- take a look
+
+  // spending strategy (ordering on discretionary expenses), 
+  // expense withdrawal strategy (order in which ivestments are sold to generate cash)
+  // Roth conversion strategy
+  // RMD strategy 
+  const createStrategyTable = `
+    CREATE TABLE IF NOT EXISTS strategy (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      scenario_id INT,
+      strategy_type VARCHAR(255) NOT NULL,
+      investment_id INT DEFAULT NULL, -- applies to investment-based strategies
+      expense_id INT DEFAULT NULL,    -- applies to spending strategie
+      strategy_order INT NOT NULL,    -- indicates the order
+      FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id),
+      FOREIGN KEY (investment_id) REFERENCES investments(id),
+      FOREIGN KEY (expense_id) REFERENCES events(id)
+    );
+
+  `;
 
   // Create tables
   await connection.execute(createUserScenarioInfoTable);
   await connection.execute(createInvestmentsTable);
   await connection.execute(createInvestmentTypesTable);
   await connection.execute(createEventsTable);
+  await connection.execute (createStrategyTable);
+
 }

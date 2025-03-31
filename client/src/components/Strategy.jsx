@@ -25,7 +25,7 @@ const Strategy = ({ investments, showEventsForm }) => {
   const [expAccounts, setExpAccounts] = useState([]);
   const [expenses, setExpenses] = useState([]);
 
-  // update form before sending to server
+  // update form before sending to server 
   useEffect(() => {
     if(formData.optimizer) {
       setFormData((prevData) => ({
