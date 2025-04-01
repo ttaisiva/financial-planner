@@ -192,12 +192,12 @@ const ScenarioInfo = forwardRef((props, ref) => {
       retirementAgeStdDev: "",
     },
     inflation_assumption: {
-      type: "", 
-      value: "", 
-      mean: "",  
-      stdev: "", 
-      lower: "", 
-      upper: "", 
+      Type: "", 
+      Value: "", 
+      Mean: "",  
+      StdDev: "", 
+      Lower: "", 
+      Upper: "", 
     }
   });
 
@@ -219,13 +219,14 @@ const ScenarioInfo = forwardRef((props, ref) => {
   // Helper function to update nested state objects
   const updateNestedState = (prefix, key, value) => {
 
+    console.log("prefix ", prefix)
     setFormData((prevData) => {
     
       const updated = {
         ...prevData,
         [prefix]: { ...prevData[prefix], [key]: value },
       };
-    
+      console.log("updated ", updated)
       return updated;
     }); 
   };
@@ -236,11 +237,14 @@ const ScenarioInfo = forwardRef((props, ref) => {
     const { name, value } = e.target;
 
     if (name.startsWith("inflation_assumption")) {
-      const key = name.replace("inflation_assumption.", "");
+      let key = name.replace("inflation_assumption", "");
+      if (!key) { key = "Type"; }
+      console.log("key", key)
+
+      console.log("value", value)
       updateNestedState("inflation_assumption", key, value);
 
-    }
-    if (name.startsWith("user")) {
+    } else if (name.startsWith("user")) {
       const key =
         name.replace("user", "").charAt(0).toLowerCase() +
         name.replace("user", "").slice(1);
@@ -254,7 +258,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       //update all other fields
       setFormData({ ...formData, [name]: value });
     }
-    
+
     
     // Reset values when switching from "fixed" to "distribution"
     if (name.endsWith("LifeExpectancyType") && value === "fixed") {
@@ -527,14 +531,15 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
         <div>
           <label>Inflation Assumption: </label>
-          <select name="inflation_assumption" value={formData.inflation_assumption} onChange={handleChange}>
+          <select name="inflation_assumption" value={formData.inflation_assumption.Type} onChange={handleChange} required>
             <option value="" disabled>Select format</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
 
-          {inputTypes({ type: formData.inflation_assumption, formData, handleChange, prefix: "inflation_assumption"  })}
+          {inputTypes({ type: formData.inflation_assumption.Type, formData, handleChange, prefix: "inflation_assumption"  })}
+          {console.log("form Data", formData)}
         </div>
 
 

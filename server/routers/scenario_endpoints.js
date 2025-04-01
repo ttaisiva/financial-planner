@@ -89,6 +89,7 @@ router.post("/user-scenario-info", async (req, res) => {
     stateOfResidence,
     userData,
     spouseData,
+    inflation_assumption
   } = req.body;
 
   const query = `
@@ -97,8 +98,10 @@ router.post("/user-scenario-info", async (req, res) => {
       user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev,
       user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev,
       spouse_life_expectancy_type, spouse_life_expectancy_value, spouse_life_expectancy_mean, spouse_life_expectancy_std_dev,
-      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev,
+      inflation_assumption_type, inflation_assumption_value, inflation_assumption_mean, inflation_assumption_stdev,
+      inflation_assumption_lower, inflation_assumption_upper
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ? ,?)
   `;
 
   const values = [
@@ -123,6 +126,12 @@ router.post("/user-scenario-info", async (req, res) => {
     spouseData.retirementAgeValue || null,
     spouseData.retirementAgeMean || null,
     spouseData.retirementAgeStdDev || null,
+    inflation_assumption.Type || null,
+    inflation_assumption.Value || null, 
+    inflation_assumption.Mean || null, 
+    inflation_assumption.StdDev || null, 
+    inflation_assumption.Upper || null, 
+    inflation_assumption.Lower || null, 
   ];
 
 

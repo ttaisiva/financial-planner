@@ -42,6 +42,12 @@ export async function createTablesIfNotExist(connection) {
     spouse_retirement_age_value DECIMAL(10, 2),
     spouse_retirement_age_mean DECIMAL(10, 2),
     spouse_retirement_age_std_dev DECIMAL(10, 2),
+    inflation_assumption_type VARCHAR(255),
+    inflation_assumption_value DECIMAL(10, 2),
+    inflation_assumption_mean DECIMAL(10, 2),
+    inflation_assumption_stdev DECIMAL(10, 2),
+    inflation_assumption_lower DECIMAL(10, 2),
+    inflation_assumption_upper DECIMAL(10, 2),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 `;

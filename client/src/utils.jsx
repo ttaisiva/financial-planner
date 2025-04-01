@@ -51,6 +51,8 @@ export const handleScenarioUpload = (e) => {
 
 export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 
+  console.log('type', type)
+  console.log("prefix", prefix);
   switch (type) {
     case "fixed":
       return (
