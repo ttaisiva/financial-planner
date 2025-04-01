@@ -47,44 +47,10 @@ export const handleScenarioUpload = (e) => {
   //TODO: send scenario to database
 };
 
-// export const resetTypes = (type) => {
-//   switch (type) {
-//     case "fixed":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     case "normal_distribution":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     case "uniform_distribution":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     default:
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//   }
-// };
+
 
 export const inputTypes = ({ type, formData, handleChange, prefix }) => {
+
   switch (type) {
     case "fixed":
       return (
