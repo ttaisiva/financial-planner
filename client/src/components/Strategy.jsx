@@ -15,11 +15,15 @@ import {tooltipContent} from "../utils";
 const Strategy = ({ investments, showEventsForm }) => {
   // State to manage form data
   const [formData, setFormData] = useState({
-    optimizer: false,
-    rothConversionStrat: [],
     rmdStrat: [],
     expenseWithdrawalStrat: [],
     spendingStrat: [],
+  });
+  const [rothData, setRothData] = useState({
+    optimizer: false,
+    rothStartYear: "",
+    rothEndYear: "",
+    rothConversionStrat: [],
   });
   // for rendering investments to order
   const [rothAccounts, setRothAccounts] = useState([]);
@@ -46,6 +50,38 @@ const Strategy = ({ investments, showEventsForm }) => {
       }));
     }
   }, [rothAccounts, rmdAccounts, expAccounts, expenses]);
+
+  // Roth Strategy Updates
+  useEffect(() => {
+      setRothData((prevData) => ({
+        ...prevData,
+        rothConversionStrat: rothAccounts,
+      }));
+  }, [rothAccounts]);
+
+    // Roth Strategy Updates sent to ser
+    useEffect(() => {
+      const updateStrategySettings = async () => {
+        try {
+          const response = await fetch("http://localhost:3000/api/roth-strategy", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(rothData), // Now it uses the latest formData
+          });
+  
+          if (response.ok) {
+            console.log("Roth strategy settings updated successfully");
+          } else {
+            console.error("Failed to update Roth strategy settings");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      };
+        updateStrategySettings();
+    }, [rothData]);
   
   // send updated settings to server whenever formData updates
   useEffect(() => {
@@ -80,7 +116,7 @@ const Strategy = ({ investments, showEventsForm }) => {
         showEventsForm={showEventsForm} />
       <ExpenseWithdrawSettings formData={formData} setFormData={setFormData}
       expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
-      <RothConversionSettings formData={formData} setFormData={setFormData} 
+      <RothConversionSettings rothData={rothData} setRothData={setRothData} 
         rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
       <RMDSettings formData={formData} setFormData={setFormData} rmdAccounts={rmdAccounts}
         setRmdAccounts={setRmdAccounts} investments={investments} rothAccounts={rothAccounts}/>
@@ -89,14 +125,6 @@ const Strategy = ({ investments, showEventsForm }) => {
 };
 
 const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccounts, setExpAccounts}) => {
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
 
   useEffect(() => {
     const fetchInvestments = async () => {
@@ -151,14 +179,6 @@ const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccount
 
 
 const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, investments, rothAccounts }) => {
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
 
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
@@ -231,10 +251,10 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
 }      
 
 // both roth and rmd are ordering on pre tax retirement rothAccounts - share drag and drop component
-const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAccounts, investments }) => {
+const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAccounts, investments }) => {
 
   const handleOptimizerToggle = () => {
-    setFormData((prevData) => ({
+    setRothData((prevData) => ({
       ...prevData,
       optimizer: !prevData.optimizer,
     }));
@@ -242,7 +262,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
+    setRothData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
@@ -286,10 +306,10 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
               <br></br>Enable the Roth Conversion Optimizer to see if this strategy may benefit you.
             </p>
             <button type="button" onClick={handleOptimizerToggle}>
-              {formData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
+              {rothData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
             </button>
           </div>
-          {formData.optimizer && (
+          {rothData.optimizer && (
             <div>
               <div>
                 <label>Start year:</label>
@@ -297,7 +317,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
                   type="number"
                   name="RothStartYear"
                   placeholder="Enter year"
-                  value={formData.RothStartYear || ""}
+                  value={rothData.RothStartYear || ""}
                   onChange={handleChange}
                   required
                 />
@@ -308,7 +328,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
                   type="number"
                   name="RothEndYear"
                   placeholder="Enter year"
-                  value={formData.RothEndYear || ""}
+                  value={rothData.RothEndYear || ""}
                   onChange={handleChange}
                   required
                 />
@@ -318,7 +338,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
       </div>
 
       {/* Ordering Strategy */}
-      {formData.optimizer && rothAccounts && (
+      {rothData.optimizer && rothAccounts && (
         <div>
           <p>
             Assets will be transferred out of your pre-tax retirement accounts

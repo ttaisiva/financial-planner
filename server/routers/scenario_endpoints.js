@@ -8,7 +8,8 @@ const router = express.Router();
 let investmentsLocalStorage = [];
 let investmentTypesLocalStorage = [];
 let eventsLocalStorage = [];
-let strategyLocalStorage = [];
+let strategyLocalStorage = []; // get rid
+let rothLocalStorage = [];
 
 
 // Route to handle temporary storage: 
@@ -42,9 +43,17 @@ router.get('/discretionary-expenses', (req, res) => {
   res.status(200).json(filtered);
 });
 
+// todo get rid of this
 router.post('/strategies', (req, res) => {
   strategyLocalStorage.push(req.body);
   console.log('Strategy data stored temporarily.');
+  res.status(200).json(req.body);
+});
+
+router.post('/roth-strategy', (req, res) => {
+  rothLocalStorage = (req.body);
+  console.log(rothLocalStorage);
+  console.log('Roth strategy data stored temporarily.');
   res.status(200).json(req.body);
 });
 
