@@ -1,72 +1,170 @@
 import "../styles/NewScenario.css";
-import React, { useState } from "react";
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+} from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import EventsForm from "./EventsForm";
-import { InvestmentType, Investment } from "./InvestmentDetails";
-import { states, tooltipContent, handleFileUpload } from "../utils";
+import {
+  InvestmentType,
+  Investment,
+  ViewInvestmentDetails,
+} from "./InvestmentDetails";
+import {
+  states,
+  tooltipContent,
+  handleFileUpload,
+  loadAnimation,
+} from "../utils";
 import Strategy from "./Strategy";
 
-
-
 const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
-  <div>
-    <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} life expectancy: </label>
+  <div className="section-new-scenario">
+    <label>
+      <h4>
+        {" "}
+        {(prefix === "user" && "Your") ||
+          (prefix === "spouse" && "Spouse's")}{" "}
+        life expectancy:{" "}
+      </h4>
+    </label>
 
-    <select name={`${prefix}LifeExpectancyType`} value={data.lifeExpectancyType} onChange={handleChange}>
-      <option value="" disabled>Select sample life expectancy</option>
-      <option value="fixed">Fixed</option>
-      <option value="dist">Normal Distribution</option>
-    </select>
-    <span data-tooltip-id="tooltip" data-tooltip-content={tooltipContent.lifeExpectancy} className="info-icon">ℹ️</span>
-      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+    <div>
+      <select
+        name={`${prefix}LifeExpectancyType`}
+        value={data.lifeExpectancyType}
+        onChange={handleChange}
+      >
+        <option value="" disabled>
+          Select sample life expectancy
+        </option>
+        <option value="fixed">Fixed</option>
+        <option value="dist">Normal Distribution</option>
+      </select>
 
+      <span
+        data-tooltip-id="tooltip"
+        data-tooltip-content={tooltipContent.lifeExpectancy}
+        className="info-icon"
+      >
+        ℹ️
+      </span>
+    </div>
+
+    <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
     {data.lifeExpectancyType === "fixed" ? (
-      <input type="number" min = "0" name={`${prefix}LifeExpectancyValue`} placeholder="Enter value" value={data.lifeExpectancyValue} onChange={handleChange} required />
+      <input
+        type="number"
+        min="0"
+        name={`${prefix}LifeExpectancyValue`}
+        placeholder="Enter value"
+        value={data.lifeExpectancyValue}
+        onChange={handleChange}
+        required
+      />
     ) : data.lifeExpectancyType === "dist" ? (
       <>
-        <input type="number" min = "0" name={`${prefix}LifeExpectancyMean`} placeholder="Enter mean" value={data.lifeExpectancyMean} onChange={handleChange} required />
-        <input type="number" min = "0" name={`${prefix}LifeExpectancyStdDev`} placeholder="Enter standard deviation" value={data.lifeExpectancyStdDev} onChange={handleChange} required />
+        <input
+          type="number"
+          min="0"
+          name={`${prefix}LifeExpectancyMean`}
+          placeholder="Enter mean"
+          value={data.lifeExpectancyMean}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="number"
+          min="0"
+          name={`${prefix}LifeExpectancyStdDev`}
+          placeholder="Enter standard deviation"
+          value={data.lifeExpectancyStdDev}
+          onChange={handleChange}
+          required
+        />
       </>
     ) : null}
-    {/* TODO: make one variable that tracks the type: percentage or amount*/}
-    <select>
-      <option name={`${prefix}LifeExpectancyPercentage`} value="percentage">Percentage</option>
-      <option name={`${prefix}LifeExpectancyAmount`} value="amount">Amount</option>
-    </select>
   </div>
 );
 
 const RetirementAgeForm = ({ prefix, data, handleChange }) => (
-  <div>
-    <label> {(prefix=='user' && "Your") || (prefix=='spouse' && "Spouse's")} retirement age: </label>
+  <div className="section-new-scenario">
+    <label>
+      <h4>
+        {" "}
+        {(prefix === "user" && "Your") ||
+          (prefix === "spouse" && "Spouse's")}{" "}
+        retirement age:{" "}
+      </h4>
+    </label>
 
-    <select name={`${prefix}RetirementAge`} value={data.retirementAge} onChange={handleChange}>
-      <option value="" disabled>Select sample retirement age</option>
-      <option value="fixed">Fixed</option>
-      <option value="dist">Normal Distribution</option>
-    </select>
-    <span data-tooltip-id="tooltip" data-tooltip-content={tooltipContent.retirementAge} className="info-icon">ℹ️</span>
-      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+    <div>
+      <select
+        name={`${prefix}RetirementAge`}
+        value={data.retirementAge}
+        onChange={handleChange}
+      >
+        <option value="" disabled>
+          Select sample retirement age
+        </option>
+        <option value="fixed">Fixed</option>
+        <option value="dist">Normal Distribution</option>
+      </select>
+      <span
+        data-tooltip-id="tooltip"
+        data-tooltip-content={tooltipContent.retirementAge}
+        className="info-icon"
+      >
+        ℹ️
+      </span>
+    </div>
 
+    <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
     {data.retirementAge === "fixed" ? (
-      <input type="number" min = "0" name={`${prefix}RetirementAgeValue`} placeholder="Enter value" value={data.retirementAgeValue} onChange={handleChange} required />
+      <input
+        type="number"
+        min="0"
+        name={`${prefix}RetirementAgeValue`}
+        placeholder="Enter value"
+        value={data.retirementAgeValue}
+        onChange={handleChange}
+        required
+      />
     ) : data.retirementAge === "dist" ? (
       <>
-        <input type="number" min = "0" name={`${prefix}RetirementAgeMean`} placeholder="Enter mean" value={data.retirementAgeMean} onChange={handleChange} required />
-        <input type="number" min = "0" name={`${prefix}RetirementAgeStdDev`} placeholder="Enter standard deviation" value={data.retirementAgeStdDev} onChange={handleChange} required />
+        <input
+          type="number"
+          min="0"
+          name={`${prefix}RetirementAgeMean`}
+          placeholder="Enter mean"
+          value={data.retirementAgeMean}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="number"
+          min="0"
+          name={`${prefix}RetirementAgeStdDev`}
+          placeholder="Enter standard deviation"
+          value={data.retirementAgeStdDev}
+          onChange={handleChange}
+          required
+        />
       </>
     ) : null}
-    <select>
-      <option value="RetirementAgePercentage">Percentage</option>
-      <option value="RetirementAgeAmount">Amount</option>
-    </select>
   </div>
 );
 
+const ScenarioInfo = forwardRef((props, ref) => {
+  useEffect(() => {
+    loadAnimation();
+  });
 
-const ScenarioInfo = () => {
   // State to manage form data
   const [formData, setFormData] = useState({
+    scenarioName: "",
     financialGoal: "",
     filingStatus: "single",
     stateOfResidence: "",
@@ -96,6 +194,8 @@ const ScenarioInfo = () => {
   const [showEventsForm, setShowEventsForm] = useState(false);
   const [showInvestmentTypeForm, setShowInvestmentTypeForm] = useState(false);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
+  const [investments, setInvestments] = useState([]);
+  const [investmentTypes, setInvestmentTypes] = useState([]);
 
   const handleAddSpouse = () => {
     setShowSpouseForm(!showSpouseForm);
@@ -113,62 +213,97 @@ const ScenarioInfo = () => {
     }));
   };
 
-
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     //specific updates for user and spouse
     if (name.startsWith("user")) {
-      const key = name.replace("user", "").charAt(0).toLowerCase() + name.replace("user", "").slice(1);
+      const key =
+        name.replace("user", "").charAt(0).toLowerCase() +
+        name.replace("user", "").slice(1);
       updateNestedState("userData", key, value);
     } else if (name.startsWith("spouse")) {
-      const key = name.replace("spouse", "").charAt(0).toLowerCase() + name.replace("spouse", "").slice(1);
+      const key =
+        name.replace("spouse", "").charAt(0).toLowerCase() +
+        name.replace("spouse", "").slice(1);
       updateNestedState("spouseData", key, value);
-    } else { //update all other fields
+    } else {
+      //update all other fields
       setFormData({ ...formData, [name]: value });
     }
 
     // Reset values when switching from "fixed" to "distribution"
     if (name.endsWith("LifeExpectancyType") && value === "fixed") {
-      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "lifeExpectancyMean", "");
-      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "lifeExpectancyStdDev", "");
+      updateNestedState(
+        name.startsWith("user") ? "userData" : "spouseData",
+        "lifeExpectancyMean",
+        ""
+      );
+      updateNestedState(
+        name.startsWith("user") ? "userData" : "spouseData",
+        "lifeExpectancyStdDev",
+        ""
+      );
     } else if (name.endsWith("LifeExpectancyType") && value === "dist") {
-      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "lifeExpectancyValue", "");
+      updateNestedState(
+        name.startsWith("user") ? "userData" : "spouseData",
+        "lifeExpectancyValue",
+        ""
+      );
     }
     if (name.endsWith("RetirementAge") && value === "fixed") {
-      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "retirementAgeMean", "");
-      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "retirementAgeStdDev", "");
+      updateNestedState(
+        name.startsWith("user") ? "userData" : "spouseData",
+        "retirementAgeMean",
+        ""
+      );
+      updateNestedState(
+        name.startsWith("user") ? "userData" : "spouseData",
+        "retirementAgeStdDev",
+        ""
+      );
     } else if (name.endsWith("RetirementAge") && value === "dist") {
-      updateNestedState(name.startsWith("user") ? "userData" : "spouseData", "retirementAgeValue", "");
+      updateNestedState(
+        name.startsWith("user") ? "userData" : "spouseData",
+        "retirementAgeValue",
+        ""
+      );
     }
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmitUserInfo = async (e) => {
+    if (e) e.preventDefault();
     console.log("User Scenario Info Submitted:", formData);
 
     try {
       const response = await fetch('http://localhost:3000/api/user-scenario-info', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
-      });
+        body: JSON.stringify(formData)
+      })
+
+      console.log(response);
 
       if (response.ok) {
-        console.log('User details saved successfully');
+        console.log("User details saved successfully");
       } else {
-        console.error('Failed to save user details');
+        console.error("Failed to save user details");
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
 
     console.log("Form Submitted with Data:", formData);
   };
+
+  // Expose handleSubmitUserInfo to parent component
+  useImperativeHandle(ref, () => ({
+    handleSubmitUserInfo,
+  }));
 
   const handleInvestmentType = () => {
     setShowInvestmentTypeForm(true);
@@ -179,64 +314,110 @@ const ScenarioInfo = () => {
   };
 
   return (
-    <div className="scenario_info-container">
-      <h2>Financial goal</h2>
-    
-        <p>
-          Your financial goal is the extra amount you would like to have left over after meeting all expenses. <br></br>
-          A zero financial goal means you will meet all of your expenses without a safety margin.
-          <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.financialGoal} className="info-icon">⚠️</span>
-          
-        </p>
-        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-      
+    <div className="section-new-scenario">
+      <form onSubmit={handleSubmitUserInfo}>
+        <h1 className="fade-in">New Scenario</h1>
+        <label>
+          <h2 className="fade-in">Scenario Name</h2>
+        </label>
+        <div className="fade-in">
+          <input
+            type="text"
+            name="scenarioName"
+            value={formData.scenarioName}
+            placeholder="Enter scenario name"
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      <form onSubmit={handleSubmit}>
-        <div>
+        <h2 className="fade-in">Financial goal</h2>
+        <div className="fade-in">
+          <p>
+            Your financial goal is the extra amount you would like to have left
+            over after meeting all expenses. <br />A zero financial goal means
+            you will meet all of your expenses without a safety margin.
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.financialGoal}
+              className="info-icon"
+            >
+              ℹ️
+            </span>
+          </p>
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+
           <label>
-            Financial goal: $ 
+            <h4>Financial goal (in $):</h4>
+          </label>
+          <div>
             <input
               type="number"
-              min = "0"
+              min="0"
               name="financialGoal"
               value={formData.financialGoal}
               onChange={handleChange}
               placeholder="0.00"
               required
             />
-          </label>
+          </div>
         </div>
 
-        <h2>Tax Information</h2>
-        <p>
-          Your tax information will be used to compute federal and state income
-          taxes, capital gains taxes, and early withdrawal taxes where applicable. 
-          <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxInfo} className="info-icon">⚠️</span>
-          
-        </p>
-        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-        
-        {/* TODO: implement logic so if residence is not already accounted for from scraped data, user has the option to upload a YAML file
-        Display warning if the user chooses not to do this */}
-        <label>Choose your state of residence (optional) 
-          <select name="stateOfResidence" value={formData.stateOfResidence} onChange={handleChange}>
-            <option value="">Select your state</option>
-            {states.map((state) => (
-              <option key={state.code} value={state.code}>
-                {state.name}
-              </option>
-            ))}
-          </select>
-          <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.taxState} className="info-icon">ℹ️</span>
+        <h2 className="fade-in">Tax Information</h2>
+        <div className="fade-in">
+          <p>
+            Your tax information will be used to compute federal and state
+            income taxes, capital gains taxes, and early withdrawal taxes where
+            applicable.
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.taxInfo}
+              className="info-icon"
+            >
+              ℹ️
+            </span>
+          </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-        </label>
 
-        {/*TODO add tooltip for file upload: something like "only .yaml file accepted" */}
-        <input type="file" accept=".yaml,.yml" onChange={(e) => handleFileUpload(e)} />
-
-        <div>
           <label>
-            Filing Status: 
+            <h4>Choose your state of residence (optional):</h4>
+          </label>
+
+          <div>
+            <select
+              name="stateOfResidence"
+              value={formData.stateOfResidence}
+              onChange={handleChange}
+            >
+              <option value="">Select your state</option>
+              {states.map((state) => (
+                <option key={state.code} value={state.code}>
+                  {state.name}
+                </option>
+              ))}
+            </select>
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.taxState}
+              className="info-icon"
+            >
+              ℹ️
+            </span>
+          </div>
+
+          <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+
+          <input
+            type="file"
+            accept=".yaml,.yml"
+            onChange={(e) => handleFileUpload(e)}
+          />
+
+          <label>
+            <h4>Filing Status:</h4>
+          </label>
+
+          <div>
             <select
               name="filingStatus"
               value={formData.filingStatus}
@@ -246,70 +427,124 @@ const ScenarioInfo = () => {
               <option value="single">Single</option>
               <option value="married">Married</option>
             </select>
-            <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.filingStatus} className="info-icon">ℹ️</span>
-            <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-          </label>
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.filingStatus}
+              className="info-icon"
+            >
+              ℹ️
+            </span>
+            <ReactTooltip
+              id="tooltip"
+              place="right"
+              type="info"
+              effect="solid"
+            />
+          </div>
         </div>
 
-        <div>
-          <h2>Major Life Events </h2>
+        <h2 className="fade-in">Major Life Events </h2>
+        <div className="fade-in">
           <p>
-            Event simulation will begin in the current year. <br></br>
+            Event simulation will begin in the current year. <br />
             Please estimate your desired retirement age and lifespan in years.
-            <span data-tooltip-id="tooltip" data-tooltip-html={tooltipContent.startYearTax} className="info-icon">⚠️</span>
-            
+            <span
+              data-tooltip-id="tooltip"
+              data-tooltip-html={tooltipContent.startYearTax}
+              className="info-icon"
+            >
+              ℹ️
+            </span>
           </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
-          <LifeExpectancyForm prefix="user" data={formData.userData} handleChange={handleChange} />
-          <RetirementAgeForm prefix="user" data={formData.userData} handleChange={handleChange} />
+          <LifeExpectancyForm
+            prefix="user"
+            data={formData.userData}
+            handleChange={handleChange}
+          />
+          <RetirementAgeForm
+            prefix="user"
+            data={formData.userData}
+            handleChange={handleChange}
+          />
         </div>
 
-        {/* Add Spouse Button */}
-        <div>
+        <h2 className="fade-in">Add Spouse</h2>
+        <div className="fade-in">
           <button type="button" onClick={handleAddSpouse}>
             {showSpouseForm ? "Remove Spouse" : "Add Spouse"}
           </button>
         </div>
 
-        {/* Spouse Form (conditional display based on showSpouseForm state) */}
         {showSpouseForm && (
           <div>
             <h3>Spouse Information</h3>
-            <LifeExpectancyForm prefix="spouse" data={formData.spouseData} handleChange={handleChange} />
-            <RetirementAgeForm prefix="spouse" data={formData.spouseData} handleChange={handleChange} />
+            <LifeExpectancyForm
+              prefix="spouse"
+              data={formData.spouseData}
+              handleChange={handleChange}
+            />
+            <RetirementAgeForm
+              prefix="spouse"
+              data={formData.spouseData}
+              handleChange={handleChange}
+            />
           </div>
         )}
-       <button type="submit">Run Simulation</button>
       </form>
 
+      <h2 className="fade-in">Investment Types and Investments</h2>
+      <div className="fade-in">
+        <button onClick={handleInvestmentType}>New Investment Type</button>
+        {showInvestmentTypeForm && (
+          <InvestmentType
+            investmentTypes={investmentTypes}
+            setInvestmentTypes={setInvestmentTypes}
+            setShowInvestmentTypeForm={setShowInvestmentTypeForm}
+          />
+        )}
+      </div>
 
-      <h2> Investment Types and Investments </h2>
-      <p>
-        Add your investments here. <br></br>
-        Create your own type of investments with New Investment Type.
+      <div className="fade-in">
+        <button onClick={handleInvestment}>New Investment</button>
+        {showInvestmentForm && (
+          <Investment
+            investments={investments}
+            setInvestments={setInvestments}
+            setShowInvestmentForm={setShowInvestmentForm}
+          />
+        )}
+      </div>
+      <div>
+        <ViewInvestmentDetails investments={investments} investmentTypes={investmentTypes} />
+      </div>
+
+      <h2 className="fade-in">Event Series</h2>
+      <p> Event series is a sequence of annual events. You may choose income, expense, invest,
+        or rebalance events that will happen every year within a desired time range.
+        <span
+          data-tooltip-id="tooltip"
+          data-tooltip-html={tooltipContent.eventSeries}
+          className="info-icon"
+        >
+          ℹ️
+        </span>
+        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+
       </p>
-      <button onClick={handleInvestmentType}>New Investment Type</button>
-      {showInvestmentTypeForm && (
-        <InvestmentType setShowInvestmentTypeForm={setShowInvestmentTypeForm} />
-      )}
+      
 
-      <button onClick={handleInvestment}>New Investment</button>
-      {showInvestmentForm && (
-        <Investment setShowInvestmentForm={setShowInvestmentForm} />
-      )}
-
-      <h2> Event Series</h2>
-      <button onClick={handleCreateEvent}>New Event</button>
-      {showEventsForm && <EventsForm setShowEventsForm={setShowEventsForm} />}
-
-      <Strategy/>      
-     
-
+      <div className="fade-in">
+        <button  onClick={handleCreateEvent} > Create Event </button>
+        {showEventsForm && <EventsForm setShowEventsForm={ setShowEventsForm }/>}
+      </div>
+    
+      <div className="fade-in">
+        <Strategy investments={investments} showEventsForm={showEventsForm} />
+      </div>
     </div>
   );
-};
+});
 
 export default ScenarioInfo;
-
-
