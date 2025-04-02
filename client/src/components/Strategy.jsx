@@ -13,11 +13,7 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import {tooltipContent} from "../utils";
 
 const Strategy = ({ investments, showEventsForm }) => {
-  // State to manage form data
-  const [formData, setFormData] = useState({
-    expenseWithdrawalStrat: [],
-    spendingStrat: [],
-  });
+  // States to manage form data
   const [rothData, setRothData] = useState({
     optimizer: false,
     rothStartYear: "",
@@ -25,29 +21,14 @@ const Strategy = ({ investments, showEventsForm }) => {
     rothConversionStrat: [],
   });
   const [rmdStrat , setRmdStrat] = useState([]);
-  // for rendering investments to order
+  const [expenseStrat, setExpenseStrat] = useState([]);
+  const [spendingStrat, setSpendingStrat] = useState([]);
+
+  // for rendering investments and expenses to move around
   const [rothAccounts, setRothAccounts] = useState([]);
   const [rmdAccounts, setRmdAccounts] = useState([]);
   const [expAccounts, setExpAccounts] = useState([]);
   const [expenses, setExpenses] = useState([]);
-
-  // update form before sending to server
-  useEffect(() => {
-    if(formData.optimizer) {
-      setFormData((prevData) => ({
-        ...prevData,
-        rothConversionStrat: rothAccounts,
-        expenseWithdrawalStrat: expAccounts,
-        spendingStrat: expenses,
-      }));
-    } else {
-      setFormData((prevData) => ({
-        ...prevData,
-        expenseWithdrawalStrat: expAccounts,
-        spendingStrat: expenses,
-      }));
-    }
-  }, [expAccounts, expenses]);
 
   // Roth Strategy Updates
   useEffect(() => {
@@ -57,7 +38,7 @@ const Strategy = ({ investments, showEventsForm }) => {
       }));
   }, [rothAccounts]);
 
-    // Roth Strategy Updates sent to server
+  // Roth Strategy Updates sent to server
     useEffect(() => {
       const updateStrategySettings = async () => {
         try {
@@ -79,7 +60,7 @@ const Strategy = ({ investments, showEventsForm }) => {
         }
       };
         updateStrategySettings();
-    }, [rothData]);
+  }, [rothData]);
   
   // RMD Strategy Updates
     useEffect(() => {
@@ -110,39 +91,72 @@ const Strategy = ({ investments, showEventsForm }) => {
       updateStrategySettings();
   }, [rmdStrat]);
 
-  // send updated settings to server whenever formData updates
+  // expense withdrawal strategy updates
+  useEffect(() => {
+    setExpenseStrat(expAccounts);
+}, [expAccounts]);
+
+  // expense withdrawal strategy updates sent to server
   useEffect(() => {
     const updateStrategySettings = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/strategies", {
+        const response = await fetch("http://localhost:3000/api/expense-withdrawal-strategy", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData), // Now it uses the latest formData
+          body: JSON.stringify(expenseStrat),
         });
 
         if (response.ok) {
-          console.log("Strategy settings updated successfully");
+          console.log("Expense withdrawal strategy settings updated successfully");
         } else {
-          console.error("Failed to update strategy settings");
+          console.error("Failed to update expense withdrawal strategy settings");
         }
       } catch (error) {
         console.error("Error:", error);
       }
     };
-  
       updateStrategySettings();
-  }, [formData]); // Now it waits for formData to update before sending to the server
+  }, [expenseStrat]);
+
+  // spending strategy updates
+  useEffect(() => {
+    setSpendingStrat(expenses);
+  }, [expenses]);
+
+  // spending strategy updates sent to server
+  useEffect(() => {
+    const updateStrategySettings = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/spending-strategy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(spendingStrat),
+        });
+
+        if (response.ok) {
+          console.log("Expense withdrawal strategy settings updated successfully");
+        } else {
+          console.error("Failed to update expense withdrawal strategy settings");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+      updateStrategySettings();
+  }, [spendingStrat]);
 
   return (
     <div>
       <h2>Strategies</h2>
 
-      <SpendingSettings setFormData={setFormData} expenses={expenses} setExpenses={setExpenses}
+      <SpendingSettings expenses={expenses} setExpenses={setExpenses}
         showEventsForm={showEventsForm} />
-      <ExpenseWithdrawSettings formData={formData} setFormData={setFormData}
-      expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
+      <ExpenseWithdrawSettings expAccounts={expAccounts} setExpAccounts={setExpAccounts}
+       investments={investments}/>
       <RothConversionSettings rothData={rothData} setRothData={setRothData} 
         rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
       <RMDSettings rmdAccounts={rmdAccounts}
@@ -152,7 +166,7 @@ const Strategy = ({ investments, showEventsForm }) => {
   );
 };
 
-const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccounts, setExpAccounts}) => {
+const ExpenseWithdrawSettings = ({investments, expAccounts, setExpAccounts}) => {
 
   useEffect(() => {
     const fetchInvestments = async () => {
@@ -392,7 +406,7 @@ const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAc
 };
 
 // ordering on discretionary expenses
-const SpendingSettings = ({ setFormData, expenses, setExpenses, showEventsForm }) => {
+const SpendingSettings = ({expenses, setExpenses, showEventsForm }) => {
 
   useEffect(() => {
     const fetchExpenses = async () => {
