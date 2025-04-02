@@ -53,15 +53,26 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 
   console.log('type', type)
   console.log("prefix", prefix);
+  const prefixParts = prefix.split(".");
+  console.log("prefix parts: ", prefixParts);
+  console.log("0", prefixParts[0]);
+  console.log("result ",formData[prefixParts[0]]?.[prefixParts[1]]?.Type)
+  console.log("length ", prefixParts.length)
+  console.log("value", formData[prefixParts[0]])
+  
   switch (type) {
     case "fixed":
       return (
         <input
           type="number"
           min="0"
-          name={`${prefix}Value`}
+          name={`${prefix}.Value`}
           placeholder="Enter value"
-          value={formData[`${prefix}Value`] || ""}
+          value={
+            prefixParts.length === 1
+              ? formData[prefixParts[0]]?.Value || "" // If only one part, access directly
+              : formData[prefixParts[0]]?.[prefixParts[1]]?.Value || "" // If two parts, use nested access
+          }
           onChange={handleChange}
           required
         />
@@ -72,18 +83,26 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}Mean`}
+            name={`${prefix}.Mean`}
             placeholder="Enter mean"
-            value={formData[`${prefix}Mean`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.Mean || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.Mean|| "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
           <input
             type="number"
             min="0"
-            name={`${prefix}StdDev`}
+            name={`${prefix}.StdDev`}
             placeholder="Enter standard deviation"
-            value={formData[`${prefix}StdDev`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.StdDev || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.StdDev || "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
@@ -95,18 +114,26 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}Lower`}
+            name={`${prefix}.Lower`}
             placeholder="Enter lower bound"
-            value={formData[`${prefix}Lower`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.Lower || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.Lower || "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
           <input
             type="number"
             min="0"
-            name={`${prefix}Upper`}
+            name={`${prefix}.Upper`}
             placeholder="Enter upper bound"
-            value={formData[`${prefix}Upper`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.Upper || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.Upper || "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
