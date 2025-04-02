@@ -15,7 +15,6 @@ import {tooltipContent} from "../utils";
 const Strategy = ({ investments, showEventsForm }) => {
   // State to manage form data
   const [formData, setFormData] = useState({
-    rmdStrat: [],
     expenseWithdrawalStrat: [],
     spendingStrat: [],
   });
@@ -25,6 +24,7 @@ const Strategy = ({ investments, showEventsForm }) => {
     rothEndYear: "",
     rothConversionStrat: [],
   });
+  const [rmdStrat , setRmdStrat] = useState([]);
   // for rendering investments to order
   const [rothAccounts, setRothAccounts] = useState([]);
   const [rmdAccounts, setRmdAccounts] = useState([]);
@@ -37,19 +37,17 @@ const Strategy = ({ investments, showEventsForm }) => {
       setFormData((prevData) => ({
         ...prevData,
         rothConversionStrat: rothAccounts,
-        rmdStrat: rmdAccounts,
         expenseWithdrawalStrat: expAccounts,
         spendingStrat: expenses,
       }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
-        rmdStrat: rmdAccounts,
         expenseWithdrawalStrat: expAccounts,
         spendingStrat: expenses,
       }));
     }
-  }, [rothAccounts, rmdAccounts, expAccounts, expenses]);
+  }, [expAccounts, expenses]);
 
   // Roth Strategy Updates
   useEffect(() => {
@@ -59,7 +57,7 @@ const Strategy = ({ investments, showEventsForm }) => {
       }));
   }, [rothAccounts]);
 
-    // Roth Strategy Updates sent to ser
+    // Roth Strategy Updates sent to server
     useEffect(() => {
       const updateStrategySettings = async () => {
         try {
@@ -83,6 +81,35 @@ const Strategy = ({ investments, showEventsForm }) => {
         updateStrategySettings();
     }, [rothData]);
   
+  // RMD Strategy Updates
+    useEffect(() => {
+      setRmdStrat(rmdAccounts);
+  }, [rmdAccounts]);
+  
+  // RMD Strategy Updates sent to server
+  useEffect(() => {
+    const updateStrategySettings = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/rmd-strategy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(rmdStrat), // Now it uses the latest formData
+        });
+
+        if (response.ok) {
+          console.log("RMD strategy settings updated successfully");
+        } else {
+          console.error("Failed to update RMD strategy settings");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+      updateStrategySettings();
+  }, [rmdStrat]);
+
   // send updated settings to server whenever formData updates
   useEffect(() => {
     const updateStrategySettings = async () => {
@@ -118,8 +145,9 @@ const Strategy = ({ investments, showEventsForm }) => {
       expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
       <RothConversionSettings rothData={rothData} setRothData={setRothData} 
         rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
-      <RMDSettings formData={formData} setFormData={setFormData} rmdAccounts={rmdAccounts}
-        setRmdAccounts={setRmdAccounts} investments={investments} rothAccounts={rothAccounts}/>
+      <RMDSettings rmdAccounts={rmdAccounts}
+        setRmdAccounts={setRmdAccounts} investments={investments} rothAccounts={rothAccounts}
+        rothData={rothData}/>
     </div>
   );
 };
@@ -178,7 +206,7 @@ const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccount
 }
 
 
-const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, investments, rothAccounts }) => {
+const RMDSettings = ({rmdAccounts, setRmdAccounts, investments, rothAccounts, rothData }) => {
 
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
@@ -242,7 +270,7 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
         </div>
         
       )}
-      {rmdAccounts && formData.optimizer && (
+      {rmdAccounts && rothData.optimizer && (
           <button onClick={copyOrder}>Copy order from Roth conversion</button>
       )}
 
