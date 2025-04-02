@@ -23,8 +23,6 @@ import { inputTypes } from '../utils';
 
 //maybe move these to utils
 const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
-  
-  
 
   return (
   <div className="section-new-scenario">
@@ -69,9 +67,9 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
   );
 }
 
-const RetirementAgeForm = ({ prefix, data, handleChange }) =>  (
+const RetirementAgeForm = ({ prefix, handleChange, formData }) =>  (
   <div className="section-new-scenario">
-    {/* <label>
+    <label>
       <h4>
         {" "}
         {(prefix === "user" && "Your") ||
@@ -81,6 +79,32 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) =>  (
     </label>
 
     <div>
+      <select
+        name={`${prefix}.retirementAge.Type`}
+        value={formData[prefix]?.retirementAge?.Type}
+        onChange={handleChange}
+      >
+        <option value="" disabled>Select sample life expectancy</option>
+        <option value="fixed">Fixed</option>
+        <option value="normal_distribution">Normal Distribution</option>
+      </select>
+
+      <span
+        data-tooltip-id="tooltip"
+        data-tooltip-content={tooltipContent.retirementAge}
+        className="info-icon"
+      >
+        ℹ️
+      </span>
+   
+      
+     
+      {inputTypes({type: formData[`${prefix}`]?.retirementAge?.Type, formData, handleChange, prefix: `${prefix}.retirementAge` })}
+
+      
+    </div>
+
+    {/* <div>
       <select
         name={`${prefix}RetirementAge`}
         value={data.retirementAge}
@@ -207,7 +231,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
 
   const updateNestedState = (prefix, key, value) => {
-    console.log("prefix nested", prefix);
+    
     setFormData((prevData) => {
       // If the prefix is user.lifeExpectancy, break it into its parts
       const prefixParts = prefix.split('.');
@@ -231,7 +255,6 @@ const ScenarioInfo = forwardRef((props, ref) => {
         [key]: value,
       };
   
-      console.log("updated state:", updated);
       return updated;
     });
   };
@@ -246,8 +269,6 @@ const ScenarioInfo = forwardRef((props, ref) => {
       let childKey = name.replace("inflation_assumption", "");
       if (!childKey) { 
         childKey = "Type"; 
-        console.log("key", childKey); // this is .Value for some reason
-        console.log("value", value);
         updateNestedState("inflation_assumption", childKey, value);
       }
       else {
@@ -256,14 +277,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
         // Access the nested values dynamically
         const parentKey = parts[0];  // 'user'
         childKey = parts[1];   // 'lifeExpectancy'
-        console.log("parentKey", parentKey);
-        console.log("childkey", childKey);
   
-        const parent_child = `${parentKey}.${childKey}`
-        console.log("parentchild ", parent_child)
-
-        console.log("key", childKey); // this is .Value for some reason
-        console.log("value", value);
         updateNestedState(parentKey, childKey, value);
 
       }
@@ -275,11 +289,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
       const parentKey = parts[0];  // 'user'
       const childKey = parts[1];   // 'lifeExpectancy'
       const subKey = parts[2];     // 'Type'
-
-      console.log("key sub", subKey)
-      console.log("value", value)
       const parent_child = `${parentKey}.${childKey}`
-      console.log("parentchild ", parent_child)
+
       updateNestedState(parent_child, subKey, value);
     } else if (name.startsWith("spouse")) {
       const parts = name.split(".");
@@ -289,10 +300,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       const childKey = parts[1];   // 'lifeExpectancy'
       const subKey = parts[2];     // 'Type'
 
-      console.log("key sub", subKey)
-      console.log("value", value)
       const parent_child = `${parentKey}.${childKey}`
-      console.log("parentchild ", parent_child)
       updateNestedState(parent_child, subKey, value);
 
     } else {
@@ -540,8 +548,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
           />
           <RetirementAgeForm
             prefix="user"
-            data={formData.userData}
             handleChange={handleChange}
+            formData={formData}
           />
         </div>
 
@@ -562,8 +570,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
             />
             <RetirementAgeForm
               prefix="spouse"
-              data={formData.spouseData}
               handleChange={handleChange}
+              formData={formData}
             />
           </div>
         )}
