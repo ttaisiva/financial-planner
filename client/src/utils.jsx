@@ -141,73 +141,43 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   }
 };
 
-export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
+// export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
 
-  /**
-   * This function handles the reset for user options for fixed, normal, and uniform distributions. 
-   */
-
-  console.log("Type in reset: ", selectedType)
-  console.log("Item to reset: ", prefix)
-  const parts = prefix.split(".");
-  console.log("parts: ", parts);
-  const reset = {};
-
-  // // Reset only fields related to the selectedType
-  // if (selectedType === "fixed") {
-  //   if (formData[parts[0]]?.[parts[1]]?.Value !== undefined){
-  //     reset[formData[parts[0]]?.parts[1]?.Value] = ""; 
-  //   } else{
-  //     reset[formData[parts[0]]?.Value] = ""; 
-  //   }
-  //   // Reset Value //need to access formData[prefix[0]]?.prefix[1]?.
-  // } else if (selectedType === "normal_distribution") {
-  //   reset[formData[parts[0]]?.parts[1]?.Mean] = "";  // Reset Mean
-  //   reset[formData[parts[0]]?.parts[1]?.StdDev] = ""; // Reset StdDev
-  // } else if (selectedType === "uniform_distribution") {
-  //   reset[formData[parts[0]]?.parts[1]?.Lower] = ""; // Reset Lower
-  //   reset[formData[parts[0]]?.parts[1]?.Upper] = ""; // Reset Upper
-  // }
-
-  // return reset;
-};
-
-// export const resetTypes = (formData, selectedType, prefix) => {
 //   /**
-//    * This function handles the reset for user options for fixed, normal, and uniform distributions.
+//    * This function handles the reset for user options for fixed, normal, and uniform distributions. 
 //    */
 
-//   console.log("Type in reset: ", selectedType);
-//   console.log("Item to reset: ", prefix);
+//   console.log("Type in reset: ", selectedType)
+//   console.log("Item to reset: ", prefix)
 //   const parts = prefix.split(".");
 //   console.log("parts: ", parts);
-
 //   const reset = {};
-//   const formSection = formData[parts[0]];
 
-
+//   // Reset only fields related to the selectedType
 //   if (selectedType === "fixed") {
-//     if (formSection?.[parts[1]]?.Value !== undefined) {
-//       reset[formSection[parts[1]].Value] = "";
+//     if (parts.length == 2){ //user object
+//       reset[formData[parts[0]]?.parts[1]?.Value] = ""; 
+//     } else{
+//       console.log("this is being reset: ", formData[parts[0]]?.Value);
+//       reset[formData[parts[0]]?.Value] = ""; //this is 4 but instead it should be inflation_assumption.Value not the actual value that inflation_assumptino holds
 //     }
+//     // Reset Value //need to access formData[prefix[0]]?.prefix[1]?.
 //   } else if (selectedType === "normal_distribution") {
-//     if (formSection?.[parts[1]]?.Mean !== undefined) {
-//       reset[formSection[parts[1]].Mean] = "";
+//     if (parts.length == 2){ 
+//       reset[formData[parts[0]]?.parts[1]?.Mean] = "";  // Reset Mean
+//       reset[formData[parts[0]]?.parts[1]?.StdDev] = ""; // Reset StdDev
 //     }
-//     if (formSection?.[parts[1]]?.StdDev !== undefined) {
-//       reset[formSection[parts[1]].StdDev] = "";
-//     }
+//     reset[formData[parts[0]]?.Mean] = "";  // Reset Mean
+//     reset[formData[parts[0]]?.StdDev] = ""; // Reset StdDev
+
 //   } else if (selectedType === "uniform_distribution") {
-//     if (formSection?.[parts[1]]?.Lower !== undefined) {
-//       reset[formSection[parts[1]].Lower] = "";
-//     }
-//     if (formSection?.[parts[1]]?.Upper !== undefined) {
-//       reset[formSection[parts[1]].Upper] = "";
-//     }
+//     reset[formData[parts[0]]?.parts[1]?.Lower] = ""; // Reset Lower
+//     reset[formData[parts[0]]?.parts[1]?.Upper] = ""; // Reset Upper
 //   }
 
 //   return reset;
 // };
+
 
 
 

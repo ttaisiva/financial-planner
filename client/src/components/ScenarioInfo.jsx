@@ -228,17 +228,25 @@ const ScenarioInfo = forwardRef((props, ref) => {
       setFormData({ ...formData, [name]: value });
     }
 
-    if (name.endsWith(".Type")) {
-      console.log("type is changing need to reset the prev values");
-      // const prefix = name.substring(0, name.lastIndexOf(".Type"));
-      // const updatedFields = resetTypes(formData, value, prefix);
+    // if (name.endsWith(".Type")) {
+    //   console.log("type is changing need to reset the prev values -> name: ", name);
+    //   console.log("type is changing need to reset the prev values -> value: ", value);
+     
+    //   const prefix = name.substring(0, name.lastIndexOf(".Type"));
+    //   console.log("type is changing need to reset the prev values -> prefix: ", prefix);
+    //   const updatedFields = resetTypes(formData, value, prefix);
+
     
-      // setFormData((prev) => ({
-      //   ...prev,
-      //   [name]: value, // Save the type itself
-      //   ...updatedFields, // Reset only fields related to that prefix
-      // }));
-    }    
+    //   setFormData((prev) => ({
+    //     ...prev,
+    //     ...updatedFields, // Reset only fields related to that prefix
+    //   }));
+    // }    
+
+  
+    
+    
+    
 
   };
 
