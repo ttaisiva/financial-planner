@@ -51,15 +51,12 @@ export const handleScenarioUpload = (e) => {
 
 export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 
-  console.log('type', type)
-  console.log("prefix", prefix);
+  /**
+   * This function handles the display for user options for fixed, normal, and uniform distributions. 
+   */
+
   const prefixParts = prefix.split(".");
-  console.log("prefix parts: ", prefixParts);
-  console.log("0", prefixParts[0]);
-  console.log("result ",formData[prefixParts[0]]?.[prefixParts[1]]?.Type)
-  console.log("length ", prefixParts.length)
-  console.log("value", formData[prefixParts[0]])
-  
+
   switch (type) {
     case "fixed":
       return (
@@ -144,38 +141,74 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   }
 };
 
-export const resetTypes = (selectedType, prefix) => {
+export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
+
+  /**
+   * This function handles the reset for user options for fixed, normal, and uniform distributions. 
+   */
+
+  console.log("Type in reset: ", selectedType)
+  console.log("Item to reset: ", prefix)
+  const parts = prefix.split(".");
+  console.log("parts: ", parts);
   const reset = {};
 
-  // Clear all possible inputs under this prefix
-  reset[`${prefix}Value`] = "";
-  reset[`${prefix}Mean`] = "";
-  reset[`${prefix}StdDev`] = "";
-  reset[`${prefix}Lower`] = "";
-  reset[`${prefix}Upper`] = "";
+  // // Reset only fields related to the selectedType
+  // if (selectedType === "fixed") {
+  //   if (formData[parts[0]]?.[parts[1]]?.Value !== undefined){
+  //     reset[formData[parts[0]]?.parts[1]?.Value] = ""; 
+  //   } else{
+  //     reset[formData[parts[0]]?.Value] = ""; 
+  //   }
+  //   // Reset Value //need to access formData[prefix[0]]?.prefix[1]?.
+  // } else if (selectedType === "normal_distribution") {
+  //   reset[formData[parts[0]]?.parts[1]?.Mean] = "";  // Reset Mean
+  //   reset[formData[parts[0]]?.parts[1]?.StdDev] = ""; // Reset StdDev
+  // } else if (selectedType === "uniform_distribution") {
+  //   reset[formData[parts[0]]?.parts[1]?.Lower] = ""; // Reset Lower
+  //   reset[formData[parts[0]]?.parts[1]?.Upper] = ""; // Reset Upper
+  // }
 
-  // Optionally, keep only the needed fields for the selected type
-  switch (selectedType) {
-    case "fixed":
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "normal_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "uniform_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      break;
-  }
-
-  return reset;
+  // return reset;
 };
+
+// export const resetTypes = (formData, selectedType, prefix) => {
+//   /**
+//    * This function handles the reset for user options for fixed, normal, and uniform distributions.
+//    */
+
+//   console.log("Type in reset: ", selectedType);
+//   console.log("Item to reset: ", prefix);
+//   const parts = prefix.split(".");
+//   console.log("parts: ", parts);
+
+//   const reset = {};
+//   const formSection = formData[parts[0]];
+
+
+//   if (selectedType === "fixed") {
+//     if (formSection?.[parts[1]]?.Value !== undefined) {
+//       reset[formSection[parts[1]].Value] = "";
+//     }
+//   } else if (selectedType === "normal_distribution") {
+//     if (formSection?.[parts[1]]?.Mean !== undefined) {
+//       reset[formSection[parts[1]].Mean] = "";
+//     }
+//     if (formSection?.[parts[1]]?.StdDev !== undefined) {
+//       reset[formSection[parts[1]].StdDev] = "";
+//     }
+//   } else if (selectedType === "uniform_distribution") {
+//     if (formSection?.[parts[1]]?.Lower !== undefined) {
+//       reset[formSection[parts[1]].Lower] = "";
+//     }
+//     if (formSection?.[parts[1]]?.Upper !== undefined) {
+//       reset[formSection[parts[1]].Upper] = "";
+//     }
+//   }
+
+//   return reset;
+// };
+
 
 
 export const states = [
