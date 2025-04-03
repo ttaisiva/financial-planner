@@ -315,3 +315,33 @@ export const loadAnimation = () => {
     element.style.animationDelay = `${delay}s`;
   });
 };
+
+
+export const updateNestedState = (prefix, key, value, setFormData) => {
+    
+  setFormData((prevData) => {
+    // If the prefix is user.lifeExpectancy, break it into its parts
+    const prefixParts = prefix.split('.');
+
+    // Create a copy of prevData to ensure we don't mutate the state directly
+    const updated = { ...prevData };
+
+    // Navigate to the correct place in the object
+    let currentLevel = updated;
+
+    // Loop through the prefixParts to reach the correct level
+    for (let i = 0; i < prefixParts.length - 1; i++) {
+      currentLevel = currentLevel[prefixParts[i]] = {
+        ...currentLevel[prefixParts[i]], // Spread to avoid direct mutation
+      };
+    }
+
+    // Finally, update the value at the deepest level (key)
+    currentLevel[prefixParts[prefixParts.length - 1]] = {
+      ...currentLevel[prefixParts[prefixParts.length - 1]], // Spread to avoid direct mutation
+      [key]: value,
+    };
+
+    return updated;
+  });
+};

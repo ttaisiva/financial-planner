@@ -19,7 +19,7 @@ import {
   loadAnimation,
 } from "../utils";
 import Strategy from "./Strategy";
-import { inputTypes} from '../utils';
+import { inputTypes, updateNestedState} from '../utils';
 
 //maybe move these to utils
 const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
@@ -169,69 +169,32 @@ const ScenarioInfo = forwardRef((props, ref) => {
   const handleCreateEvent = () => {
     setShowEventsForm(true); // Show the EventsForm when button is clicked
   };
+ 
 
-
-  const updateNestedState = (prefix, key, value) => {
-    
-    setFormData((prevData) => {
-      // If the prefix is user.lifeExpectancy, break it into its parts
-      const prefixParts = prefix.split('.');
   
-      // Create a copy of prevData to ensure we don't mutate the state directly
-      const updated = { ...prevData };
-  
-      // Navigate to the correct place in the object
-      let currentLevel = updated;
-  
-      // Loop through the prefixParts to reach the correct level
-      for (let i = 0; i < prefixParts.length - 1; i++) {
-        currentLevel = currentLevel[prefixParts[i]] = {
-          ...currentLevel[prefixParts[i]], // Spread to avoid direct mutation
-        };
-      }
-  
-      // Finally, update the value at the deepest level (key)
-      currentLevel[prefixParts[prefixParts.length - 1]] = {
-        ...currentLevel[prefixParts[prefixParts.length - 1]], // Spread to avoid direct mutation
-        [key]: value,
-      };
-  
-      return updated;
-    });
-  };
-
-
   // Handle input changes -> maybe modularize this a bit (you could probably combine inflation assumptino with user and spouse)
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     console.log("name and value: ", name, value)
 
-    if (name.startsWith("inflation_assumption")) {
-
-      const parts = name.split(".");
-      const parentKey = parts[0];  // 'user'
-      const childKey = parts[1];   // 'lifeExpectancy'
-      updateNestedState(parentKey, childKey, value);
   
+    const parts = name.split(".");
+    const parentKey = parts[0];  // inflation_assumption
+    const childKey = parts[1];   // type
+    
+    if (name.startsWith("inflation_assumption")) {  //nested once
+      updateNestedState(parentKey, childKey, value, setFormData);
 
-    } else if (name.startsWith("user") || name.startsWith("spouse"))  {
-      const parts = name.split(".");
-      const parentKey = parts[0];  // 'user'
-      const childKey = parts[1];   // 'lifeExpectancy'
+    } else if (name.startsWith("user") || name.startsWith("spouse"))  { //nested twice
       const subKey = parts[2];     // 'Type'
       const parent_child = `${parentKey}.${childKey}`
-      updateNestedState(parent_child, subKey, value);
+      updateNestedState(parent_child, subKey, value, setFormData);
 
     } else {
-      //update all other fields
+      //update all other fields that are not stupidly nested
       setFormData({ ...formData, [name]: value });
     }
-
-    if (name.endsWith(".Type")) {
-      // if time perimtws implement function that resetsTypes
-    }  
-    
 
   };
 
