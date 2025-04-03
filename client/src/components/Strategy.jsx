@@ -59,7 +59,10 @@ const Strategy = ({ investments, showEventsForm }) => {
           console.error("Error:", error);
         }
       };
+      if (rothData.optimizer){
         updateStrategySettings();
+      }
+        
   }, [rothData]);
   
   // RMD Strategy Updates

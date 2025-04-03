@@ -232,7 +232,11 @@ router.post("/user-scenario-info", async (req, res) => {
       
     }    
 
- 
+    console.log("ROTH: ", rothLocalStorage);
+    console.log("RMD: ", rmdLocalStorage);
+    console.log("SPENDING: ", spendingLocalStorage);
+    console.log("EXPENSE: ", expenseWithdrawalLocalStorage);
+    let strategyLocalStorage = [rothLocalStorage, rmdLocalStorage, spendingLocalStorage, expenseWithdrawalLocalStorage];
     await insertStrategies(connection, scenario_id, strategyLocalStorage);
 
     // Step 6: Clear temporary data after insertion
@@ -240,8 +244,13 @@ router.post("/user-scenario-info", async (req, res) => {
     investmentsLocalStorage = [];
     investmentTypesLocalStorage = [];
     eventsLocalStorage = [];
-    strategyLocalStorage =  [];
+    rothLocalStorage =  [];
+    rmdLocalStorage = [];
+    spendingLocalStorage = [];
+    expenseWithdrawalLocalStorage = [];
+    strategyLocalStorage = [];
 
+    
     res.status(200).send("User scenario and related data saved successfully.");
   } catch (err) {
     console.error("Failed to insert user scenario info:", err);
@@ -364,36 +373,34 @@ export default router;
 
 //note: this is rly slow but because how the strategies are sent to server it cant be changed
 async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
-  const strategyTypes = [
-    'rothConversionStrat',
-    'rmdStrat',
-    'expenseWithdrawalStrat',
-    'spendingStrat'
-  ];
+  const strategyTypes = {
+    0: 'rothConversionStrat',
+    1: 'rmdStrat',
+    2: 'spendingStrat',
+    3: 'expenseWithdrawalStrat',
+    
+  };
 
   console.log("Strategy Local Storage:", JSON.stringify(strategyLocalStorage, null, 2));
 
-  for (const strategy of strategyLocalStorage) { //iterate over strategy object in local storage
-    //console.log("Processing strategy:", strategy);
-
-    for (const type of strategyTypes) { //iterate through all these strategy types
-      const items = strategy[type];
-      console.log(`Processing type: ${type}, Items:`, items);
+    for (let i = 0; i < strategyLocalStorage.length; i++) { //iterate through all these strategy types
+      const items = strategyLocalStorage[i];
+      console.log(`Processing type: ${strategyTypes[i]}, Items:`, items);
 
       if (!Array.isArray(items)) {
         console.log(`No valid items found for strategy type: ${type}`);
         continue;
       }
 
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const strategy_type = type;
-        const strategy_order = i;
+      for (let j = 0; j < items.length; j++) {
+        const item = items[j];
+        const strategy_type = strategyTypes[i];
+        const strategy_order = j;
       
         let investment_id = null;
         let expense_id = null;
       
-        if (type !== 'spendingStrat' && item.investment_type) {
+        if (strategy_type !== 'spendingStrat' && item.investment_type) {
           const [rows] = await connection.execute(
             `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ? LIMIT 1`,
             [scenario_id, item.investment_type, item.tax_status]
@@ -401,7 +408,7 @@ async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
           investment_id = rows.length > 0 ? rows[0].id : null;
         }
       
-        if (type === 'spendingStrat') {
+        if (strategy_type === 'spendingStrat') {
           const [rows] = await connection.execute(
             `SELECT id FROM events WHERE scenario_id = ? AND name = ? LIMIT 1`,
             [scenario_id, item.name]
@@ -424,7 +431,7 @@ async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
       }
       
     }
-  }
+  //}
 }
 
 
