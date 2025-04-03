@@ -19,7 +19,7 @@ import {
   loadAnimation,
 } from "../utils";
 import Strategy from "./Strategy";
-import { inputTypes, resetTypes } from '../utils';
+import { inputTypes} from '../utils';
 
 //maybe move these to utils
 const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
@@ -228,31 +228,15 @@ const ScenarioInfo = forwardRef((props, ref) => {
       setFormData({ ...formData, [name]: value });
     }
 
-    // if (name.endsWith(".Type")) {
-    //   console.log("type is changing need to reset the prev values -> name: ", name);
-    //   console.log("type is changing need to reset the prev values -> value: ", value);
-     
-    //   const prefix = name.substring(0, name.lastIndexOf(".Type"));
-    //   console.log("type is changing need to reset the prev values -> prefix: ", prefix);
-    //   const updatedFields = resetTypes(formData, value, prefix);
-
-    
-    //   setFormData((prev) => ({
-    //     ...prev,
-    //     ...updatedFields, // Reset only fields related to that prefix
-    //   }));
-    // }    
-
-  
-    
-    
+    if (name.endsWith(".Type")) {
+      // if time perimtws implement function that resetsTypes
+    }  
     
 
   };
 
 
 
-// Helper function to update nested state
 
 
   const handleSubmitUserInfo = async (e) => {
