@@ -141,6 +141,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   }
 };
 
+//sophie was working on this but didnt finish
 // export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
 
 //   /**
@@ -177,6 +178,41 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 
 //   return reset;
 // };
+
+
+export const resetTypes = (selectedType, prefix) => {
+  const reset = {};
+
+  // Clear all possible inputs under this prefix
+  reset[`${prefix}Value`] = "";
+  reset[`${prefix}Mean`] = "";
+  reset[`${prefix}StdDev`] = "";
+  reset[`${prefix}Lower`] = "";
+  reset[`${prefix}Upper`] = "";
+
+  // Optionally, keep only the needed fields for the selected type
+  switch (selectedType) {
+    case "fixed":
+      delete reset[`${prefix}Mean`];
+      delete reset[`${prefix}StdDev`];
+      delete reset[`${prefix}Lower`];
+      delete reset[`${prefix}Upper`];
+      break;
+    case "normal_distribution":
+      delete reset[`${prefix}Value`];
+      delete reset[`${prefix}Lower`];
+      delete reset[`${prefix}Upper`];
+      break;
+    case "uniform_distribution":
+      delete reset[`${prefix}Value`];
+      delete reset[`${prefix}Mean`];
+      delete reset[`${prefix}StdDev`];
+      break;
+  }
+
+  return reset;
+};
+
 
 
 

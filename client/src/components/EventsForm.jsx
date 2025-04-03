@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { inputTypes } from '../utils';
+import { inputTypes, resetTypes } from '../utils';
 
 const EventsForm = ({ setShowEventsForm }) => {
   const [formData, setFormData] = useState({
@@ -36,16 +36,16 @@ const EventsForm = ({ setShowEventsForm }) => {
     }));
 
 
-    // if (name === "startType" || name === "durationType") {
-    //   const prefix = name === "startType" ? "start" : "duration";
-    //   const updatedFields = resetTypes(value, prefix);
+    if (name === "startType" || name === "durationType") {
+      const prefix = name === "startType" ? "start" : "duration";
+      const updatedFields = resetTypes(value, prefix);
     
-    //   setFormData((prev) => ({
-    //     ...prev,
-    //     [name]: value, // Save the type itself
-    //     ...updatedFields, // Reset only fields related to that prefix
-    //   }));
-    // }
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value, // Save the type itself
+        ...updatedFields, // Reset only fields related to that prefix
+      }));
+    }
 
   };
 
