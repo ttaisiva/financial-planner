@@ -17,6 +17,7 @@ let spendingLocalStorage = [];
 // Route to handle temporary storage: 
 router.post('/investment-type', (req, res) => {
   const investmentTypeData = req.body;
+  investmentTypeData.id = investmentTypesLocalStorage.length;
   investmentTypesLocalStorage.push(investmentTypeData);
   console.log('Investment type stored temporarily:', investmentTypeData);
   res.status(200).json(investmentTypeData);
@@ -74,7 +75,7 @@ router.get('/investments', (req, res) => {
   res.status(200).json(investmentsLocalStorage);
 });
 
-// specifically pre-tax
+// specifically pre-tax -> which pretax investment is used???
 router.get('/investments-pretax', (req, res) => {
   console.log("Received request for locally stored investments of type pre-tax.")
   const filtered = investmentsLocalStorage.filter((investment) => investment.tax_status === "Pre-Tax")
@@ -82,10 +83,12 @@ router.get('/investments-pretax', (req, res) => {
 });
 
 router.get('/investment-types', (req, res) => {
-  res.status(200).json(investmentTypes);
+  console.log("Received request for locally stored investment types.")
+  res.status(200).json(investmentTypesLocalStorage);
 });
 
 router.post("/user-scenario-info", async (req, res) => {
+  //TODO: modularize this code a bit
   console.log("Server received user info request from client..");
 
   let userId;
@@ -102,8 +105,9 @@ router.post("/user-scenario-info", async (req, res) => {
     financialGoal,
     filingStatus,
     stateOfResidence,
-    userData,
-    spouseData,
+    user,
+    spouse,
+    inflation_assumption
   } = req.body;
 
   const query = `
@@ -112,8 +116,10 @@ router.post("/user-scenario-info", async (req, res) => {
       user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev,
       user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev,
       spouse_life_expectancy_type, spouse_life_expectancy_value, spouse_life_expectancy_mean, spouse_life_expectancy_std_dev,
-      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev,
+      inflation_assumption_type, inflation_assumption_value, inflation_assumption_mean, inflation_assumption_stdev,
+      inflation_assumption_lower, inflation_assumption_upper
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ? ,?)
   `;
 
   const values = [
@@ -122,22 +128,28 @@ router.post("/user-scenario-info", async (req, res) => {
     financialGoal || null,
     filingStatus || null,
     stateOfResidence || null,
-    userData.lifeExpectancyType || null,
-    userData.lifeExpectancyValue || null,
-    userData.lifeExpectancyMean || null,
-    userData.lifeExpectancyStdDev || null,
-    userData.retirementAge || null,
-    userData.retirementAgeValue || null,
-    userData.retirementAgeMean || null,
-    userData.retirementAgeStdDev || null,
-    spouseData.lifeExpectancyType || null,
-    spouseData.lifeExpectancyValue || null,
-    spouseData.lifeExpectancyMean || null,
-    spouseData.lifeExpectancyStdDev || null,
-    spouseData.retirementAge || null,
-    spouseData.retirementAgeValue || null,
-    spouseData.retirementAgeMean || null,
-    spouseData.retirementAgeStdDev || null,
+    user.lifeExpectancy.Type || null,
+    user.lifeExpectancy.Value || null,
+    user.lifeExpectancy.Mean || null,
+    user.lifeExpectancy.StdDev || null,
+    user.retirementAge.Type || null,
+    user.retirementAge.Value || null,
+    user.retirementAge.Mean || null,
+    user.retirementAge.StdDev || null,
+    spouse.lifeExpectancy.Type || null,
+    spouse.lifeExpectancy.Value || null,
+    spouse.lifeExpectancy.Mean || null,
+    spouse.lifeExpectancy.StdDev || null,
+    spouse.retirementAge.Type || null,
+    spouse.retirementAge.Value || null,
+    spouse.retirementAge.Mean || null,
+    spouse.retirementAge.StdDev || null,
+    inflation_assumption.Type || null,
+    inflation_assumption.Value || null, 
+    inflation_assumption.Mean || null, 
+    inflation_assumption.StdDev || null, 
+    inflation_assumption.Upper || null, 
+    inflation_assumption.Lower || null, 
   ];
 
 
@@ -190,7 +202,6 @@ router.post("/user-scenario-info", async (req, res) => {
     }
 
     // Step 4: Insert events with scenario_id
-    console.log(eventsLocalStorage)
     for (const e of eventsLocalStorage) {
       const eventsQuery = `
         INSERT INTO events (scenario_id, name, description, start_type, start_value, duration_type, duration_value, event_type, initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, asset_allocation)
@@ -221,43 +232,25 @@ router.post("/user-scenario-info", async (req, res) => {
       
     }    
 
-    // Step 5: Insert strategy with scenario_id
-    // for (const s of strategyLocalStorage) {
-    //   const eventsQuery = `
-    //     INSERT INTO  (scenario_id, name, description, start_type, start_value, duration_type, duration_value, event_type, initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, asset_allocation)
-    //     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    //   `;
-    //   const eventsValues = [
-    //     scenario_id || null,
-    //     e.name || null,
-    //     e.description || null,
-    //     e.startType || null,
-    //     e.startValue || null,
-    //     e.durationType || null,
-    //     e.durationValue || null,
-    //     e.eventType || null, 
-    //     e.initialAmount || null,
-    //     e.annualChangeType || null,
-    //     e.annualChangeValue || null,
-    //     e.inflationAdjusted || null,
-    //     e.userPercentage || null,
-    //     e.spousePercentage || null,
-    //     e.isSocialSecurity || null,
-    //     e.isWages || null,
-    //     e.allocationMethod || null,
-    //   ];
-    //   await connection.execute(eventsQuery, eventsValues);
-    //   console.log(`Event ${e.name} saved to the database.`);
-      
-      
-    // } 
+    console.log("ROTH: ", rothLocalStorage);
+    console.log("RMD: ", rmdLocalStorage);
+    console.log("SPENDING: ", spendingLocalStorage);
+    console.log("EXPENSE: ", expenseWithdrawalLocalStorage);
+    let strategyLocalStorage = [rothLocalStorage, rmdLocalStorage, spendingLocalStorage, expenseWithdrawalLocalStorage];
+    await insertStrategies(connection, scenario_id, strategyLocalStorage);
 
     // Step 6: Clear temporary data after insertion
+    console.log("All temporary storage cleared");
     investmentsLocalStorage = [];
     investmentTypesLocalStorage = [];
     eventsLocalStorage = [];
-    strategyLocalStorage =  [];
+    rothLocalStorage =  [];
+    rmdLocalStorage = [];
+    spendingLocalStorage = [];
+    expenseWithdrawalLocalStorage = [];
+    strategyLocalStorage = [];
 
+    
     res.status(200).send("User scenario and related data saved successfully.");
   } catch (err) {
     console.error("Failed to insert user scenario info:", err);
@@ -265,254 +258,76 @@ router.post("/user-scenario-info", async (req, res) => {
   }
 });
 
-// router.get('/scenarios', async (req, res) => {
-//   console.log("Display scenarios in server")
-//   console.log(req.session.user)
-  
-//   try{
-//     if (req.session.user){
-//       const userId = req.session.user['id'];
-//       //const userId = 107981191838034384868; //i just hard coded this for now because too many issues with loggin in
-//       console.log("user id: ", userId)
-//       const query = `
-//         SELECT  
-//           usi.*, 
-//           it.*, 
-//           i.* ,
-//           e.*
-//         FROM 
-//           user_scenario_info usi
-//         LEFT JOIN 
-//           investment_types it ON usi.id = it.scenario_id
-//         LEFT JOIN 
-//           investments i ON usi.id = i.scenario_id
-//         LEFT JOIN 
-//           events e ON usi.id = e.scenario_id   
-//         WHERE 
-//           usi.user_id = ?
-//       `;
-//       try {
-//         await ensureConnection();
-//         await createTablesIfNotExist(connection);
-//         const [results] = await connection.execute(query, [userId]);
-//         console.log("Retrieved scenarios:");
-//         res.status(200).json(results);
-//       } catch (err) {
-//         console.error("Failed to retrieve scenarios:", err);
-//         res.status(500).send("Failed to retrieve scenarios");
-//       }
-//     } else {
-//       // User is not authenticated
-//       res.status(401).send("User is not authenticated.");
-//     }
-//   }
-//   catch (err) {
-//     console.error("Error during authentication or insertion:", err);
-//     res.status(500).send("Failed to insert user scenario info.");
-//   }
-
-  
-
-
-// });
-
-
-
-// router.post("/user-scenario-info", async (req, res) => {
-//   try {
-//     console.log("user", req.session.user)
-//     if (req.session.user) {
-      
-//       const userId = req.session.user['id'];
-//       console.log("Authenticated user ID:", userId);
-
-
-//       const {
-//         scenarioName,
-//         financialGoal,
-//         filingStatus,
-//         stateOfResidence,
-//         userData,
-//         spouseData,
-//       } = req.body;
-
-//       const query = `
-//         INSERT INTO user_scenario_info (
-//           user_id, scenario_name, financial_goal, filing_status, state_of_residence,
-//           user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev, user_retirement_age_type, 
-//           user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev, spouse_life_expectancy_type, spouse_life_expectancy_value, 
-//           spouse_life_expectancy_mean, spouse_life_expectancy_std_dev, spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, 
-//           spouse_retirement_age_std_dev
-//         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-//       `;
-
-//       const values = [
-//         userId,
-//         scenarioName || null,
-//         financialGoal || null,
-//         filingStatus || null,
-//         stateOfResidence || null,
-//         userData.lifeExpectancyType || null,
-//         userData.lifeExpectancyValue || null,
-//         userData.lifeExpectancyMean || null,
-//         userData.lifeExpectancyStdDev || null,
-//         userData.retirementAge || null,
-//         userData.retirementAgeValue || null,
-//         userData.retirementAgeMean || null,
-//         userData.retirementAgeStdDev || null,
-//         spouseData.lifeExpectancyType || null,
-//         spouseData.lifeExpectancyValue || null,
-//         spouseData.lifeExpectancyMean || null,
-//         spouseData.lifeExpectancyStdDev || null,
-//         spouseData.retirementAge || null,
-//         spouseData.retirementAgeValue || null,
-//         spouseData.retirementAgeMean || null,
-//         spouseData.retirementAgeStdDev || null,
-//       ];
-
-//       // Proceed with the insertion to the database
-//       await ensureConnection();
-//       await createTablesIfNotExist(connection);
-
-//       const [results] = await connection.execute(query, values);
-//       console.log("User scenario info inserted successfully.");
-
-//       res.status(200).send("Scenario info inserted successfully!");
-//     } else {
-//       // User is not authenticated
-//       res.status(401).send("User is not authenticated.");
-//     }
-//   } catch (err) {
-//     console.error("Error during authentication or insertion:", err);
-//     res.status(500).send("Failed to insert user scenario info.");
-//   }
-// });
 
 router.get('/scenarios', async (req, res) => {
   console.log("Display scenarios in server");
-  console.log(req.session.user);
+  // console.log(req.session.user);
 
-  try {
-    if (!req.session.user) {
-      return res.status(401).send("User is not authenticated.");
-    }
+  // try {
+  //   if (!req.session.user) {
+  //     return res.status(401).send("User is not authenticated.");
+  //   }
 
-    const userId = req.session.user['id'];
-    console.log("user id: ", userId);
+  //   const userId = req.session.user['id'];
+  //   console.log("user id: ", userId);
 
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
+  //   await ensureConnection();
+  //   await createTablesIfNotExist(connection);
 
-    // 1. Fetch user scenarios
-    const [scenarios] = await connection.execute(
-      `SELECT * FROM user_scenario_info WHERE user_id = ?`,
-      [userId]
-    );
+  //   // 1. Fetch user scenarios
+  //   const [scenarios] = await connection.execute(
+  //     `SELECT * FROM user_scenario_info WHERE user_id = ?`,
+  //     [userId]
+  //   );
 
-    if (scenarios.length === 0) {
-      return res.status(200).json([]); // No scenarios
-    }
+  //   if (scenarios.length === 0) {
+  //     return res.status(200).json([]); // No scenarios
+  //   }
 
-    // Get all scenario IDs
-    const scenarioIds = scenarios.map(s => s.id);
+  //   // Get all scenario IDs
+  //   const scenarioIds = scenarios.map(s => s.id);
 
-    // 2. Fetch all related investments, investment types, and events in one go
-    const [investments] = await connection.query(
-      `SELECT * FROM investments WHERE scenario_id IN (?)`,
-      [scenarioIds]
-    );
+  //   // 2. Fetch all related investments, investment types, and events in one go
+  //   const [investments] = await connection.query(
+  //     `SELECT * FROM investments WHERE scenario_id IN (?)`,
+  //     [scenarioIds]
+  //   );
 
-    const [investmentTypes] = await connection.query(
-      `SELECT * FROM investment_types WHERE scenario_id IN (?)`,
-      [scenarioIds]
-    );
+  //   const [investmentTypes] = await connection.query(
+  //     `SELECT * FROM investment_types WHERE scenario_id IN (?)`,
+  //     [scenarioIds]
+  //   );
 
-    const [events] = await connection.query(
-      `SELECT * FROM events WHERE scenario_id IN (?)`,
-      [scenarioIds]
-    );
+  //   const [events] = await connection.query(
+  //     `SELECT * FROM events WHERE scenario_id IN (?)`,
+  //     [scenarioIds]
+  //   );
 
-    // 3. Group related data under each scenario
-    const scenarioMap = scenarios.map(scenario => {
-      return {
-        ...scenario,
-        investments: investments.filter(inv => inv.scenario_id === scenario.id),
-        investment_types: investmentTypes.filter(type => type.scenario_id === scenario.id),
-        events: events.filter(evt => evt.scenario_id === scenario.id),
-      };
-    });
+  //   //strategies
+  //   //     SELECT * FROM strategies 
+  //   // WHERE scenario_id = 'scenarioX' 
+  //   //   AND strategy_type = 'Roth_conversion'
+  //   // ORDER BY strategy_order;
 
-    console.log("Formatted scenarios:", scenarioMap);
-    res.status(200).json(scenarioMap);
+  //   // 3. Group related data under each scenario
+  //   const scenarioMap = scenarios.map(scenario => {
+  //     return {
+  //       ...scenario,
+  //       investments: investments.filter(inv => inv.scenario_id === scenario.id),
+  //       investment_types: investmentTypes.filter(type => type.scenario_id === scenario.id),
+  //       events: events.filter(evt => evt.scenario_id === scenario.id),
+  //     };
+  //   });
 
-  } catch (err) {
-    console.error("Error retrieving scenarios:", err);
-    res.status(500).send("Failed to retrieve scenarios.");
-  }
+  //   //console.log("Formatted scenarios:", scenarioMap);
+  //   res.status(200).json(scenarioMap);
+
+  // } catch (err) {
+  //   console.error("Error retrieving scenarios:", err);
+  //   res.status(500).send("Failed to retrieve scenarios.");
+  // }
 });
 
-
-router.post("/investments", async (req, res) => {
-  console.log("Server received investment request from client..");
-  const { investment_type, dollar_value, tax_status } = req.body;
-  console.log("make query");
-  const query =
-    "INSERT INTO investments (investment_type, dollar_value, tax_status) VALUES (?, ?, ?)";
-  const values = [investment_type, dollar_value, tax_status];
-
-  console.log("Send to database..");
-
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, values);
-    res.status(201).send("Investment saved successfully");
-  } catch (err) {
-    console.error("Failed to insert investment:", err);
-    res.status(500).send("Failed to save investment");
-  }
-});
-
-router.post("/investment-type", async (req, res) => {
-  console.log("Server received investment type request");
-  const {
-    name,
-    description,
-    expAnnReturnType,
-    expAnnReturnAmtOrPct,
-    expAnnReturnValue,
-    expenseRatio,
-    expAnnIncomeType,
-    expAnnIncomeValue,
-    expAnnIncomeAmtOrPct,
-    taxability,
-  } = req.body;
-
-  const query =
-    "INSERT INTO investment_types (name, description, expAnnReturnType, expAnnReturnAmtOrPct, expAnnReturnValue, expenseRatio, expAnnIncomeType, expAnnIncomeValue,  expAnnIncomeAmtOrPct, taxability) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-  const values = [
-    name,
-    description,
-    expAnnReturnType,
-    expAnnReturnAmtOrPct,
-    expAnnReturnValue,
-    expenseRatio,
-    expAnnIncomeType,
-    expAnnIncomeValue,
-    expAnnIncomeAmtOrPct,
-    taxability,
-  ];
-
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-    const [results] = await connection.execute(query, values);
-    res.status(201).send("Investment type saved successfully");
-  } catch (err) {
-    console.error("Failed to insert investment type:", err);
-    res.status(500).send("Failed to save investment type");
-  }
-});
 
 router.get('/pre-tax-investments', async (req, res) => {
   console.log("Server received request for pre-tax type investments..");
@@ -552,20 +367,71 @@ router.get('/get-investments', (req, res) => {
   console.log(`Sent investments tax statuses ${taxStatus} to client:`, filteredInvestments);
 });
 
-// *** don't have expenses yet
-// router.get('/discretionary-expenses', async (req, res) => {
-//   console.log("Server received request for discretionary expenses..");
-
-//   const query = "SELECT * FROM discretionary_expenses";
-
-//   try {
-//     await ensureConnection();
-//     const [rows] = await connection.execute(query);
-//     res.json(rows);
-//   } catch (err) {
-//     console.error("Failed to fetch discretionary expenses:", err);
-//     res.status(500).send("Failed to fetch discretionary expenses");
-//   }
-// });
 
 export default router;
+
+
+//note: this is rly slow but because how the strategies are sent to server it cant be changed
+async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
+  const strategyTypes = {
+    0: 'rothConversionStrat',
+    1: 'rmdStrat',
+    2: 'spendingStrat',
+    3: 'expenseWithdrawalStrat',
+    
+  };
+
+  console.log("Strategy Local Storage:", JSON.stringify(strategyLocalStorage, null, 2));
+
+    for (let i = 0; i < strategyLocalStorage.length; i++) { //iterate through all these strategy types
+      const items = strategyLocalStorage[i];
+      console.log(`Processing type: ${strategyTypes[i]}, Items:`, items);
+
+      if (!Array.isArray(items)) {
+        console.log(`No valid items found for strategy type: ${type}`);
+        continue;
+      }
+
+      for (let j = 0; j < items.length; j++) {
+        const item = items[j];
+        const strategy_type = strategyTypes[i];
+        const strategy_order = j;
+      
+        let investment_id = null;
+        let expense_id = null;
+      
+        if (strategy_type !== 'spendingStrat' && item.investment_type) {
+          const [rows] = await connection.execute(
+            `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ? LIMIT 1`,
+            [scenario_id, item.investment_type, item.tax_status]
+          );
+          investment_id = rows.length > 0 ? rows[0].id : null;
+        }
+      
+        if (strategy_type === 'spendingStrat') {
+          const [rows] = await connection.execute(
+            `SELECT id FROM events WHERE scenario_id = ? AND name = ? LIMIT 1`,
+            [scenario_id, item.name]
+          );
+          expense_id = item.id;
+        }
+      
+        console.log("Inserting strategy with values:", {
+          scenario_id,
+          strategy_type,
+          investment_id,
+          expense_id,
+          strategy_order
+        });
+      
+        await connection.execute(
+          `INSERT INTO strategy (scenario_id, strategy_type, investment_id, expense_id, strategy_order) VALUES (?, ?, ?, ?, ?)`,
+          [scenario_id, String(strategy_type), investment_id, expense_id, strategy_order]
+        );
+      }
+      
+    }
+  //}
+}
+
+

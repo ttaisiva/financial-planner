@@ -47,53 +47,29 @@ export const handleScenarioUpload = (e) => {
   //TODO: send scenario to database
 };
 
-// export const resetTypes = (type) => {
-//   switch (type) {
-//     case "fixed":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     case "normal_distribution":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     case "uniform_distribution":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     default:
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//   }
-// };
+
 
 export const inputTypes = ({ type, formData, handleChange, prefix }) => {
+
+  /**
+   * This function handles the display for user options for fixed, normal, and uniform distributions. 
+   */
+
+  const prefixParts = prefix.split(".");
+
   switch (type) {
     case "fixed":
       return (
         <input
           type="number"
           min="0"
-          name={`${prefix}Value`}
+          name={`${prefix}.Value`}
           placeholder="Enter value"
-          value={formData[`${prefix}Value`] || ""}
+          value={
+            prefixParts.length === 1
+              ? formData[prefixParts[0]]?.Value || "" // If only one part, access directly
+              : formData[prefixParts[0]]?.[prefixParts[1]]?.Value || "" // If two parts, use nested access
+          }
           onChange={handleChange}
           required
         />
@@ -104,18 +80,26 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}Mean`}
+            name={`${prefix}.Mean`}
             placeholder="Enter mean"
-            value={formData[`${prefix}Mean`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.Mean || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.Mean|| "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
           <input
             type="number"
             min="0"
-            name={`${prefix}StdDev`}
+            name={`${prefix}.StdDev`}
             placeholder="Enter standard deviation"
-            value={formData[`${prefix}StdDev`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.StdDev || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.StdDev || "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
@@ -127,18 +111,26 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}Lower`}
+            name={`${prefix}.Lower`}
             placeholder="Enter lower bound"
-            value={formData[`${prefix}Lower`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.Lower || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.Lower || "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
           <input
             type="number"
             min="0"
-            name={`${prefix}Upper`}
+            name={`${prefix}.Upper`}
             placeholder="Enter upper bound"
-            value={formData[`${prefix}Upper`] || ""}
+            value={
+              prefixParts.length === 1
+                ? formData[prefixParts[0]]?.Upper || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.Upper || "" // If two parts, use nested access
+            }
             onChange={handleChange}
             required
           />
@@ -149,38 +141,44 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   }
 };
 
-export const resetTypes = (selectedType, prefix) => {
-  const reset = {};
+// export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
 
-  // Clear all possible inputs under this prefix
-  reset[`${prefix}Value`] = "";
-  reset[`${prefix}Mean`] = "";
-  reset[`${prefix}StdDev`] = "";
-  reset[`${prefix}Lower`] = "";
-  reset[`${prefix}Upper`] = "";
+//   /**
+//    * This function handles the reset for user options for fixed, normal, and uniform distributions. 
+//    */
 
-  // Optionally, keep only the needed fields for the selected type
-  switch (selectedType) {
-    case "fixed":
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "normal_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "uniform_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      break;
-  }
+//   console.log("Type in reset: ", selectedType)
+//   console.log("Item to reset: ", prefix)
+//   const parts = prefix.split(".");
+//   console.log("parts: ", parts);
+//   const reset = {};
 
-  return reset;
-};
+//   // Reset only fields related to the selectedType
+//   if (selectedType === "fixed") {
+//     if (parts.length == 2){ //user object
+//       reset[formData[parts[0]]?.parts[1]?.Value] = ""; 
+//     } else{
+//       console.log("this is being reset: ", formData[parts[0]]?.Value);
+//       reset[formData[parts[0]]?.Value] = ""; //this is 4 but instead it should be inflation_assumption.Value not the actual value that inflation_assumptino holds
+//     }
+//     // Reset Value //need to access formData[prefix[0]]?.prefix[1]?.
+//   } else if (selectedType === "normal_distribution") {
+//     if (parts.length == 2){ 
+//       reset[formData[parts[0]]?.parts[1]?.Mean] = "";  // Reset Mean
+//       reset[formData[parts[0]]?.parts[1]?.StdDev] = ""; // Reset StdDev
+//     }
+//     reset[formData[parts[0]]?.Mean] = "";  // Reset Mean
+//     reset[formData[parts[0]]?.StdDev] = ""; // Reset StdDev
+
+//   } else if (selectedType === "uniform_distribution") {
+//     reset[formData[parts[0]]?.parts[1]?.Lower] = ""; // Reset Lower
+//     reset[formData[parts[0]]?.parts[1]?.Upper] = ""; // Reset Upper
+//   }
+
+//   return reset;
+// };
+
+
 
 
 export const states = [
