@@ -88,6 +88,7 @@ const EventsForm = ({ setShowEventsForm }) => {
 
   return (
     <div className="content">
+
       <form onSubmit={handleSubmit}>
         <h3>Customize your event:</h3> {/* I should add a delete btn*/}
 

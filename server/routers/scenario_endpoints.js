@@ -8,7 +8,10 @@ const router = express.Router();
 let investmentsLocalStorage = [];
 let investmentTypesLocalStorage = [];
 let eventsLocalStorage = [];
-let strategyLocalStorage = [];
+let rothLocalStorage = [];
+let rmdLocalStorage = [];
+let expenseWithdrawalLocalStorage = [];
+let spendingLocalStorage = [];
 
 
 // Route to handle temporary storage: 
@@ -43,11 +46,26 @@ router.get('/discretionary-expenses', (req, res) => {
   res.status(200).json(filtered);
 });
 
-router.post('/strategies', (req, res) => {
-  
-  strategyLocalStorage.push(req.body); 
-  console.log('Strategy data stored temporarily.', req.body);
- 
+router.post('/roth-strategy', (req, res) => {
+  rothLocalStorage = (req.body);
+  console.log('Roth strategy data stored temporarily.');
+  res.status(200).json(req.body);
+});
+router.post('/rmd-strategy', (req, res) => {
+  rmdLocalStorage = (req.body);
+  console.log('RMD strategy data stored temporarily.');
+  res.status(200).json(req.body);
+});
+router.post('/expense-withdrawal-strategy', (req, res) => {
+  expenseWithdrawalLocalStorage = (req.body);
+  console.log(expenseWithdrawalLocalStorage);
+  console.log('Expense withdrawal strategy data stored temporarily.');
+  res.status(200).json(req.body);
+});
+router.post('/spending-strategy', (req, res) => {
+  spendingLocalStorage = (req.body);
+  console.log(spendingLocalStorage);
+  console.log('Spending strategy data stored temporarily.');
   res.status(200).json(req.body);
 });
 

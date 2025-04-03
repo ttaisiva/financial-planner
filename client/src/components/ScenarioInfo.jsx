@@ -312,7 +312,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
               data-tooltip-html={tooltipContent.financialGoal}
               className="info-icon"
             >
-              ⚠️
+              ℹ️
             </span>
           </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
@@ -344,7 +344,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
               data-tooltip-html={tooltipContent.taxInfo}
               className="info-icon"
             >
-              ⚠️
+              ℹ️
             </span>
           </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
@@ -437,7 +437,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
               data-tooltip-html={tooltipContent.startYearTax}
               className="info-icon"
             >
-              ⚠️
+              ℹ️
             </span>
           </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
@@ -507,6 +507,20 @@ const ScenarioInfo = forwardRef((props, ref) => {
       </div>
 
       <h2 className="fade-in">Event Series</h2>
+      <p> Event series is a sequence of annual events. You may choose income, expense, invest,
+        or rebalance events that will happen every year within a desired time range.
+        <span
+          data-tooltip-id="tooltip"
+          data-tooltip-html={tooltipContent.eventSeries}
+          className="info-icon"
+        >
+          ℹ️
+        </span>
+        <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
+
+      </p>
+      
+
       <div className="fade-in">
         <button  onClick={handleCreateEvent} > Create Event </button>
         {showEventsForm && <EventsForm setShowEventsForm={ setShowEventsForm }/>}
