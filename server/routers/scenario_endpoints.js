@@ -202,40 +202,9 @@ router.post("/user-scenario-info", async (req, res) => {
     }
 
     // Step 4: Insert events with scenario_id
-    for (const e of eventsLocalStorage) {
-      const eventsQuery = `
-        INSERT INTO events (scenario_id, name, description, start_type, start_value, duration_type, duration_value, event_type, initial_amount, annual_change_type, annual_change_value, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, asset_allocation)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      const eventsValues = [
-        scenario_id || null,
-        e.name || null,
-        e.description || null,
-        e.startType || null,
-        e.startValue || null,
-        e.durationType || null,
-        e.durationValue || null,
-        e.eventType || null, 
-        e.initialAmount || null,
-        e.annualChangeType || null,
-        e.annualChangeValue || null,
-        e.inflationAdjusted || null,
-        e.userPercentage || null,
-        e.spousePercentage || null,
-        e.isSocialSecurity || null,
-        e.isWages || null,
-        e.allocationMethod || null,
-      ];
-      await connection.execute(eventsQuery, eventsValues);
-      console.log(`Event ${e.name} saved to the database.`);
-      
-      
-    }    
-
-    console.log("ROTH: ", rothLocalStorage);
-    console.log("RMD: ", rmdLocalStorage);
-    console.log("SPENDING: ", spendingLocalStorage);
-    console.log("EXPENSE: ", expenseWithdrawalLocalStorage);
+    await insertEvents(connection, scenario_id, eventsLocalStorage);
+  
+    // Step 5: insert events into db
     let strategyLocalStorage = [rothLocalStorage, rmdLocalStorage, spendingLocalStorage, expenseWithdrawalLocalStorage];
     await insertStrategies(connection, scenario_id, strategyLocalStorage);
 
@@ -261,71 +230,71 @@ router.post("/user-scenario-info", async (req, res) => {
 
 router.get('/scenarios', async (req, res) => {
   console.log("Display scenarios in server");
-  // console.log(req.session.user);
+  console.log(req.session.user);
 
-  // try {
-  //   if (!req.session.user) {
-  //     return res.status(401).send("User is not authenticated.");
-  //   }
+  try {
+    if (!req.session.user) {
+      return res.status(401).send("User is not authenticated.");
+    }
 
-  //   const userId = req.session.user['id'];
-  //   console.log("user id: ", userId);
+    const userId = req.session.user['id'];
+    console.log("user id: ", userId);
 
-  //   await ensureConnection();
-  //   await createTablesIfNotExist(connection);
+    await ensureConnection();
+    await createTablesIfNotExist(connection);
 
-  //   // 1. Fetch user scenarios
-  //   const [scenarios] = await connection.execute(
-  //     `SELECT * FROM user_scenario_info WHERE user_id = ?`,
-  //     [userId]
-  //   );
+    // 1. Fetch user scenarios
+    const [scenarios] = await connection.execute(
+      `SELECT * FROM user_scenario_info WHERE user_id = ?`,
+      [userId]
+    );
 
-  //   if (scenarios.length === 0) {
-  //     return res.status(200).json([]); // No scenarios
-  //   }
+    if (scenarios.length === 0) {
+      return res.status(200).json([]); // No scenarios
+    }
 
-  //   // Get all scenario IDs
-  //   const scenarioIds = scenarios.map(s => s.id);
+    // Get all scenario IDs
+    const scenarioIds = scenarios.map(s => s.id);
 
-  //   // 2. Fetch all related investments, investment types, and events in one go
-  //   const [investments] = await connection.query(
-  //     `SELECT * FROM investments WHERE scenario_id IN (?)`,
-  //     [scenarioIds]
-  //   );
+    // 2. Fetch all related investments, investment types, and events in one go
+    const [investments] = await connection.query(
+      `SELECT * FROM investments WHERE scenario_id IN (?)`,
+      [scenarioIds]
+    );
 
-  //   const [investmentTypes] = await connection.query(
-  //     `SELECT * FROM investment_types WHERE scenario_id IN (?)`,
-  //     [scenarioIds]
-  //   );
+    const [investmentTypes] = await connection.query(
+      `SELECT * FROM investment_types WHERE scenario_id IN (?)`,
+      [scenarioIds]
+    );
 
-  //   const [events] = await connection.query(
-  //     `SELECT * FROM events WHERE scenario_id IN (?)`,
-  //     [scenarioIds]
-  //   );
+    const [events] = await connection.query(
+      `SELECT * FROM events WHERE scenario_id IN (?)`,
+      [scenarioIds]
+    );
 
-  //   //strategies
-  //   //     SELECT * FROM strategies 
-  //   // WHERE scenario_id = 'scenarioX' 
-  //   //   AND strategy_type = 'Roth_conversion'
-  //   // ORDER BY strategy_order;
+    const [strategies] = await connection.query(
+      `SELECT * FROM strategy WHERE scenario_id IN (?) ORDER BY strategy_order`,
+      [scenarioIds]
+    );
 
-  //   // 3. Group related data under each scenario
-  //   const scenarioMap = scenarios.map(scenario => {
-  //     return {
-  //       ...scenario,
-  //       investments: investments.filter(inv => inv.scenario_id === scenario.id),
-  //       investment_types: investmentTypes.filter(type => type.scenario_id === scenario.id),
-  //       events: events.filter(evt => evt.scenario_id === scenario.id),
-  //     };
-  //   });
+    // 3. Group related data under each scenario
+    const scenarioMap = scenarios.map(scenario => {
+      return {
+        ...scenario,
+        investments: investments.filter(inv => inv.scenario_id === scenario.id),
+        investment_types: investmentTypes.filter(type => type.scenario_id === scenario.id),
+        events: events.filter(evt => evt.scenario_id === scenario.id),
+        strategies: strategies.filter(strat => strat.scenario_id === scenario.id),
+      };
+    });
 
-  //   //console.log("Formatted scenarios:", scenarioMap);
-  //   res.status(200).json(scenarioMap);
+    //console.log("Formatted scenarios:", scenarioMap);
+    res.status(200).json(scenarioMap);
 
-  // } catch (err) {
-  //   console.error("Error retrieving scenarios:", err);
-  //   res.status(500).send("Failed to retrieve scenarios.");
-  // }
+  } catch (err) {
+    console.error("Error retrieving scenarios:", err);
+    res.status(500).send("Failed to retrieve scenarios.");
+  }
 });
 
 
@@ -434,4 +403,76 @@ async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
   //}
 }
 
+async function insertEvents(connection, scenario_id, eventsLocal){
+  for (const e of eventsLocalStorage) {
+    const eventsQuery = `
+      INSERT INTO events (scenario_id, name, description, event_type, start_type, start_value, 
+      start_mean,
+      start_std_dev,
+      start_lower,
+      start_upper,
+      start_series,
+      start_series_end,
+      duration_type, 
+      duration_value, 
+      duration_mean,
+      duration_std_dev,
+      duration_lower,
+      duration_upper,
+      annual_change_type, 
+      annual_change_value, 
+      annual_change_type_amt_or_pct,
+      annual_change_mean,
+      annual_change_std_dev,
+      annual_change_lower ,
+      annual_change_upper,  
+       initial_amount, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, asset_allocation)
+      VALUES (?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, 
+      ?, ?, ?, ?, ?, 
+      ?, ?, ?, ?, ?, 
+      ?, ?, ?, ?, ?, 
+      ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const eventsValues = [
+      scenario_id || null,
+      e.name || null,
+      e.description || null,
+      e.eventType || null, 
+      e.start.type || null,
+      e.start.value || null,
+      e.start.mean || null, 
+      e.start.stdDev || null, 
+      e.start.upper || null, 
+      e.start.lower || null,
+      e.start.series_start || null, 
+      e.strat.series_end || null, 
+      e.duration.type || null,
+      e.duration.value || null,
+      e.duration.mean || null, 
+      e.duration.stdDev || null, 
+      e.duration.upper || null, 
+      e.duration.lower || null, 
+      e.expected_annual_change.type || null,
+      e.expected_annual_change.value || null,
+      e.expected_annual_change.type_amt_or_pct || null,  
+      e.expected_annual_change.mean || null, 
+      e.expected_annual_change.stdDev || null, 
+      e.expected_annual_change.upper || null, 
+      e.expected_annual_change.lower || null, 
+      e.initialAmount || null,
+      e.max_cash || null,
+      e.inflationAdjusted || null,
+      e.userPercentage || null,
+      e.spousePercentage || null,
+      e.isSocialSecurity || null, 
+      e.allocationMethod || null,
+    ];
+    await connection.execute(eventsQuery, eventsValues);
+    console.log(`Event ${e.name} saved to the database.`);
+    
+    
+  }  
+}
 

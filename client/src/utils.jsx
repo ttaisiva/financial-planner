@@ -141,6 +141,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   }
 };
 
+//sophie was working on this but didnt finish
 // export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
 
 //   /**
@@ -177,6 +178,41 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 
 //   return reset;
 // };
+
+
+export const resetTypes = (selectedType, prefix) => {
+  const reset = {};
+
+  // Clear all possible inputs under this prefix
+  reset[`${prefix}Value`] = "";
+  reset[`${prefix}Mean`] = "";
+  reset[`${prefix}StdDev`] = "";
+  reset[`${prefix}Lower`] = "";
+  reset[`${prefix}Upper`] = "";
+
+  // Optionally, keep only the needed fields for the selected type
+  switch (selectedType) {
+    case "fixed":
+      delete reset[`${prefix}Mean`];
+      delete reset[`${prefix}StdDev`];
+      delete reset[`${prefix}Lower`];
+      delete reset[`${prefix}Upper`];
+      break;
+    case "normal_distribution":
+      delete reset[`${prefix}Value`];
+      delete reset[`${prefix}Lower`];
+      delete reset[`${prefix}Upper`];
+      break;
+    case "uniform_distribution":
+      delete reset[`${prefix}Value`];
+      delete reset[`${prefix}Mean`];
+      delete reset[`${prefix}StdDev`];
+      break;
+  }
+
+  return reset;
+};
+
 
 
 
@@ -277,5 +313,35 @@ export const loadAnimation = () => {
     const rect = element.getBoundingClientRect();
     const delay = rect.top / window.innerHeight;
     element.style.animationDelay = `${delay}s`;
+  });
+};
+
+
+export const updateNestedState = (prefix, key, value, setFormData) => {
+    
+  setFormData((prevData) => {
+    // If the prefix is user.lifeExpectancy, break it into its parts
+    const prefixParts = prefix.split('.');
+
+    // Create a copy of prevData to ensure we don't mutate the state directly
+    const updated = { ...prevData };
+
+    // Navigate to the correct place in the object
+    let currentLevel = updated;
+
+    // Loop through the prefixParts to reach the correct level
+    for (let i = 0; i < prefixParts.length - 1; i++) {
+      currentLevel = currentLevel[prefixParts[i]] = {
+        ...currentLevel[prefixParts[i]], // Spread to avoid direct mutation
+      };
+    }
+
+    // Finally, update the value at the deepest level (key)
+    currentLevel[prefixParts[prefixParts.length - 1]] = {
+      ...currentLevel[prefixParts[prefixParts.length - 1]], // Spread to avoid direct mutation
+      [key]: value,
+    };
+
+    return updated;
   });
 };

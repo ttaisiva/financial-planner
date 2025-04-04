@@ -1,28 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { inputTypes } from '../utils';
+import { inputTypes, resetTypes, updateNestedState } from '../utils';
 
 const EventsForm = ({ setShowEventsForm }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    startType: '',
-    startValue: '',
-    startMean: '',
-    startStdDev: '',
-    startupper: '',
-    startlower: '',
-    durationType: '',
-    durationValue: '',
     eventType: '',
-    eventValue: '',
+    start: {
+      type: '',
+      value: '',
+      mean: '',
+      stdDev: '',
+      upper: '',
+      lower: '',
+      series_start: false,
+      series_end: false,
+    },
+    expected_annual_change: {
+      type: '',
+      value: '',
+      amtOrPct: '',
+      mean: '',
+      stdDev: '',
+      upper: '',
+      lower: '',
+    },
+    duration: {
+      type: '',
+      value: '',
+      mean: '',
+      stdDev: '',
+      upper: '',
+      lower: '',
+    },
     initialAmount: '', 
-    annualChangeType: '',
-    annualChangeValue: '',
+    max_cash: '',
     inflationAdjusted: false,
     userPercentage: '',
     spousePercentage: '',
     isSocialSecurity: false,
-    isWages: false,
     allocationMethod: '',
     discretionary: false, 
   });
@@ -30,22 +46,31 @@ const EventsForm = ({ setShowEventsForm }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    const parts = name.split(".");
+    const parentKey = parts[0];  // inflation_assumption
+    const childKey = parts[1];   // type
+
+    if (parts.length > 1){ //meaning nested once
+      updateNestedState(parentKey, childKey, value, setFormData);
+    }
+
+    //update everything else and checkbox
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
     }));
 
 
-    // if (name === "startType" || name === "durationType") {
-    //   const prefix = name === "startType" ? "start" : "duration";
-    //   const updatedFields = resetTypes(value, prefix);
+    if (name === "start.type" || name === "duration.type") {
+      const prefix = name === "start.type" ? "start" : "duration";
+      const updatedFields = resetTypes(value, prefix);
     
-    //   setFormData((prev) => ({
-    //     ...prev,
-    //     [name]: value, // Save the type itself
-    //     ...updatedFields, // Reset only fields related to that prefix
-    //   }));
-    // }
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value, // Save the type itself
+        ...updatedFields, // Reset only fields related to that prefix
+      }));
+    }
 
   };
 
@@ -104,16 +129,16 @@ const EventsForm = ({ setShowEventsForm }) => {
 
         <div>
           <label>Start year:</label>
-          <select name="startType" value={formData.startType} onChange={handleChange}>
+          <select name="start.type" value={formData.start.type} onChange={handleChange}>
             <option value="" disabled>Select start year</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
-            <option value="same_year">Same year as event series</option>
-            <option value="year_after">Year after event series</option>
+            <option value="series_start">Same year as event series</option>
+            <option value="series_end">Year after event series</option>
           </select>
           
-          {inputTypes({ type: formData.startType, formData, handleChange, prefix: "start" })}
+          {inputTypes({ type: formData.start.type, formData, handleChange, prefix: "start" })}
         
       
 
@@ -121,14 +146,14 @@ const EventsForm = ({ setShowEventsForm }) => {
 
         <div>
           <label>Duration: </label>
-          <select name="durationType" value={formData.durationType} onChange={handleChange}>
+          <select name="duration.type" value={formData.duration.type} onChange={handleChange}>
             <option value="" disabled>Select Duration</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
 
-          {inputTypes({ type: formData.durationType, formData, handleChange, prefix: "duration"  })}
+          {inputTypes({ type: formData.duration.type, formData, handleChange, prefix: "duration"  })}
         </div>
 
         <div>
@@ -185,20 +210,20 @@ const IncomeEvent = ({ formData, handleChange }) => {
 
       <div>
           <label>Expected Annual Change: </label>
-          <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
-            <option value="" disabled>Select format</option>
+          <select name="expected_annual_change.type" value={formData.expected_annual_change.type} onChange={handleChange}>
+            <option value="" disabled>Select expected annual change</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
-          <select>
-            <option>Amount</option>
-            <option>Percentage</option>
-          </select>
+          <select name="expected_annual_change.amtOrPct" value={formData.expected_annual_change.amtOrPct} onChange={handleChange} required>
+            <option value="amt">Amount</option>
+            <option value="pct">Percentage</option>
+          </select>  
+          
 
-
-          {inputTypes({ type: formData.annualChangeType, formData, handleChange, prefix: "annualChange"  })}
-        </div>
+          {inputTypes({ type: formData.expected_annual_change.type, formData, handleChange, prefix: "expected_annual_change"  })}
+      </div>
   
       <div>
           <label>
@@ -590,15 +615,20 @@ const ExpenseEvent = ({formData, handleChange}) => {
 
       <div>
           <label>Expected Annual Change: </label>
-          <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
-            <option value="" disabled>Select format</option>
+          <select name="expected_annual_change.type" value={formData.expected_annual_change.type} onChange={handleChange}>
+            <option value="" disabled>Select expected annual change</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
+          <select name="expected_annual_change.amtOrPct" value={formData.expected_annual_change.amtOrPct} onChange={handleChange} required>
+            <option value="amt">Amount</option>
+            <option value="pct">Percentage</option>
+          </select>  
+          
 
-          {inputTypes({ type: formData.annualChangeType, formData, handleChange, prefix: "annualChange"  })}
-        </div>
+          {inputTypes({ type: formData.expected_annual_change.type, formData, handleChange, prefix: "expected_annual_change"  })}
+      </div>
   
       <div>
           <label>
