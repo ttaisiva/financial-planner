@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { inputTypes, resetTypes, updateNestedState } from '../utils';
 
-const EventsForm = ({ setShowEventsForm }) => {
+export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -92,12 +92,14 @@ const EventsForm = ({ setShowEventsForm }) => {
 
         if (response.ok) {
           console.log('Events saved successfully');
+          const newEvent = await response.json();
+          setEvents((prevEvents) => [...prevEvents, newEvent]); 
           setShowEventsForm(false);
         } else {
           console.error('Failed to save events details');
         }
 
-       //TODO: not sure if this is the best way to handle this -> discuss with tai
+       
 
 
     } catch (error) {
@@ -198,7 +200,7 @@ const EventsForm = ({ setShowEventsForm }) => {
   );
 };
 
-export default EventsForm;
+
 
 const IncomeEvent = ({ formData, handleChange }) => {
   return (
@@ -659,4 +661,57 @@ const ExpenseEvent = ({formData, handleChange}) => {
 }
 
 
+export const ViewEventsDetails = ({ events }) => {
+  useEffect(() => {
+    console.log("events", events);
+  }, [events]);
+
+  return (
+    <div className="p-4 border rounded-md mt-6">
+      <h3>Your Events</h3>
+      {events.length > 0 ? (
+        <ul>
+          {events.map((item, idx) => (
+            <li key={idx}>
+              <strong>{item.name}</strong>: {item.description}, Type: {item.eventType}
+              {item.start?.value && (
+                <span>, Start: {item.start.type} ({item.start.value})</span>
+              )}
+              {item.duration?.value && (
+                <span>, Duration: {item.duration.type} ({item.duration.value})</span>
+              )}
+
+              {item.eventType === "income" && (
+                <>
+                  <br />
+                  Initial Amount: ${item.initialAmount}
+                  <br />
+                  Expected Annual Change:{" "}
+                  {item.expected_annual_change?.type}{" "}
+                  {item.expected_annual_change?.amtOrPct && `(${item.expected_annual_change.amtOrPct})`}
+                  <br />
+                  {item.inflationAdjusted && <span>Inflation Adjusted: ✅</span>}
+                  <br />
+                  User %: {item.userPercentage}
+                  <br />
+                  Spouse %: {item.spousePercentage}
+                  <br />
+                  {item.isSocialSecurity && <span>Social Security: ✅</span>}
+                </>
+              )}
+
+              {item.eventType === "expense" && <p>(Expense-specific info can go here)</p>}
+
+              {item.eventType === "invest" && <p>(Investment-specific info can go here)</p>}
+
+              {item.eventType === "rebalance" && <p>(Rebalance-specific info can go here)</p>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No events added yet.</p>
+      )}
+    </div>
+  );
+};
 

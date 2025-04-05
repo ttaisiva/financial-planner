@@ -6,7 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
-import EventsForm from "./EventsForm";
+import {EventsForm, ViewEventsDetails } from "./EventsForm";
 import {
   InvestmentType,
   Investment,
@@ -161,6 +161,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [investments, setInvestments] = useState([]);
   const [investmentTypes, setInvestmentTypes] = useState([]);
+  const [events, setEvents] = useState([]);
 
   const handleAddSpouse = () => {
     setShowSpouseForm(!showSpouseForm);
@@ -486,7 +487,13 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
       <div className="fade-in">
         <button  onClick={handleCreateEvent} > Create Event </button>
-        {showEventsForm && <EventsForm setShowEventsForm={ setShowEventsForm }/>}
+        {showEventsForm && <EventsForm     
+            events={events}
+            setEvents={setEvents}
+            setShowEventsForm={ setShowEventsForm }/>}
+
+        <ViewEventsDetails events={events} />
+ 
       </div>
     
       <div className="fade-in">
