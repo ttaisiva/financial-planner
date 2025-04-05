@@ -403,76 +403,81 @@ async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
   //}
 }
 
-async function insertEvents(connection, scenario_id, eventsLocal){
-  for (const e of eventsLocalStorage) {
+async function insertEvents(connection, scenario_id, eventsLocal) {
+  for (const e of eventsLocal) {
+ 
     const eventsQuery = `
-      INSERT INTO events (scenario_id, name, description, event_type, start_type, start_value, 
-      start_mean,
-      start_std_dev,
-      start_lower,
-      start_upper,
-      start_series,
-      start_series_end,
-      duration_type, 
-      duration_value, 
-      duration_mean,
-      duration_std_dev,
-      duration_lower,
-      duration_upper,
-      annual_change_type, 
-      annual_change_value, 
-      annual_change_type_amt_or_pct,
-      annual_change_mean,
-      annual_change_std_dev,
-      annual_change_lower ,
-      annual_change_upper,  
-       initial_amount, inflation_adjusted, user_percentage, spouse_percentage, is_social_security, is_wages, asset_allocation)
-      VALUES (?, ?, ?, ?, ?,
-      ?, ?, ?, ?, ?, 
-      ?, ?, ?, ?, ?, 
-      ?, ?, ?, ?, ?, 
-      ?, ?, ?, ?, ?, 
-      ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO events (
+        scenario_id, name, description, event_type, start_type, start_value, 
+        start_mean, start_std_dev, start_lower, start_upper,
+        start_series_start, start_series_end, duration_type, 
+        duration_value, duration_mean, duration_std_dev, 
+        duration_lower, duration_upper, annual_change_type, 
+        annual_change_value, annual_change_type_amt_or_pct,
+        annual_change_mean, annual_change_std_dev, annual_change_lower,
+        annual_change_upper, initial_amount, inflation_adjusted, 
+        user_percentage, spouse_percentage, is_social_security, asset_allocation,
+        discretionary, max_cash
+      )
+      VALUES (
+        ?, ?, ?, ?, ?, 
+        ?, ?, ?, ?, ?, 
+        ?, ?, ?, ?, ?, 
+        ?, ?, ?, ?, ?, 
+        ?, ?, ?, ?, ?, 
+        ?, ?, ?, ?, ?, 
+        ?, ?, ?
+      )
+
+
     `;
 
     const eventsValues = [
       scenario_id || null,
       e.name || null,
       e.description || null,
-      e.eventType || null, 
-      e.start.type || null,
-      e.start.value || null,
-      e.start.mean || null, 
-      e.start.stdDev || null, 
-      e.start.upper || null, 
-      e.start.lower || null,
-      e.start.series_start || null, 
-      e.strat.series_end || null, 
-      e.duration.type || null,
-      e.duration.value || null,
-      e.duration.mean || null, 
-      e.duration.stdDev || null, 
-      e.duration.upper || null, 
-      e.duration.lower || null, 
-      e.expected_annual_change.type || null,
-      e.expected_annual_change.value || null,
-      e.expected_annual_change.type_amt_or_pct || null,  
-      e.expected_annual_change.mean || null, 
-      e.expected_annual_change.stdDev || null, 
-      e.expected_annual_change.upper || null, 
-      e.expected_annual_change.lower || null, 
-      e.initialAmount || null,
-      e.max_cash || null,
-      e.inflationAdjusted || null,
-      e.userPercentage || null,
-      e.spousePercentage || null,
-      e.isSocialSecurity || null, 
-      e.allocationMethod || null,
+      e.eventType || null,
+      e.start?.type || null,
+
+      e.start?.value || 0,  // Default to 0 if value is missing
+      e.start?.mean || null,
+      e.start?.stdDev || null,
+      e.start?.upper || null,
+      e.start?.lower || null,
+
+      e.start?.series_start || false,
+      e.start?.series_end || false,
+      e.duration?.type || null,
+      e.duration?.value || 0,  // Default to 0 if value is missing
+      e.duration?.mean || null,
+
+      e.duration?.stdDev || null,
+      e.duration?.upper || null,
+      e.duration?.lower || null,
+      e.expected_annual_change?.type || null,
+      e.expected_annual_change?.value || 0,  // Default to 0 if missing
+      
+      e.expected_annual_change?.type_amt_or_pct || null,
+      e.expected_annual_change?.mean || null,
+      e.expected_annual_change?.stdDev || null,
+      e.expected_annual_change?.upper || null,
+      e.expected_annual_change?.lower || null,
+      
+      e.initialAmount || 0,  // Default to 0 if missing
+      e.max_cash || 0,  // Default to 0 if missing
+      e.inflationAdjusted || false,  // Default to false if missing
+      e.userPercentage || 0,  // Default to 0 if missing
+      e.spousePercentage || 0,  // Default to 0 if missing
+      
+      e.isSocialSecurity || false,  // Default to false if missing
+      e.allocationMethod || null,  // Default to null if missing
+      e.discretionary || false,  // Default to false if missing
     ];
+
+    console.log('Inserting values:', eventsValues);
     await connection.execute(eventsQuery, eventsValues);
     console.log(`Event ${e.name} saved to the database.`);
-    
-    
-  }  
+  }
 }
+
 
