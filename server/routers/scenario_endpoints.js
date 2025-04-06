@@ -163,27 +163,7 @@ router.post("/user-scenario-info", async (req, res) => {
     const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
 
     // Step 2: Insert the investment types and investments with scenario_id from Local Storage
-    for (const investmentType of investmentTypesLocalStorage) {
-      const investmentTypeQuery = `
-        INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeTypeAmtOrPct, taxability) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      const investmentTypeValues = [
-        scenario_id || null,
-        investmentType.name || null,
-        investmentType.description || null,
-        investmentType.expAnnReturnType || null,
-        investmentType.expAnnReturnValue || null,
-        investmentType.expAnnReturnTypeAmtOrPct || null,
-        investmentType.expenseRatio || null,
-        investmentType.expAnnIncomeType || null,
-        investmentType.expAnnIncomeValue || null,
-        investmentType.expAnnIncomeTypeAmtOrPct || null,
-        investmentType.taxability || null,
-      ];
-      await connection.execute(investmentTypeQuery, investmentTypeValues);
-      console.log(`Investment type ${investmentType.name} saved to the database.`);
-    }
+    await insertInvestmentTypes(connection, scenario_id, investmentTypesLocalStorage);
 
     // Step 3: Insert investments with scenario_id
     for (const investment of investmentsLocalStorage) {
@@ -479,5 +459,38 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
     console.log(`Event ${e.name} saved to the database.`);
   }
 }
+
+async function insertInvestmentTypes(connection, scenario_id, investmentTypesLocal) {
+
+  for (const investmentType of investmentTypesLocalStorage) {
+    const investmentTypeQuery = `
+      INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeTypeAmtOrPct, taxability) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const investmentTypeValues = [
+      scenario_id || null,
+      investmentType.name || null,
+      investmentType.description || null,
+      investmentType.expAnnReturn.type || null,
+      investmentType.expAnnReturn.value || null,
+
+      investmentType.expAnnReturn.mean || null,
+      investmentType.expAnnReturn.stdDev || null,
+      investmentType.expAnnReturn.amtOrPct || null,
+      investmentType.expenseRatio || null,
+      investmentType.expAnnIncome.type || null,
+      
+      investmentType.expAnnIncome.value || null,
+      investmentType.expAnnIncome.mean || null,
+      investmentType.expAnnIncome.stdDev || null,
+      investmentType.expAnnIncome.amtOrPct || null,
+      investmentType.taxability || null,
+    ];
+    await connection.execute(investmentTypeQuery, investmentTypeValues);
+    console.log(`Investment type ${investmentType.name} saved to the database.`);
+  }
+
+}
+
 
 
