@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-
+import "../styles/NewScenario.css";
 
 export const Investment = ( { investments, setInvestments, setShowInvestmentForm } ) => {
   const [formData, setFormData] = useState({
@@ -320,7 +320,7 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
       {investmentTypes.length > 0 ? (
         <ul>
           {investmentTypes.map((item, idx) => (
-            <li key={idx}>
+            <li key={idx} className="item">
               <strong>{item.name}</strong>: {item.description}, Expected Annual Return:{" "}
               {item.expAnnReturnType === "fixed"
                 ? `$${item.expAnnReturnValue}`
@@ -339,7 +339,7 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
       {investments.length > 0 ? (
         <ul>
           {investments.map((item, idx) => (
-            <li key={idx}>
+            <li key={idx} className="item">
               <strong>{item.investment_type}</strong>: ${item.dollar_value} ({item.tax_status})
             </li>
           ))}

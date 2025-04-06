@@ -672,7 +672,7 @@ export const ViewEventsDetails = ({ events }) => {
       {events.length > 0 ? (
         <ul>
           {events.map((item, idx) => (
-            <li key={idx}>
+            <li key={idx} className="item">
               <strong>{item.name}</strong>: {item.description}, Type: {item.eventType}
               {item.start?.value && (
                 <span>, Start: {item.start.type} ({item.start.value})</span>
@@ -700,11 +700,40 @@ export const ViewEventsDetails = ({ events }) => {
                 </>
               )}
 
+              {/* still need to implement this something is breaking here i dont know what */}
               {item.eventType === "expense" && <p>(Expense-specific info can go here)</p>}
+              <>
+                <br />
+                Initial Amount: ${item.initialAmount}
+                <br />
+                Expected Annual Change:{" "}
+                {item.expected_annual_change?.type}{" "}
+                {item.expected_annual_change?.amtOrPct && `(${item.expected_annual_change.amtOrPct})`}
+                <br />
+                {item.inflationAdjusted && <span>Inflation Adjusted: ✅</span>}
+                <br />
+                User %: {item.userPercentage}
+                <br />
+                Spouse %: {item.spousePercentage}
+                <br />
+                {item.discretionary && <span>Discretionary: ✅</span>}
+
+             
+              </>
 
               {item.eventType === "invest" && <p>(Investment-specific info can go here)</p>}
+              <>
+                <br />
+                Allocatio method: ${item.allocationMethod}
+                <br />
+                Max Cash: ${item.maxCash}
+              </>
 
               {item.eventType === "rebalance" && <p>(Rebalance-specific info can go here)</p>}
+              <>
+                <br />
+                Allocatio method: ${item.allocationMethod}
+              </>
             </li>
           ))}
         </ul>
