@@ -33,7 +33,9 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
    * This function handles the display for user options for fixed, normal, and uniform distributions. 
    */
 
+  
   const prefixParts = prefix.split(".");
+
 
   switch (type) {
     case "fixed":
@@ -41,12 +43,12 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
         <input
           type="number"
           min="0"
-          name={`${prefix}.Value`}
+          name={`${prefix}.value`} //should be .value instead oops
           placeholder="Enter value"
           value={
             prefixParts.length === 1
-              ? formData[prefixParts[0]]?.Value || "" // If only one part, access directly
-              : formData[prefixParts[0]]?.[prefixParts[1]]?.Value || "" // If two parts, use nested access
+              ? formData[prefixParts[0]]?.value || "" // If only one part, access directly
+              : formData[prefixParts[0]]?.[prefixParts[1]]?.value || "" // If two parts, use nested access
           }
           onChange={handleChange}
           required
@@ -58,12 +60,12 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}.Mean`}
+            name={`${prefix}.mean`}
             placeholder="Enter mean"
             value={
               prefixParts.length === 1
-                ? formData[prefixParts[0]]?.Mean || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.Mean|| "" // If two parts, use nested access
+                ? formData[prefixParts[0]]?.mean || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.mean|| "" // If two parts, use nested access
             }
             onChange={handleChange}
             required
@@ -71,12 +73,12 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}.StdDev`}
+            name={`${prefix}.stdDev`}
             placeholder="Enter standard deviation"
             value={
               prefixParts.length === 1
-                ? formData[prefixParts[0]]?.StdDev || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.StdDev || "" // If two parts, use nested access
+                ? formData[prefixParts[0]]?.stdDev || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.stdDev || "" // If two parts, use nested access
             }
             onChange={handleChange}
             required
@@ -89,12 +91,12 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}.Lower`}
+            name={`${prefix}.lower`}
             placeholder="Enter lower bound"
             value={
               prefixParts.length === 1
-                ? formData[prefixParts[0]]?.Lower || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.Lower || "" // If two parts, use nested access
+                ? formData[prefixParts[0]]?.lower || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.lower || "" // If two parts, use nested access
             }
             onChange={handleChange}
             required
@@ -102,12 +104,12 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           <input
             type="number"
             min="0"
-            name={`${prefix}.Upper`}
+            name={`${prefix}.upper`}
             placeholder="Enter upper bound"
             value={
               prefixParts.length === 1
-                ? formData[prefixParts[0]]?.Upper || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.Upper || "" // If two parts, use nested access
+                ? formData[prefixParts[0]]?.upper || "" // If only one part, access directly
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.upper || "" // If two parts, use nested access
             }
             onChange={handleChange}
             required
@@ -158,38 +160,38 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 // };
 
 
-export const resetTypes = (selectedType, prefix) => {
-  const reset = {};
+// export const resetTypes = (selectedType, prefix) => {
+//   const reset = {};
 
-  // Clear all possible inputs under this prefix
-  reset[`${prefix}Value`] = "";
-  reset[`${prefix}Mean`] = "";
-  reset[`${prefix}StdDev`] = "";
-  reset[`${prefix}Lower`] = "";
-  reset[`${prefix}Upper`] = "";
+//   // Clear all possible inputs under this prefix
+//   reset[`${prefix}Value`] = "";
+//   reset[`${prefix}Mean`] = "";
+//   reset[`${prefix}StdDev`] = "";
+//   reset[`${prefix}Lower`] = "";
+//   reset[`${prefix}Upper`] = "";
 
-  // Optionally, keep only the needed fields for the selected type
-  switch (selectedType) {
-    case "fixed":
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "normal_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "uniform_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      break;
-  }
+//   // Optionally, keep only the needed fields for the selected type
+//   switch (selectedType) {
+//     case "fixed":
+//       delete reset[`${prefix}Mean`];
+//       delete reset[`${prefix}StdDev`];
+//       delete reset[`${prefix}Lower`];
+//       delete reset[`${prefix}Upper`];
+//       break;
+//     case "normal_distribution":
+//       delete reset[`${prefix}Value`];
+//       delete reset[`${prefix}Lower`];
+//       delete reset[`${prefix}Upper`];
+//       break;
+//     case "uniform_distribution":
+//       delete reset[`${prefix}Value`];
+//       delete reset[`${prefix}Mean`];
+//       delete reset[`${prefix}StdDev`];
+//       break;
+//   }
 
-  return reset;
-};
+//   return reset;
+// };
 
 
 
@@ -319,6 +321,8 @@ export const updateNestedState = (prefix, key, value, setFormData) => {
       ...currentLevel[prefixParts[prefixParts.length - 1]], // Spread to avoid direct mutation
       [key]: value,
     };
+
+
 
     return updated;
   });

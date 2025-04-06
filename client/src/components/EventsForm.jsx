@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { inputTypes, resetTypes, updateNestedState } from '../utils';
+import { inputTypes,  updateNestedState } from '../utils';
 
 export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
   const [formData, setFormData] = useState({
@@ -34,7 +34,7 @@ export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
       lower: '',
     },
     initialAmount: '', 
-    max_cash: '',
+    maxCash: '',
     inflationAdjusted: false,
     userPercentage: '',
     spousePercentage: '',
@@ -46,31 +46,27 @@ export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    console.log("name", name);
+    console.log("value", value);
     const parts = name.split(".");
     const parentKey = parts[0];  // inflation_assumption
     const childKey = parts[1];   // type
+    console.log("parts", parts);
 
     if (parts.length > 1){ //meaning nested once
       updateNestedState(parentKey, childKey, value, setFormData);
     }
-
-    //update everything else and checkbox
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-
-    if (name === "start.type" || name === "duration.type") {
-      const prefix = name === "start.type" ? "start" : "duration";
-      const updatedFields = resetTypes(value, prefix);
-    
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value, // Save the type itself
-        ...updatedFields, // Reset only fields related to that prefix
+    else {
+      //update everything else and checkbox
+      const updated = setFormData((prevData) => ({
+        ...prevData,
+        [name]: type === "checkbox" ? checked : value,
       }));
+      console.log("updated", formData);
+      return updated;
     }
+    
+    
 
   };
 
@@ -442,7 +438,6 @@ const RebalanceEvent = ({ formData, handleChange }) => {
 const InvestEvent = ({ formData, handleChange }) => {
   const [accounts, setAccounts] = useState([]);
   const [allocationPercentages, setAllocationPercentages] = useState({});
-  const [maxCash, setMaxCash] = useState("");
   const [sumWarning, setSumWarning] = useState("");
 
   // Fetch investments not in pre-tax accounts
@@ -540,8 +535,8 @@ const InvestEvent = ({ formData, handleChange }) => {
         <input
           type="number"
           name="maxCash"
-          value={maxCash}
-          onChange={(e) => setMaxCash(e.target.value)}
+          value={formData.maxCash}
+          onChange={handleChange} 
           min={0}
         />
       </div>
@@ -724,7 +719,7 @@ export const ViewEventsDetails = ({ events }) => {
               {item.eventType === "invest" && (
                 <>
                   <br />
-                  Allocation method: ${item.allocationMethod}
+                  Allocation method: {item.allocationMethod}
                   <br />
                   Max Cash: ${item.maxCash}
                 </>
