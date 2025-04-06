@@ -1,21 +1,35 @@
 const { process_income_event } = require('./run_income_events');
 
+
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-function simulation(current_year, num_simulations, scenario) {
-    const total_years = calculate_total_years(current_year, scenario);
+function simulation(date=2025, num_simulations, scenario) { 
+    const total_years = get_total_years(date, scenario);
 
     const simulation_results = [];
 
+
     for (let sim = 0; sim < num_simulations; sim++) {
         let yearly_results = [];
+        let previousYearAmounts = []; // Placeholder for previous year amounts for income events
+        let inflationRate;
+        let isUserAlive = true;
+        let isSpouseAlive = true;
+        let cashInvestment = 0;
+        let curYearIncome = 0;
+        let curYearSS = 0;
+        
 
-        for (let year = 0; year < total_years; year++) {
-            const current_simulation_year = current_year + year;
+        for (let year = 0; year < total_years; year++) { //years in which the simulation is  being run
+            
+            const current_simulation_year = date + year; //actual year being simulated
+
+            //run preliminaries -> need to further implement this
+            const { inflationRate } = run_preliminaries(current_simulation_year, scenario);
 
             // Run income events
-            process_income_event(current_simulation_year);
+            process_income_event(scenario.id, previousYearAmount, inflationRate, isUserAlive, isSpouseAlive, cashInvestment, curYearIncome, curYearSS);
 
             // Perform required minimum distributions (RMDs)
           
@@ -52,25 +66,32 @@ function simulation(current_year, num_simulations, scenario) {
     return calculate_stats(simulation_results); // Calculate median, mean, and other statistics
 }
 
+
+
 /**
- * Calculates the total number of years for the simulation based on the scenario.
+ * Calculates the total number of years for the simulation based on the user's and spouse's lifespans.
+ * @param {number} date - starting year of simulation
+ * @param {Object} scenario - The scenario object containing user and spouse details.
+ * @returns {number} The total number of years for the simulation.
  */
-function calculate_total_years(current_year, scenario) {
+function get_total_years(date, scenario) {
     const user_lifespan = scenario.user_birth_year + scenario.user_life_expectancy;
 
     if (scenario.filing_status === 'SINGLE') {
-        return user_lifespan - current_year;
+        // If filing status is single, return the user's lifespan minus the current year
+        return user_lifespan - date;
     }
 
+    // Calculate the spouse's lifespan
     const spouse_lifespan = scenario.spouse_birth_year + scenario.spouse_life_expectancy;
 
+    // Return the greater of the two lifespans minus the current year
     if (user_lifespan >= spouse_lifespan) {
-        return user_lifespan - current_year;
+        return user_lifespan - date;
     }
 
-    return spouse_lifespan - current_year;
+    return spouse_lifespan - date;
 }
-
 
 
 /**

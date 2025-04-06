@@ -19,43 +19,51 @@ const db = require('../db'); // Assuming you have a database connection module
  * @param {number} previousYearAmount - The amount from the previous year.
  * @returns {Object} The calculated data for the income event.
  */
-async function get_income_events_data(eventId, previousYearAmount) {
-    // Fetch event data from the database
-    //is this rly how this works??
+async function get_income_events_data(scenario_id, previousYearAmounts) {
     const [rows] = await db.execute(
         `SELECT 
-            expected_annual_change_type , 
-            expected_annual_change_value AS value, 
-            expected_annual_change_mean AS mean, 
-            expected_annual_change_std_dev AS stdDev, 
-            inflation_adjusted AS inflationAdjusted, 
-            user_percentage AS userPercentage, 
-            spouse_percentage AS spousePercentage, 
-            event_type AS eventType 
+            id,
+            annual_change_type, 
+            annual_change_value, 
+            annual_change_mean, 
+            annual_change_std_dev, 
+            annual_change_upper, 
+            annual_change_lower, 
+            annual_change_type_amt_or_pct
+            inflation_adjusted, 
+            user_percentage, 
+            spouse_percentage, 
+            is_social_security
          FROM events 
-         WHERE id = ? AND event_type = 'income'`,
-        [eventId]
+         WHERE scenario_id = ? AND event_type = 'income'`,
+        [scenario_id]
     );
 
-    if (rows.length === 0) {
-        throw new Error(`No event found with ID: ${eventId}`);
-    }
+    return rows.map(event => {
+        const prevAmount = previousYearAmounts[event.id] || 0;
 
-    const event = rows[0];
-    let currentAmount = previousYearAmount;
+        const sampledChange = sample({
+            type: event.annual_change_type,
+            value: event.annual_change_value,
+            mean: event.annual_change_mean,
+            std_dev: event.annual_change_std_dev, 
+            upper: event.annual_change_upper,     
+            lower: event.annual_change_lower,
+        });
 
-    // Sample the expected annual change is there a better way to do this can i just pass in an object???
-    currentAmount += sample(expected_annual_change); 
-    
-    // Return the updated amount and other event-related data
-    return {
-        currentAmount,
-        inflationAdjusted: event.inflationAdjusted || false,
-        userPercentage: event.userPercentage || 0,
-        spousePercentage: event.spousePercentage || 0,
-        eventType: event.eventType || null,
-    };
+        const currentAmount = prevAmount + sampledChange;
+
+        return {
+            id: event.id,
+            currentAmount,
+            inflationAdjusted: event.inflation_adjusted || false,
+            userPercentage: event.user_percentage || 0,
+            spousePercentage: event.spouse_percentage || 0,
+            isSocialSecurity: event.is_social_security || false,
+        };
+    });
 }
+
 
 /**
  * Processes an income event and updates financial data.
@@ -67,50 +75,57 @@ async function get_income_events_data(eventId, previousYearAmount) {
  * @param {number} cashInvestment - The current cash investment.
  * @param {number} curYearIncome - The current year's income total.
  * @param {number} curYearSS - The current year's social security total.
- * @returns {Object} Updated financial data after processing the event.
+ * @returns {Object} The updated financial data.
  */
-async function process_income_event(eventId, previousYearAmount, inflationRate, isUserAlive, isSpouseAlive, cashInvestment, curYearIncome, curYearSS) {
-    // Get all necessary data for the income event
-    const {
-        currentAmount,
-        inflationAdjusted,
-        userPercentage,
-        spousePercentage,
-        eventType,
-    } = await get_income_events_data(eventId, previousYearAmount);
+async function process_income_event(
+    scenario_id,
+    previousYearAmounts,
+    inflationRate,
+    isUserAlive,
+    isSpouseAlive,
+    cashInvestment,
+    curYearIncome,
+    curYearSS
+) {
+    // Get all income events and calculate current amounts
+    const incomeEvents = await get_income_events_data(scenario_id, previousYearAmounts);
 
-    let adjustedAmount = currentAmount;
+    const updatedAmounts = {}; // To store currentAmount for each event
 
-    // Adjust for inflation if the inflation-adjustment flag is set
-    if (inflationAdjusted) {
-        adjustedAmount *= 1 + inflationRate;
-    }
+    for (const event of incomeEvents) {
+        let adjustedAmount = event.currentAmount;
 
-    // Omit user or spouse percentage if they are dead
-    if (!isUserAlive) {
-        adjustedAmount -= (userPercentage / 100) * currentAmount;
-    }
-    if (!isSpouseAlive) {
-        adjustedAmount -= (spousePercentage / 100) * currentAmount;
-    }
+        // Apply inflation adjustment
+        if (event.inflationAdjusted) {
+            adjustedAmount *= 1 + inflationRate;
+        }
 
-    // Add the income to the cash investment
-    cashInvestment += adjustedAmount;
+        // Omit user or spouse portion if they are dead
+        if (!isUserAlive) {
+            adjustedAmount -= (event.userPercentage / 100) * event.currentAmount;
+        }
+        if (!isSpouseAlive) {
+            adjustedAmount -= (event.spousePercentage / 100) * event.currentAmount;
+        }
 
-    // Update running total curYearIncome
-    curYearIncome += adjustedAmount;
+        // Add to cash investment and income totals
+        cashInvestment += adjustedAmount;
+        curYearIncome += adjustedAmount;
 
-    // Update running total curYearSS if income type is social security
-    if (eventType === "social_security") {
-        curYearSS += adjustedAmount;
+        if (event.isSocialSecurity) {
+            curYearSS += adjustedAmount;
+        }
+
+        updatedAmounts[event.id] = event.currentAmount; // Save the pre-adjusted amount
     }
 
     return {
-        updatedAmount: currentAmount,
+        updatedAmounts,     
         cashInvestment,
         curYearIncome,
-        curYearSS,
+        curYearSS
     };
 }
+
 
 module.exports = { process_income_event, get_income_events_data };
