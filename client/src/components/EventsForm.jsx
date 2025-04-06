@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { inputTypes, resetTypes, updateNestedState } from '../utils';
+import { inputTypes,  updateNestedState } from '../utils';
 
 export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
   const [formData, setFormData] = useState({
@@ -34,7 +34,7 @@ export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
       lower: '',
     },
     initialAmount: '', 
-    max_cash: '',
+    maxCash: '',
     inflationAdjusted: false,
     userPercentage: '',
     spousePercentage: '',
@@ -46,31 +46,27 @@ export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
+    console.log("name", name);
+    console.log("value", value);
     const parts = name.split(".");
     const parentKey = parts[0];  // inflation_assumption
     const childKey = parts[1];   // type
+    console.log("parts", parts);
 
     if (parts.length > 1){ //meaning nested once
       updateNestedState(parentKey, childKey, value, setFormData);
     }
-
-    //update everything else and checkbox
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-
-    if (name === "start.type" || name === "duration.type") {
-      const prefix = name === "start.type" ? "start" : "duration";
-      const updatedFields = resetTypes(value, prefix);
-    
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value, // Save the type itself
-        ...updatedFields, // Reset only fields related to that prefix
+    else {
+      //update everything else and checkbox
+      const updated = setFormData((prevData) => ({
+        ...prevData,
+        [name]: type === "checkbox" ? checked : value,
       }));
+      console.log("updated", formData);
+      return updated;
     }
+    
+    
 
   };
 
@@ -442,7 +438,6 @@ const RebalanceEvent = ({ formData, handleChange }) => {
 const InvestEvent = ({ formData, handleChange }) => {
   const [accounts, setAccounts] = useState([]);
   const [allocationPercentages, setAllocationPercentages] = useState({});
-  const [maxCash, setMaxCash] = useState("");
   const [sumWarning, setSumWarning] = useState("");
 
   // Fetch investments not in pre-tax accounts
@@ -540,8 +535,8 @@ const InvestEvent = ({ formData, handleChange }) => {
         <input
           type="number"
           name="maxCash"
-          value={maxCash}
-          onChange={(e) => setMaxCash(e.target.value)}
+          value={formData.maxCash}
+          onChange={handleChange} 
           min={0}
         />
       </div>
@@ -672,14 +667,15 @@ export const ViewEventsDetails = ({ events }) => {
       {events.length > 0 ? (
         <ul>
           {events.map((item, idx) => (
-            <li key={idx}>
+            <li key={idx} className="item">
               <strong>{item.name}</strong>: {item.description}, Type: {item.eventType}
-              {item.start?.value && (
+              {/* need to edit this */}
+              {/* {item.start?.value && (
                 <span>, Start: {item.start.type} ({item.start.value})</span>
               )}
               {item.duration?.value && (
                 <span>, Duration: {item.duration.type} ({item.duration.value})</span>
-              )}
+              )} */}
 
               {item.eventType === "income" && (
                 <>
@@ -690,21 +686,52 @@ export const ViewEventsDetails = ({ events }) => {
                   {item.expected_annual_change?.type}{" "}
                   {item.expected_annual_change?.amtOrPct && `(${item.expected_annual_change.amtOrPct})`}
                   <br />
-                  {item.inflationAdjusted && <span>Inflation Adjusted: ✅</span>}
-                  <br />
                   User %: {item.userPercentage}
                   <br />
                   Spouse %: {item.spousePercentage}
                   <br />
                   {item.isSocialSecurity && <span>Social Security: ✅</span>}
+                  <br />
+                  {item.inflationAdjusted && <span>Inflation Adjusted: ✅</span>}
                 </>
               )}
 
-              {item.eventType === "expense" && <p>(Expense-specific info can go here)</p>}
+              {item.eventType === "expense" &&  (
+                <>
+                  <br />
+                  Initial Amount: ${item.initialAmount}
+                  <br />
+                  Expected Annual Change:{" "}
+                  {item.expected_annual_change?.type}{" "}
+                  {item.expected_annual_change?.amtOrPct && `(${item.expected_annual_change.amtOrPct})`}
+                  <br />
+                  User %: {item.userPercentage}
+                  <br />
+                  Spouse %: {item.spousePercentage}
+                  <br />
+                  {item.discretionary && <span>Discretionary: ✅</span>}
+                  <br />
+                  {item.inflationAdjusted && <span>Inflation Adjusted: ✅</span>}
+              
+                </>
+              )}
 
-              {item.eventType === "invest" && <p>(Investment-specific info can go here)</p>}
+              {item.eventType === "invest" && (
+                <>
+                  <br />
+                  Allocation method: {item.allocationMethod}
+                  <br />
+                  Max Cash: ${item.maxCash}
+                </>
+              )}
+              
+              {item.eventType === "rebalance" && (
+                <>
+                  <br />
+                  Allocation method: ${item.allocationMethod}
+                </>
+              )}
 
-              {item.eventType === "rebalance" && <p>(Rebalance-specific info can go here)</p>}
             </li>
           ))}
         </ul>
@@ -714,4 +741,3 @@ export const ViewEventsDetails = ({ events }) => {
     </div>
   );
 };
-

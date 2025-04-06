@@ -128,28 +128,28 @@ router.post("/user-scenario-info", async (req, res) => {
     financialGoal || null,
     filingStatus || null,
     stateOfResidence || null,
-    user.lifeExpectancy.Type || null,
-    user.lifeExpectancy.Value || null,
-    user.lifeExpectancy.Mean || null,
-    user.lifeExpectancy.StdDev || null,
-    user.retirementAge.Type || null,
-    user.retirementAge.Value || null,
-    user.retirementAge.Mean || null,
-    user.retirementAge.StdDev || null,
-    spouse.lifeExpectancy.Type || null,
-    spouse.lifeExpectancy.Value || null,
-    spouse.lifeExpectancy.Mean || null,
-    spouse.lifeExpectancy.StdDev || null,
-    spouse.retirementAge.Type || null,
-    spouse.retirementAge.Value || null,
-    spouse.retirementAge.Mean || null,
-    spouse.retirementAge.StdDev || null,
-    inflation_assumption.Type || null,
-    inflation_assumption.Value || null, 
-    inflation_assumption.Mean || null, 
-    inflation_assumption.StdDev || null, 
-    inflation_assumption.Upper || null, 
-    inflation_assumption.Lower || null, 
+    user.lifeExpectancy.type || null,
+    user.lifeExpectancy.value || null,
+    user.lifeExpectancy.mean || null,
+    user.lifeExpectancy.stdDev || null,
+    user.retirementAge.type || null,
+    user.retirementAge.value || null,
+    user.retirementAge.mean || null,
+    user.retirementAge.stdDev || null,
+    spouse.lifeExpectancy.type || null,
+    spouse.lifeExpectancy.value || null,
+    spouse.lifeExpectancy.mean || null,
+    spouse.lifeExpectancy.stdDev || null,
+    spouse.retirementAge.type || null,
+    spouse.retirementAge.value || null,
+    spouse.retirementAge.mean || null,
+    spouse.retirementAge.stdDev || null,
+    inflation_assumption.type || null,
+    inflation_assumption.value || null, 
+    inflation_assumption.mean || null, 
+    inflation_assumption.stdDev || null, 
+    inflation_assumption.upper || null, 
+    inflation_assumption.lower || null, 
   ];
 
 
@@ -163,27 +163,7 @@ router.post("/user-scenario-info", async (req, res) => {
     const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
 
     // Step 2: Insert the investment types and investments with scenario_id from Local Storage
-    for (const investmentType of investmentTypesLocalStorage) {
-      const investmentTypeQuery = `
-        INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeTypeAmtOrPct, taxability) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      const investmentTypeValues = [
-        scenario_id || null,
-        investmentType.name || null,
-        investmentType.description || null,
-        investmentType.expAnnReturnType || null,
-        investmentType.expAnnReturnValue || null,
-        investmentType.expAnnReturnTypeAmtOrPct || null,
-        investmentType.expenseRatio || null,
-        investmentType.expAnnIncomeType || null,
-        investmentType.expAnnIncomeValue || null,
-        investmentType.expAnnIncomeTypeAmtOrPct || null,
-        investmentType.taxability || null,
-      ];
-      await connection.execute(investmentTypeQuery, investmentTypeValues);
-      console.log(`Investment type ${investmentType.name} saved to the database.`);
-    }
+    await insertInvestmentTypes(connection, scenario_id, investmentTypesLocalStorage);
 
     // Step 3: Insert investments with scenario_id
     for (const investment of investmentsLocalStorage) {
@@ -479,5 +459,38 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
     console.log(`Event ${e.name} saved to the database.`);
   }
 }
+
+async function insertInvestmentTypes(connection, scenario_id, investmentTypesLocal) {
+
+  for (const investmentType of investmentTypesLocalStorage) {
+    const investmentTypeQuery = `
+      INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnMean, expAnnReturnStdDev, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeMean, expAnnIncomeStdDev, expAnnIncomeTypeAmtOrPct, taxability) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const investmentTypeValues = [
+      scenario_id || null,
+      investmentType.name || null,
+      investmentType.description || null,
+      investmentType.expAnnReturn.type || null,
+      investmentType.expAnnReturn.value || null,
+
+      investmentType.expAnnReturn.mean || null,
+      investmentType.expAnnReturn.stdDev || null,
+      investmentType.expAnnReturn.amtOrPct || null,
+      investmentType.expenseRatio || null,
+      investmentType.expAnnIncome.type || null,
+
+      investmentType.expAnnIncome.value || null,
+      investmentType.expAnnIncome.mean || null,
+      investmentType.expAnnIncome.stdDev || null,
+      investmentType.expAnnIncome.amtOrPct || null,
+      investmentType.taxability || null,
+    ];
+    await connection.execute(investmentTypeQuery, investmentTypeValues);
+    console.log(`Investment type ${investmentType.name} saved to the database.`);
+  }
+
+}
+
 
 

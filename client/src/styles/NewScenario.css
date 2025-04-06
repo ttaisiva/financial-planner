@@ -42,3 +42,15 @@
   color: white;
   background-color: var(--primary-color);
 }
+
+.item {
+  border-radius: 25px;               
+  margin: 1rem 0;                    
+  padding: 0.6em 1.2em;              
+  font-weight: 500;               
+  font-family: inherit;             
+  overflow: hidden;                  
+  color: var(--text-color);          
+  background-color: var(--primary-color3);
+  transition: background-color 0.25s; 
+}
