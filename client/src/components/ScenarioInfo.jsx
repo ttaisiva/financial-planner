@@ -37,8 +37,8 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
 
     <div>
       <select
-        name={`${prefix}.lifeExpectancy.Type`}
-        value={formData[prefix]?.lifeExpectancy?.Type}
+        name={`${prefix}.lifeExpectancy.type`}
+        value={formData[prefix]?.lifeExpectancy?.type}
         onChange={handleChange}
       >
         <option value="" disabled>Select sample life expectancy</option>
@@ -54,7 +54,7 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
         ℹ️
       </span>
    
-      {inputTypes({type: formData[`${prefix}`]?.lifeExpectancy?.Type, formData, handleChange, prefix: `${prefix}.lifeExpectancy` })}
+      {inputTypes({type: formData[`${prefix}`]?.lifeExpectancy?.type, formData, handleChange, prefix: `${prefix}.lifeExpectancy` })}
       
     </div>
 
@@ -77,8 +77,8 @@ const RetirementAgeForm = ({ prefix, handleChange, formData }) =>  (
 
     <div>
       <select
-        name={`${prefix}.retirementAge.Type`}
-        value={formData[prefix]?.retirementAge?.Type}
+        name={`${prefix}.retirementAge.type`}
+        value={formData[prefix]?.retirementAge?.type}
         onChange={handleChange}
       >
         <option value="" disabled>Select sample life expectancy</option>
@@ -94,7 +94,7 @@ const RetirementAgeForm = ({ prefix, handleChange, formData }) =>  (
         ℹ️
       </span>
 
-      {inputTypes({type: formData[`${prefix}`]?.retirementAge?.Type, formData, handleChange, prefix: `${prefix}.retirementAge` })}
+      {inputTypes({type: formData[`${prefix}`]?.retirementAge?.type, formData, handleChange, prefix: `${prefix}.retirementAge` })}
       
     </div>
 
@@ -116,42 +116,42 @@ const ScenarioInfo = forwardRef((props, ref) => {
     stateOfResidence: "",
     user: {
       lifeExpectancy: {
-        Type: "", 
-        Value: "", 
-        Mean: "",  
-        StdDev: "", 
+        type: "", 
+        value: "", 
+        meanean: "",  
+        stdDev: "", 
       
       },
       retirementAge: {
-        Type: "", 
-        Value: "", 
-        Mean: "",  
-        StdDev: "", 
+        type: "", 
+        value: "", 
+        mean: "",  
+        stdDev: "", 
       }
    
     },
     spouse: {
       lifeExpectancy: {
-        Type: "", 
-        Value: "", 
-        Mean: "",  
-        StdDev: "", 
+        type: "", 
+        value: "", 
+        mean: "",  
+        stdDev: "", 
       
       },
       retirementAge: {
-        Type: "", 
-        Value: "", 
-        Mean: "",  
-        StdDev: "", 
+        type: "", 
+        value: "", 
+        mean: "",  
+        stdDev: "", 
       }
     },
     inflation_assumption: {
-      Type: "", 
-      Value: "", 
-      Mean: "",  
-      StdDev: "", 
-      Lower: "", 
-      Upper: "", 
+      type: "", 
+      value: "", 
+      mean: "",  
+      stdDev: "", 
+      lower: "", 
+      upper: "", 
     }
   });
 
@@ -380,14 +380,14 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
         <div>
           <label>Inflation Assumption: </label>
-          <select name="inflation_assumption.Type" value={formData.inflation_assumption.Type} onChange={handleChange} required>
+          <select name="inflation_assumption.type" value={formData.inflation_assumption.type} onChange={handleChange} required>
             <option value="" disabled>Select format</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
 
-          {inputTypes({ type: formData.inflation_assumption.Type, formData, handleChange, prefix: "inflation_assumption"  })}
+          {inputTypes({ type: formData.inflation_assumption.type, formData, handleChange, prefix: "inflation_assumption"  })}
           {console.log("form Data", formData)}
         </div>
 
