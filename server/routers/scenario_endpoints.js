@@ -464,7 +464,7 @@ async function insertInvestmentTypes(connection, scenario_id, investmentTypesLoc
 
   for (const investmentType of investmentTypesLocalStorage) {
     const investmentTypeQuery = `
-      INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeTypeAmtOrPct, taxability) 
+      INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnMean, expAnnReturnStdDev, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeMean, expAnnIncomeStdDev, expAnnIncomeTypeAmtOrPct, taxability) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const investmentTypeValues = [
@@ -479,7 +479,7 @@ async function insertInvestmentTypes(connection, scenario_id, investmentTypesLoc
       investmentType.expAnnReturn.amtOrPct || null,
       investmentType.expenseRatio || null,
       investmentType.expAnnIncome.type || null,
-      
+
       investmentType.expAnnIncome.value || null,
       investmentType.expAnnIncome.mean || null,
       investmentType.expAnnIncome.stdDev || null,
