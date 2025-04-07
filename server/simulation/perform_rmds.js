@@ -18,4 +18,84 @@
 // already exists, and if so, adding the transferred amount to its value, otherwise creating an
 // investment with the same investment type, the target tax status, and value equal to the transferred amount.
 
+const axios = require('axios');
 
+/**
+ * Performs the Required Minimum Distribution (RMD) for the previous year.
+ * @param {Object} user - The user object containing birth year and other details.
+ * @param {number} currentYear - The current simulation year.
+ * @param {number} curYearIncome - The current year's income total.
+ * @returns {Object} Updated investments and curYearIncome after performing RMDs.
+ */
+async function performRMDs(user, currentSimulationYear, curYearIncome) {
+    const userAge = currentYear - user.birthYear;
+
+    // Step a: Check if the user is at least 74 and has pre-tax investments
+    if (user.birthYear + 73 != currentSimulationYear) {
+        return; // No RMD required
+    }
+
+    let preTaxInvestments;
+    try {
+        const response = await axios.get('http://localhost:3000/pre-tax-investments'); // Replace with your server's URL
+        preTaxInvestments = response.data;
+    } catch (err) {
+        console.error("Failed to fetch pre-tax investments:", err);
+        throw new Error("Unable to fetch pre-tax investments from the server.");
+    }
+
+    if (preTaxInvestments.length === 0) {
+        return; // No pre-tax investments
+    }
+
+    // Step b: Lookup distribution period (d) from the RMD table
+    //not rly sure how to access RMD table 
+    const distributionPeriod = rmdTable[userAge - 1]; // Assuming the table is indexed by age
+    if (!distributionPeriod) {
+        throw new Error(`No distribution period found for age ${userAge}`);
+    }
+
+    // Step c: Calculate the sum of pre-tax investment values (s)
+    const totalPreTaxValue = preTaxInvestments.reduce((sum, inv) => sum + inv.value, 0);
+
+    // Step d: Calculate the RMD (rmd = s / d)
+    const rmd = totalPreTaxValue / distributionPeriod;
+
+    // Step e: Add RMD to curYearIncome
+    curYearIncome += rmd;
+
+    // Step f: Transfer investments in-kind to non-retirement accounts
+    let remainingRMD = rmd;
+    const updatedInvestments = investments.map((inv) => {
+        if (remainingRMD > 0 && inv.taxStatus === "pre-tax") {
+            const transferAmount = Math.min(inv.value, remainingRMD);
+            inv.value -= transferAmount; // Reduce the value of the source investment
+            remainingRMD -= transferAmount;
+
+            // Check if a non-retirement investment with the same type exists
+            const targetInvestment = investments.find(
+                (targetInv) =>
+                    targetInv.investmentType === inv.investmentType &&
+                    targetInv.taxStatus === "non-retirement"
+            );
+
+            if (targetInvestment) {
+                // Add the transferred amount to the existing non-retirement investment
+                targetInvestment.value += transferAmount;
+            } else {
+                // Create a new non-retirement investment
+                investments.push({
+                    investmentType: inv.investmentType,
+                    taxStatus: "non-retirement",
+                    value: transferAmount,
+                });
+            }
+        }
+        return inv;
+    });
+
+    // Return the updated investments and curYearIncome
+    return { investments: updatedInvestments, curYearIncome };
+}
+
+module.exports = { performRMDs };

@@ -13,7 +13,7 @@ const NewScenarioPage = () => {
   const [formData, setFormData] = useState({});
   const navigate = useNavigate();
 
-  const handleRunSimulation = async () => {
+  const handleSaveScenario = async () => {
     // Trigger the form submission in ScenarioInfo component
     if (scenarioInfoRef.current) {
       scenarioInfoRef.current.handleSubmitUserInfo();
@@ -63,7 +63,7 @@ const NewScenarioPage = () => {
             className="fade-in"
           />
 
-          <button onClick={handleRunSimulation}>Run Simulation</button>
+          <button onClick={handleSaveScenario}>Save Scenario</button>
         </div>
       </div>
     </>
