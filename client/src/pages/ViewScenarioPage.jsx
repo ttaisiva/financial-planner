@@ -6,11 +6,58 @@ import { loadAnimation } from "../utils";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
+  const [numSimulations, setNumSimulations] = useState(1000); // Default value for simulations
+  const [simulationResults, setSimulationResults] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const handleRunSimulation = async () => {
+    setIsRunning(true);
+    try {
+      const response = await fetch("http://localhost:3000/run-simulation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ numSimulations }), // Send the number of simulations to the backend
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSimulationResults(data); // Store the simulation results
+      } else {
+        console.error("Failed to run simulation");
+      }
+    } catch (error) {
+      console.error("Error running simulation:", error);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
     <div className="viewscenario-container">
       <Header />
-      <h1> Simulation Results</h1>
+      <h1> Your Scenario </h1>
       <ViewUserScenarios />
+
+      <div className="simulation-controls">
+        <h3>Simulation</h3>
+        <label>Number of Simulations:</label>
+        <input
+          type="number"
+          id="numSimulations"
+          value={numSimulations}
+          onChange={(e) => setNumSimulations(Number(e.target.value))}
+          min="1"
+          disabled={isRunning}
+        />
+        <button onClick={handleRunSimulation} disabled={isRunning}>
+          {isRunning ? "Running..." : "Run Simulation"}
+        </button>
+      </div>
+
+      
+      <DisplaySimulationResults />
       <Footer />
     </div>
   );
@@ -18,6 +65,11 @@ export const ViewScenarioPage = () => {
 
 export default ViewScenarioPage;
 
+
+export const DisplaySimulationResults = () => {
+  //placeholder need to implmement this
+  return <div>Simulation Results</div>;
+};
 
 export const ViewUserScenarios = () => {
   const [scenarios, setScenarios] = useState([]);

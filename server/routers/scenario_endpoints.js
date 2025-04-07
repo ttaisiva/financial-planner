@@ -1,6 +1,7 @@
 import express from "express";
 import { ensureConnection, connection } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
+const { simulation } = require("./monte_carlo_sim"); 
 
 const router = express.Router();
 
@@ -82,6 +83,22 @@ router.get('/investments-pretax', (req, res) => {
   res.status(200).json(filtered);
 });
 
+router.get('/pre-tax-investments', async (req, res) => {
+  console.log("Server received request for pre-tax type investments..");
+
+  const query = "SELECT * FROM investments WHERE tax_status = 'pre-tax'";
+
+  try {
+    await ensureConnection();
+    const [rows] = await connection.execute(query);
+    res.json(rows);
+    console.log('Sent pre-tax investments to client:', rows);
+  } catch (err) {
+    console.error("Failed to fetch pre-tax type investments:", err);
+    res.status(500).send("Failed to fetch pre-tax type investments");
+  }
+});
+
 router.get('/investment-types', (req, res) => {
   console.log("Received request for locally stored investment types.")
   res.status(200).json(investmentTypesLocalStorage);
@@ -153,6 +170,7 @@ router.post("/user-scenario-info", async (req, res) => {
   ];
 
 
+  //Insert all Scenario data into DB
   try {
     await ensureConnection();
     await createTablesIfNotExist(connection);
@@ -166,20 +184,7 @@ router.post("/user-scenario-info", async (req, res) => {
     await insertInvestmentTypes(connection, scenario_id, investmentTypesLocalStorage);
 
     // Step 3: Insert investments with scenario_id
-    for (const investment of investmentsLocalStorage) {
-      const investmentQuery = `
-        INSERT INTO investments (scenario_id, investment_type, dollar_value, tax_status) 
-        VALUES (?, ?, ?, ?)
-      `;
-      const investmentValues = [
-        scenario_id || null,
-        investment.investment_type || null,
-        investment.dollar_value || null,
-        investment.tax_status || null,
-      ];
-      await connection.execute(investmentQuery, investmentValues);
-      console.log(`Investment ${investment.investment_type} saved to the database.`);
-    }
+    await insertInvestment(connection, scenario_id, investmentsLocalStorage);
 
     // Step 4: Insert events with scenario_id
     await insertEvents(connection, scenario_id, eventsLocalStorage);
@@ -205,8 +210,28 @@ router.post("/user-scenario-info", async (req, res) => {
     console.error("Failed to insert user scenario info:", err);
     res.status(500).send("Failed to save user scenario info and related data.");
   }
+
+
 });
 
+
+router.post("/run-simulation", async (req, res) => {
+  try {
+    console.log("Running simulation...");
+    const scenario = req.body.scenario; // Pass scenario data from the frontend
+    const currentYear = req.body.currentYear || new Date().getFullYear();
+    const numSimulations = req.body.numSimulations || 1000;
+
+    // Call the Monte Carlo simulation function
+    const results = await simulation(currentYear, numSimulations, scenario);
+
+    // Send the results back to the client
+    res.json(results);
+  } catch (error) {
+    console.error("Error running simulation:", error);
+    res.status(500).send("Failed to run simulation");
+  }
+});
 
 router.get('/scenarios', async (req, res) => {
   console.log("Display scenarios in server");
@@ -274,23 +299,6 @@ router.get('/scenarios', async (req, res) => {
   } catch (err) {
     console.error("Error retrieving scenarios:", err);
     res.status(500).send("Failed to retrieve scenarios.");
-  }
-});
-
-
-router.get('/pre-tax-investments', async (req, res) => {
-  console.log("Server received request for pre-tax type investments..");
-
-  const query = "SELECT * FROM investments WHERE tax_status = 'pre-tax'";
-
-  try {
-    await ensureConnection();
-    const [rows] = await connection.execute(query);
-    res.json(rows);
-    console.log('Sent pre-tax investments to client:', rows);
-  } catch (err) {
-    console.error("Failed to fetch pre-tax type investments:", err);
-    res.status(500).send("Failed to fetch pre-tax type investments");
   }
 });
 
@@ -492,5 +500,21 @@ async function insertInvestmentTypes(connection, scenario_id, investmentTypesLoc
 
 }
 
+async function insertInvestment(connection, scenario_id, investmentsLocalStorage){
+  for (const investment of investmentsLocalStorage) {
+    const investmentQuery = `
+      INSERT INTO investments (scenario_id, investment_type, dollar_value, tax_status) 
+      VALUES (?, ?, ?, ?)
+    `;
+    const investmentValues = [
+      scenario_id || null,
+      investment.investment_type || null,
+      investment.dollar_value || null,
+      investment.tax_status || null,
+    ];
+    await connection.execute(investmentQuery, investmentValues);
+    console.log(`Investment ${investment.investment_type} saved to the database.`);
+  }
+}
 
 

@@ -20,6 +20,7 @@ const db = require('../db'); // Assuming you have a database connection module
  * @returns {Object} The calculated data for the income event.
  */
 async function get_income_events_data(scenario_id, previousYearAmounts) {
+    //need to update this to get data from localStorage instead....
     const [rows] = await db.execute(
         `SELECT 
             id,

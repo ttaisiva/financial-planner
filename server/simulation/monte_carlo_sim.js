@@ -1,4 +1,6 @@
 const { process_income_event } = require('./run_income_events');
+const { performRMDs } = require('./perform_rmds');
+const { run_preliminaries } = require('./preliminaries');
 
 
 /**
@@ -23,15 +25,16 @@ function simulation(date=2025, num_simulations, scenario) {
 
         for (let year = 0; year < total_years; year++) { //years in which the simulation is  being run
             
-            const current_simulation_year = date + year; //actual year being simulated
+            const currentSimulationYear = date + year; //actual year being simulated
 
             //run preliminaries -> need to further implement this
-            const { inflationRate } = run_preliminaries(current_simulation_year, scenario);
+            const { inflationRate } = run_preliminaries(currentSimulationYear, scenario);
 
             // Run income events
-            process_income_event(scenario.id, previousYearAmount, inflationRate, isUserAlive, isSpouseAlive, cashInvestment, curYearIncome, curYearSS);
+            process_income_event(scenario.id, previousYearAmounts, inflationRate, isUserAlive, isSpouseAlive, cashInvestment, curYearIncome, curYearSS);
 
             // Perform required minimum distributions (RMDs)
+            performRMDs(scenario.user, currentSimulationYear, curYearIncome);
           
 
             // Optimize Roth conversions
