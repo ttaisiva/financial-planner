@@ -1,12 +1,13 @@
-const { process_income_event } = require('./run_income_events');
-const { performRMDs } = require('./perform_rmds');
-const { run_preliminaries } = require('./preliminaries');
+import { process_income_event } from './run_income_events.js';
+import { run_preliminaries } from './preliminaries.js';
+import { performRMDs } from './perform_rmds.js';
+
 
 
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-function simulation(date=2025, num_simulations, scenario) { 
+export function simulation(date=2025, num_simulations, scenario) { 
     const total_years = get_total_years(date, scenario);
 
     const simulation_results = [];
@@ -77,7 +78,7 @@ function simulation(date=2025, num_simulations, scenario) {
  * @param {Object} scenario - The scenario object containing user and spouse details.
  * @returns {number} The total number of years for the simulation.
  */
-function get_total_years(date, scenario) {
+export function get_total_years(date, scenario) {
     const user_lifespan = scenario.user_birth_year + scenario.user_life_expectancy;
 
     if (scenario.filing_status === 'SINGLE') {
@@ -100,7 +101,7 @@ function get_total_years(date, scenario) {
 /**
  * Placeholder for calculating statistics from the simulation results.
  */
-function calculate_stats(simulationResults) {
+export function calculate_stats(simulationResults) {
     console.log('Calculating statistics from simulation results');
     return {
         median: 0, 
@@ -109,4 +110,3 @@ function calculate_stats(simulationResults) {
     };
 }
 
-module.exports = { simulation, calculate_total_years };

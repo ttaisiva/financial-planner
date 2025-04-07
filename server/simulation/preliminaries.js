@@ -1,11 +1,10 @@
-const db = require('../db'); // Assuming you have a database connection module
 
 /**
  * Fetches necessary preliminary data from the database.
  * @param {number} scenarioId - The ID of the scenario.
  * @returns {Object} The preliminary data, including inflation assumptions.
  */
-async function get_preliminaries_data(scenarioId) {
+export async function get_preliminaries_data(scenarioId) {
     // Query the database to fetch inflation assumptions and other necessary data
     const [rows] = await db.execute(
         `SELECT 
@@ -45,7 +44,7 @@ async function get_preliminaries_data(scenarioId) {
  * 
  */
 
-async function run_preliminaries(current_simulation_year, scenario) {
+export async function run_preliminaries(current_simulation_year, scenario) {
     const {
         
     } = await get_data_prelims(scenario.id);
@@ -68,7 +67,7 @@ async function run_preliminaries(current_simulation_year, scenario) {
  * inflation rate, for use in all inflation-related calculations for the year.
  */
 
-function sample(item) {
+export function sample(item) {
     let result;
 
     switch (item.type) {
@@ -103,7 +102,7 @@ function sample(item) {
 /**
  * Samples a value from a normal distribution using the Box-Muller transform.
  */
-function sample_normal_distribution(mean, std_dev) {
+export function sample_normal_distribution(mean, std_dev) {
     if (std_dev <= 0) {
         throw new Error("Standard deviation must be greater than 0.");
     }
@@ -118,7 +117,7 @@ function sample_normal_distribution(mean, std_dev) {
 /**
  * Samples a value from a uniform distribution.
  */
-function sample_uniform_distribution(min, max) {
+export function sample_uniform_distribution(min, max) {
     if (min >= max) {
         throw new Error("Minimum value must be less than the maximum value.");
     }
@@ -126,4 +125,3 @@ function sample_uniform_distribution(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-module.exports = { sample, sample_normal_distribution, sample_uniform_distribution, get_total_years };

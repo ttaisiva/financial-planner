@@ -38,7 +38,7 @@ export const ViewScenarioPage = () => {
     <div className="viewscenario-container">
       <Header />
       <h1> Your Scenario </h1>
-      <ViewUserScenarios />
+      {/* <ViewUserScenarios /> */} maybe only display the current scenario..need to edit this...
 
       <div className="simulation-controls">
         <h3>Simulation</h3>
