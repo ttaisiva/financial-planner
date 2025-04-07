@@ -18,7 +18,7 @@
 // already exists, and if so, adding the transferred amount to its value, otherwise creating an
 // investment with the same investment type, the target tax status, and value equal to the transferred amount.
 
-const axios = require('axios');
+
 
 /**
  * Performs the Required Minimum Distribution (RMD) for the previous year.
@@ -27,7 +27,7 @@ const axios = require('axios');
  * @param {number} curYearIncome - The current year's income total.
  * @returns {Object} Updated investments and curYearIncome after performing RMDs.
  */
-async function performRMDs(user, currentSimulationYear, curYearIncome) {
+export async function performRMDs(user, currentSimulationYear, curYearIncome) {
     const userAge = currentYear - user.birthYear;
 
     // Step a: Check if the user is at least 74 and has pre-tax investments
@@ -98,4 +98,3 @@ async function performRMDs(user, currentSimulationYear, curYearIncome) {
     return { investments: updatedInvestments, curYearIncome };
 }
 
-module.exports = { performRMDs };

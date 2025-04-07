@@ -1,7 +1,8 @@
 import express from "express";
 import { ensureConnection, connection } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
-const { simulation } = require("./monte_carlo_sim"); 
+import {simulation} from "../simulation/monte_carlo_sim.js"
+// const { simulation } = require("./monte_carlo_sim"); 
 
 const router = express.Router();
 
@@ -83,21 +84,7 @@ router.get('/investments-pretax', (req, res) => {
   res.status(200).json(filtered);
 });
 
-router.get('/pre-tax-investments', async (req, res) => {
-  console.log("Server received request for pre-tax type investments..");
 
-  const query = "SELECT * FROM investments WHERE tax_status = 'pre-tax'";
-
-  try {
-    await ensureConnection();
-    const [rows] = await connection.execute(query);
-    res.json(rows);
-    console.log('Sent pre-tax investments to client:', rows);
-  } catch (err) {
-    console.error("Failed to fetch pre-tax type investments:", err);
-    res.status(500).send("Failed to fetch pre-tax type investments");
-  }
-});
 
 router.get('/investment-types', (req, res) => {
   console.log("Received request for locally stored investment types.")
@@ -214,6 +201,21 @@ router.post("/user-scenario-info", async (req, res) => {
 
 });
 
+router.get('/pre-tax-investments', async (req, res) => {
+  console.log("Server received request for pre-tax type investments..");
+
+  const query = "SELECT * FROM investments WHERE tax_status = 'pre-tax'";
+
+  try {
+    await ensureConnection();
+    const [rows] = await connection.execute(query);
+    res.json(rows);
+    console.log('Sent pre-tax investments to client:', rows);
+  } catch (err) {
+    console.error("Failed to fetch pre-tax type investments:", err);
+    res.status(500).send("Failed to fetch pre-tax type investments");
+  }
+});
 
 router.post("/run-simulation", async (req, res) => {
   try {

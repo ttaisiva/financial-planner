@@ -8,10 +8,11 @@
 // e. Update running total curYearIncome,
 // f. Update running total curYearSS of social security benefits, if income type = social security.
 
-const {sample} = require('./preliminaries');
 
 
-const db = require('../db'); // Assuming you have a database connection module
+import {sample} from './preliminaries.js';
+
+
 
 /**
  * Fetches and calculates necessary data for an income event from the database.
@@ -19,7 +20,7 @@ const db = require('../db'); // Assuming you have a database connection module
  * @param {number} previousYearAmount - The amount from the previous year.
  * @returns {Object} The calculated data for the income event.
  */
-async function get_income_events_data(scenario_id, previousYearAmounts) {
+export async function get_income_events_data(scenario_id, previousYearAmounts) {
     //need to update this to get data from localStorage instead....
     const [rows] = await db.execute(
         `SELECT 
@@ -78,7 +79,7 @@ async function get_income_events_data(scenario_id, previousYearAmounts) {
  * @param {number} curYearSS - The current year's social security total.
  * @returns {Object} The updated financial data.
  */
-async function process_income_event(
+export async function process_income_event(
     scenario_id,
     previousYearAmounts,
     inflationRate,
@@ -129,4 +130,3 @@ async function process_income_event(
 }
 
 
-module.exports = { process_income_event, get_income_events_data };
