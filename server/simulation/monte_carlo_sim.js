@@ -7,7 +7,7 @@ import { performRMDs } from './perform_rmds.js';
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export function simulation(date=2025, num_simulations, scenario) { 
+export function simulation(date=2025, num_simulations, userId, scenarioId, connection) { 
     const total_years = get_total_years(date, scenario);
 
     const simulation_results = [];
@@ -29,13 +29,13 @@ export function simulation(date=2025, num_simulations, scenario) {
             const currentSimulationYear = date + year; //actual year being simulated
 
             //run preliminaries -> need to further implement this
-            const { inflationRate } = run_preliminaries(currentSimulationYear, scenario);
+            const { inflationRate } = run_preliminaries(currentSimulationYear, scenarioId, connection);
 
             // Run income events
-            process_income_event(scenario.id, previousYearAmounts, inflationRate, isUserAlive, isSpouseAlive, cashInvestment, curYearIncome, curYearSS);
+            process_income_event(scenarioId, previousYearAmounts, inflationRate, isUserAlive, isSpouseAlive, cashInvestment, curYearIncome, curYearSS);
 
             // Perform required minimum distributions (RMDs)
-            performRMDs(scenario.user, currentSimulationYear, curYearIncome);
+            performRMDs(userId, currentSimulationYear, curYearIncome);
           
 
             // Optimize Roth conversions

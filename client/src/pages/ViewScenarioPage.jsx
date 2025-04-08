@@ -65,6 +65,11 @@ export const ViewScenarioPage = () => {
 
 export default ViewScenarioPage;
 
+export const ViewSingleScenario = () => {
+  //placeholder need to implmement this
+
+};
+
 
 export const DisplaySimulationResults = () => {
   //placeholder need to implmement this

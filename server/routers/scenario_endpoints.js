@@ -16,6 +16,9 @@ let expenseWithdrawalLocalStorage = [];
 let spendingLocalStorage = [];
 
 
+
+
+
 // Route to handle temporary storage: 
 router.post('/investment-type', (req, res) => {
   const investmentTypeData = req.body;
@@ -166,6 +169,7 @@ router.post("/user-scenario-info", async (req, res) => {
     console.log("insert user scenario info to database..")
     const [results] = await connection.execute(query, values);
     const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
+    req.session.user['scenario_id'] = scenario_id; // Store the scenario ID in the session
 
     // Step 2: Insert the investment types and investments with scenario_id from Local Storage
     await insertInvestmentTypes(connection, scenario_id, investmentTypesLocalStorage);
@@ -180,7 +184,7 @@ router.post("/user-scenario-info", async (req, res) => {
     let strategyLocalStorage = [rothLocalStorage, rmdLocalStorage, spendingLocalStorage, expenseWithdrawalLocalStorage];
     await insertStrategies(connection, scenario_id, strategyLocalStorage);
 
-    // Step 6: Clear temporary data after insertion
+    // Step 6: Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
     console.log("All temporary storage cleared");
     investmentsLocalStorage = [];
     investmentTypesLocalStorage = [];
@@ -217,15 +221,19 @@ router.get('/pre-tax-investments', async (req, res) => {
   }
 });
 
+// edit this endpoint to run-simulation-auth and run-simulation-guest for guest send all localStorageData
 router.post("/run-simulation", async (req, res) => {
   try {
     console.log("Running simulation...");
-    const scenario = req.body.scenario; // Pass scenario data from the frontend
+    console.log("user id", req.session.user['id']);
+    console.log("scenario id", req.session.scenario_id);
+    userId = req.session.user['id'];
+    scenarioId = req.session.user['scenario_id'];
     const currentYear = req.body.currentYear || new Date().getFullYear();
     const numSimulations = req.body.numSimulations || 1000;
 
     // Call the Monte Carlo simulation function
-    const results = await simulation(currentYear, numSimulations, scenario);
+    const results = simulation(currentYear, numSimulations, userId, scenarioId, connection);
 
     // Send the results back to the client
     res.json(results);
