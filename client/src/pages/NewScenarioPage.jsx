@@ -11,14 +11,15 @@ const NewScenarioPage = () => {
 
   const scenarioInfoRef = useRef();
   const [formData, setFormData] = useState({});
+  // const [showSingleScenario, setShowSingleScenario] = useState(false);
   const navigate = useNavigate();
 
-  const handleRunSimulation = async () => {
+  const handleSaveScenario = async () => {
     // Trigger the form submission in ScenarioInfo component
     if (scenarioInfoRef.current) {
       scenarioInfoRef.current.handleSubmitUserInfo();
     } // scenario endpoint also pushes all local storage to database
-    navigate("/scenario");
+    //navigate("/scenario", {state: {showSingleScenario: true}});
   };
 
   const handleFileChange = (event) => {
@@ -63,7 +64,7 @@ const NewScenarioPage = () => {
             className="fade-in"
           />
 
-          <button onClick={handleRunSimulation}>Run Simulation</button>
+          <button onClick={handleSaveScenario}>Save Scenario</button>
         </div>
       </div>
     </>

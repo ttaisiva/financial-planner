@@ -13,90 +13,163 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 import {tooltipContent} from "../utils";
 
 const Strategy = ({ investments, showEventsForm }) => {
-  // State to manage form data
-  const [formData, setFormData] = useState({
+  // States to manage form data
+  const [rothData, setRothData] = useState({
     optimizer: false,
+    rothStartYear: "",
+    rothEndYear: "",
     rothConversionStrat: [],
-    rmdStrat: [],
-    expenseWithdrawalStrat: [],
-    spendingStrat: [],
   });
-  // for rendering investments to order
+  const [rmdStrat , setRmdStrat] = useState([]);
+  const [expenseStrat, setExpenseStrat] = useState([]);
+  const [spendingStrat, setSpendingStrat] = useState([]);
+
+  // for rendering investments and expenses to move around
   const [rothAccounts, setRothAccounts] = useState([]);
   const [rmdAccounts, setRmdAccounts] = useState([]);
   const [expAccounts, setExpAccounts] = useState([]);
   const [expenses, setExpenses] = useState([]);
 
-  // update form before sending to server
+  // Roth Strategy Updates
   useEffect(() => {
-    if(formData.optimizer) {
-      setFormData((prevData) => ({
+      setRothData((prevData) => ({
         ...prevData,
         rothConversionStrat: rothAccounts,
-        rmdStrat: rmdAccounts,
-        expenseWithdrawalStrat: expAccounts,
-        spendingStrat: expenses,
       }));
-    } else {
-      setFormData((prevData) => ({
-        ...prevData,
-        rmdStrat: rmdAccounts,
-        expenseWithdrawalStrat: expAccounts,
-        spendingStrat: expenses,
-      }));
-    }
-  }, [rothAccounts, rmdAccounts, expAccounts, expenses]);
+  }, [rothAccounts]);
+
+  // Roth Strategy Updates sent to server
+    useEffect(() => {
+      const updateStrategySettings = async () => {
+        try {
+          const response = await fetch("http://localhost:3000/api/roth-strategy", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(rothData), // Now it uses the latest formData
+          });
   
-  // send updated settings to server whenever formData updates
+          if (response.ok) {
+            console.log("Roth strategy settings updated successfully");
+          } else {
+            console.error("Failed to update Roth strategy settings");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      };
+      if (rothData.optimizer){
+        updateStrategySettings();
+      }
+        
+  }, [rothData]);
+  
+  // RMD Strategy Updates
+    useEffect(() => {
+      setRmdStrat(rmdAccounts);
+  }, [rmdAccounts]);
+  
+  // RMD Strategy Updates sent to server
   useEffect(() => {
     const updateStrategySettings = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/strategies", {
+        const response = await fetch("http://localhost:3000/api/rmd-strategy", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData), // Now it uses the latest formData
+          body: JSON.stringify(rmdStrat), // Now it uses the latest formData
         });
 
         if (response.ok) {
-          console.log("Strategy settings updated successfully");
+          console.log("RMD strategy settings updated successfully");
         } else {
-          console.error("Failed to update strategy settings");
+          console.error("Failed to update RMD strategy settings");
         }
       } catch (error) {
         console.error("Error:", error);
       }
     };
-  
       updateStrategySettings();
-  }, [formData]); // Now it waits for formData to update before sending to the server
+  }, [rmdStrat]);
+
+  // expense withdrawal strategy updates
+  useEffect(() => {
+    setExpenseStrat(expAccounts);
+}, [expAccounts]);
+
+  // expense withdrawal strategy updates sent to server
+  useEffect(() => {
+    const updateStrategySettings = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/expense-withdrawal-strategy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(expenseStrat),
+        });
+
+        if (response.ok) {
+          console.log("Expense withdrawal strategy settings updated successfully");
+        } else {
+          console.error("Failed to update expense withdrawal strategy settings");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+      updateStrategySettings();
+  }, [expenseStrat]);
+
+  // spending strategy updates
+  useEffect(() => {
+    setSpendingStrat(expenses);
+  }, [expenses]);
+
+  // spending strategy updates sent to server
+  useEffect(() => {
+    const updateStrategySettings = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/spending-strategy", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(spendingStrat),
+        });
+
+        if (response.ok) {
+          console.log("Expense withdrawal strategy settings updated successfully");
+        } else {
+          console.error("Failed to update expense withdrawal strategy settings");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+      updateStrategySettings();
+  }, [spendingStrat]);
 
   return (
     <div>
       <h2>Strategies</h2>
 
-      <SpendingSettings setFormData={setFormData} expenses={expenses} setExpenses={setExpenses}
+      <SpendingSettings expenses={expenses} setExpenses={setExpenses}
         showEventsForm={showEventsForm} />
-      <ExpenseWithdrawSettings formData={formData} setFormData={setFormData}
-      expAccounts={expAccounts} setExpAccounts={setExpAccounts} investments={investments}/>
-      <RothConversionSettings formData={formData} setFormData={setFormData} 
+      <ExpenseWithdrawSettings expAccounts={expAccounts} setExpAccounts={setExpAccounts}
+       investments={investments}/>
+      <RothConversionSettings rothData={rothData} setRothData={setRothData} 
         rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
-      <RMDSettings formData={formData} setFormData={setFormData} rmdAccounts={rmdAccounts}
-        setRmdAccounts={setRmdAccounts} investments={investments} rothAccounts={rothAccounts}/>
+      <RMDSettings rmdAccounts={rmdAccounts}
+        setRmdAccounts={setRmdAccounts} investments={investments} rothAccounts={rothAccounts}
+        rothData={rothData}/>
     </div>
   );
 };
 
-const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccounts, setExpAccounts}) => {
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+const ExpenseWithdrawSettings = ({investments, expAccounts, setExpAccounts}) => {
 
   useEffect(() => {
     const fetchInvestments = async () => {
@@ -150,15 +223,7 @@ const ExpenseWithdrawSettings = ({formData, setFormData, investments, expAccount
 }
 
 
-const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, investments, rothAccounts }) => {
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+const RMDSettings = ({rmdAccounts, setRmdAccounts, investments, rothAccounts, rothData }) => {
 
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
@@ -222,7 +287,7 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
         </div>
         
       )}
-      {rmdAccounts && formData.optimizer && (
+      {rmdAccounts && rothData.optimizer && (
           <button onClick={copyOrder}>Copy order from Roth conversion</button>
       )}
 
@@ -231,10 +296,10 @@ const RMDSettings = ({ formData, setFormData, rmdAccounts, setRmdAccounts, inves
 }      
 
 // both roth and rmd are ordering on pre tax retirement rothAccounts - share drag and drop component
-const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAccounts, investments }) => {
+const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAccounts, investments }) => {
 
   const handleOptimizerToggle = () => {
-    setFormData((prevData) => ({
+    setRothData((prevData) => ({
       ...prevData,
       optimizer: !prevData.optimizer,
     }));
@@ -242,7 +307,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
+    setRothData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
@@ -286,10 +351,10 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
               <br></br>Enable the Roth Conversion Optimizer to see if this strategy may benefit you.
             </p>
             <button type="button" onClick={handleOptimizerToggle}>
-              {formData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
+              {rothData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
             </button>
           </div>
-          {formData.optimizer && (
+          {rothData.optimizer && (
             <div>
               <div>
                 <label>Start year:</label>
@@ -297,7 +362,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
                   type="number"
                   name="RothStartYear"
                   placeholder="Enter year"
-                  value={formData.RothStartYear || ""}
+                  value={rothData.RothStartYear || ""}
                   onChange={handleChange}
                   required
                 />
@@ -308,7 +373,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
                   type="number"
                   name="RothEndYear"
                   placeholder="Enter year"
-                  value={formData.RothEndYear || ""}
+                  value={rothData.RothEndYear || ""}
                   onChange={handleChange}
                   required
                 />
@@ -318,7 +383,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
       </div>
 
       {/* Ordering Strategy */}
-      {formData.optimizer && rothAccounts && (
+      {rothData.optimizer && rothAccounts && (
         <div>
           <p>
             Assets will be transferred out of your pre-tax retirement accounts
@@ -344,7 +409,7 @@ const RothConversionSettings = ({ formData, setFormData, rothAccounts, setRothAc
 };
 
 // ordering on discretionary expenses
-const SpendingSettings = ({ setFormData, expenses, setExpenses, showEventsForm }) => {
+const SpendingSettings = ({expenses, setExpenses, showEventsForm }) => {
 
   useEffect(() => {
     const fetchExpenses = async () => {
