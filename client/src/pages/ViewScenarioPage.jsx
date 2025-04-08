@@ -133,56 +133,91 @@ export const ViewSingleScenario = () => {
 
     <div className="content-dashboard fade-in">
       
-      <div className="scenario-details">
-        <h3>Scenario Details</h3>
-        {scenario && renderAttributes({
-          scenario_name: scenario.scenario_name,
-          filing_status: scenario.filing_status,
-          state_of_residence: scenario.state_of_residence,
-          user_life_expectancy_type: scenario.user_life_expectancy_type,
-          user_life_expectancy_value: scenario.user_life_expectancy_value,
-          user_life_expectancy_mean: scenario.user_life_expectancy_mean,
-          user_life_expectancy_std_dev: scenario.user_life_expectancy_std_dev,
-          user_retirement_age_type: scenario.user_retirement_age_type,
-          user_retirement_age_value: scenario.user_retirement_age_value,
-          user_retirement_age_mean: scenario.user_retirement_age_mean,
-          user_retirement_age_std_dev: scenario.user_retirement_age_std_dev,
-          spouse_life_expectancy_type: scenario.spouse_life_expectancy_type,
-          spouse_life_expectancy_value: scenario.spouse_life_expectancy_value,
-          spouse_life_expectancy_mean: scenario.spouse_life_expectancy_mean,
-          spouse_life_expectancy_std_dev: scenario.spouse_life_expectancy_std_dev,
-          spouse_retirement_age_type: scenario.spouse_retirement_age_type,
-          spouse_retirement_age_value: scenario.spouse_retirement_age_value,
-          spouse_retirement_age_mean: scenario.spouse_retirement_age_mean,
-          spouse_retirement_age_std_dev: scenario.spouse_retirement_age_std_dev,
-          
-        })}
-      </div>
-
-
-      <div >
-        <h3>Financial Details</h3> {/* render financial goal, inflation assumption*/}
-        {scenario && renderAttributes({
-          financial_goal: scenario.financial_goal,
-          inflation_assumption_type: scenario.inflation_assumption_type,
-          inflation_assumption_value: scenario.inflation_assumption_value,
-          inflation_assumption_mean: scenario.inflation_assumption_mean,
-          inflation_assumption_std_dev: scenario.inflation_assumption_std_dev,
-          inflation_assumption_lower: scenario.inflation_assumption_lower,
-          inflation_assumption_upper: scenario.inflation_assumption_upper,
-        })}
-      </div>
-
-      {/* Render related data if available */}
       <div>
+        
+        <div className="row">
+          
+          <div className="item">
+          <h3>Scenario Details</h3>
+            {scenario && renderAttributes({
+              scenario_name: scenario.scenario_name,
+              filing_status: scenario.filing_status,
+              state_of_residence: scenario.state_of_residence,
+            })}
+          </div>
+
+          <div className="item">
+            <h3>Financial Details</h3> 
+              {scenario && renderAttributes({
+                financial_goal: scenario.financial_goal,
+                inflation_assumption_type: scenario.inflation_assumption_type,
+                inflation_assumption_value: scenario.inflation_assumption_value,
+                inflation_assumption_mean: scenario.inflation_assumption_mean,
+                inflation_assumption_std_dev: scenario.inflation_assumption_std_dev,
+                inflation_assumption_lower: scenario.inflation_assumption_lower,
+                inflation_assumption_upper: scenario.inflation_assumption_upper,
+              })}
+          </div>
+
+          <div className="item">
+            <h3>Personal Details</h3>
+            {scenario && renderAttributes({
+              user_life_expectancy_type: scenario.user_life_expectancy_type,
+              user_life_expectancy_value: scenario.user_life_expectancy_value,
+              user_life_expectancy_mean: scenario.user_life_expectancy_mean,
+              user_life_expectancy_std_dev: scenario.user_life_expectancy_std_dev,
+              user_retirement_age_type: scenario.user_retirement_age_type,
+              user_retirement_age_value: scenario.user_retirement_age_value,
+              user_retirement_age_mean: scenario.user_retirement_age_mean,
+              user_retirement_age_std_dev: scenario.user_retirement_age_std_dev,
+            })}
+          </div>
+
+          {
+            (scenario.spouse_life_expectancy_type ) && (
+              <div className="item">
+              <h3>Spouse Details</h3>
+              {scenario && renderAttributes({
+                spouse_life_expectancy_type: scenario.spouse_life_expectancy_type,
+                spouse_life_expectancy_value: scenario.spouse_life_expectancy_value,
+                spouse_life_expectancy_mean: scenario.spouse_life_expectancy_mean,
+                spouse_life_expectancy_std_dev: scenario.spouse_life_expectancy_std_dev,
+                spouse_retirement_age_type: scenario.spouse_retirement_age_type,
+                spouse_retirement_age_value: scenario.spouse_retirement_age_value,
+                spouse_retirement_age_mean: scenario.spouse_retirement_age_mean,
+                spouse_retirement_age_std_dev: scenario.spouse_retirement_age_std_dev,
+              })}
+            </div>
+            )
+          }
+
+
+
+
+        </div>
+      </div>
+
+
+
+      <div>
+        
+
+
+      </div>
+
+      
+      {/* Render related data if available */}
+      <div >
         {scenario.investments?.length > 0 && (
           <>
-            <h3>Investments</h3>
+            <h3 style={{ textAlign: "center" }}>Investments</h3>
+            <div className="grid">
             {scenario.investments.map((investment, index) => (
-              <div key={index} className="investment-item">
+              <div key={index} className="item">
                 {renderAttributes(investment)}
               </div>
             ))}
+            </div>
           </>
         )}
       </div>
@@ -190,12 +225,14 @@ export const ViewSingleScenario = () => {
       <div>
         {scenario.investment_types?.length > 0 && (
           <>
-            <h3>Investment Types</h3>
+            <h3  >Investment Types</h3>
+            <div className="grid">
             {scenario.investment_types.map((type, index) => (
-              <div key={index} className="investment-type-item">
+              <div key={index} className="item">
                 {renderAttributes(type)}
               </div>
             ))}
+            </div>
           </>
         )}
       </div>
@@ -203,12 +240,14 @@ export const ViewSingleScenario = () => {
       <div>
         {scenario.events?.length > 0 && (
           <>
-            <h3>Events</h3>
+            <h3 style={{ textAlign: "center" }}>Events</h3>
+            <div className="grid">
             {scenario.events.map((event, index) => (
-              <div key={index} className="event-item">
+              <div key={index} className="item">
                 {renderAttributes(event)}
               </div>
             ))}
+            </div>
           </>
         )}
       </div>
@@ -216,12 +255,14 @@ export const ViewSingleScenario = () => {
       <div>
         {scenario.strategies?.length > 0 && (
           <>
-            <h3>Strategies</h3>
+            <h3 style={{ textAlign: "center" }}>Strategies</h3>
+            <div className="grid">
             {scenario.strategies.map((strategy, index) => (
-              <div key={index} className="strategy-item">
+              <div key={index} className="item">
                 {renderAttributes(strategy)}
               </div>
             ))}
+            </div>
           </>
         )}
       </div>
