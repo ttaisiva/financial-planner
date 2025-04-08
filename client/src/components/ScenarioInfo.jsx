@@ -20,6 +20,7 @@ import {
 } from "../utils";
 import Strategy from "./Strategy";
 import { inputTypes, updateNestedState} from '../utils';
+import { useNavigate } from "react-router-dom";
 
 //maybe move these to utils
 const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
@@ -107,6 +108,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
     loadAnimation();
 
   });
+
+  const navigate = useNavigate();
 
   // State to manage form data
   const [formData, setFormData] = useState({
@@ -220,7 +223,10 @@ const ScenarioInfo = forwardRef((props, ref) => {
       console.log(response);
 
       if (response.ok) {
-        console.log("User details saved successfully");
+        const data = await response.json();
+        console.log("Scenario saved successfully:", data);
+        console.log("scenario id: ", data.scenario_id);
+        navigate("/scenario", { state: { scenario_id: data.scenario_id } });
       } else {
         console.error("Failed to save user details");
       }

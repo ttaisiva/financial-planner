@@ -10,12 +10,10 @@ const router = express.Router();
 let investmentsLocalStorage = [];
 let investmentTypesLocalStorage = [];
 let eventsLocalStorage = [];
-let rothLocalStorage = [];
+let rothLocalStorage = []; 
 let rmdLocalStorage = [];
 let expenseWithdrawalLocalStorage = [];
 let spendingLocalStorage = [];
-
-
 
 
 
@@ -86,7 +84,6 @@ router.get('/investments-pretax', (req, res) => {
   const filtered = investmentsLocalStorage.filter((investment) => investment.tax_status === "Pre-Tax")
   res.status(200).json(filtered);
 });
-
 
 
 router.get('/investment-types', (req, res) => {
@@ -170,21 +167,17 @@ router.post("/user-scenario-info", async (req, res) => {
     const [results] = await connection.execute(query, values);
     const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
     req.session.user['scenario_id'] = scenario_id; // Store the scenario ID in the session
+    console.log("Scenario ID:", scenario_id);
 
-    // Step 2: Insert the investment types and investments with scenario_id from Local Storage
+
+    // insert all data into db
     await insertInvestmentTypes(connection, scenario_id, investmentTypesLocalStorage);
-
-    // Step 3: Insert investments with scenario_id
     await insertInvestment(connection, scenario_id, investmentsLocalStorage);
-
-    // Step 4: Insert events with scenario_id
     await insertEvents(connection, scenario_id, eventsLocalStorage);
-  
-    // Step 5: insert events into db
     let strategyLocalStorage = [rothLocalStorage, rmdLocalStorage, spendingLocalStorage, expenseWithdrawalLocalStorage];
     await insertStrategies(connection, scenario_id, strategyLocalStorage);
 
-    // Step 6: Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
+    //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
     console.log("All temporary storage cleared");
     investmentsLocalStorage = [];
     investmentTypesLocalStorage = [];
@@ -195,8 +188,8 @@ router.post("/user-scenario-info", async (req, res) => {
     expenseWithdrawalLocalStorage = [];
     strategyLocalStorage = [];
 
-    
-    res.status(200).send("User scenario and related data saved successfully.");
+    console.log("User scenario info and related data saved successfully.");
+    res.status(200).json({ message: "User scenario and related data saved successfully.", scenario_id });
   } catch (err) {
     console.error("Failed to insert user scenario info:", err);
     res.status(500).send("Failed to save user scenario info and related data.");
@@ -226,7 +219,7 @@ router.post("/run-simulation", async (req, res) => {
   try {
     console.log("Running simulation...");
     console.log("user id", req.session.user['id']);
-    console.log("scenario id", req.session.scenario_id);
+    console.log("scenario id", req.session.user['scenario_id']);
     userId = req.session.user['id'];
     scenarioId = req.session.user['scenario_id'];
     const currentYear = req.body.currentYear || new Date().getFullYear();
@@ -242,6 +235,73 @@ router.post("/run-simulation", async (req, res) => {
     res.status(500).send("Failed to run simulation");
   }
 });
+
+
+router.get('/single-scenario', async (req, res) => {
+  console.log("Display single scenario in server");
+  console.log(req.session.user);
+
+    //const scenarioId = await waitForScenarioId();
+    const scenarioId = req.session.user['scenario_id'];
+    const userId = req.session.user['id'];
+
+    console.log("scenario id: ", scenarioId);
+    console.log("user id: ", userId);
+
+    if (!scenarioId) {
+      return res.status(400).send("Scenario ID is not available in the session.");
+    }
+
+    await ensureConnection();
+    await createTablesIfNotExist(connection);
+
+    // 1. Fetch user scenario info
+    const [scenarios] = await connection.execute(
+      `SELECT * FROM user_scenario_info WHERE user_id = ? AND id = ?`,
+      [userId, scenarioId]
+    );
+
+    if (scenarios.length === 0) {
+      return res.status(200).json([]); // No scenario found
+    }
+
+    const scenario = scenarios[0]; // Grab the single scenario object
+
+    // 2. Fetch all related data
+    const [investments] = await connection.query(
+      `SELECT * FROM investments WHERE scenario_id = ?`,
+      [scenarioId]
+    );
+
+    const [investmentTypes] = await connection.query(
+      `SELECT * FROM investment_types WHERE scenario_id = ?`,
+      [scenarioId]
+    );
+
+    const [events] = await connection.query(
+      `SELECT * FROM events WHERE scenario_id = ?`,
+      [scenarioId]
+    );
+
+    const [strategy] = await connection.query(
+      `SELECT * FROM strategy WHERE scenario_id = ? ORDER BY strategy_order`,
+      [scenarioId]
+    );
+
+    // 3. Assemble the full scenario object
+    const scenarioWithDetails = {
+      ...scenario,
+      investments,
+      investment_types: investmentTypes,
+      events,
+      strategy,
+    };
+
+    res.status(200).json(scenarioWithDetails);
+
+
+});
+
 
 router.get('/scenarios', async (req, res) => {
   console.log("Display scenarios in server");
