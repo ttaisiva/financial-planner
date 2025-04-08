@@ -11,6 +11,7 @@ const NewScenarioPage = () => {
 
   const scenarioInfoRef = useRef();
   const [formData, setFormData] = useState({});
+  // const [showSingleScenario, setShowSingleScenario] = useState(false);
   const navigate = useNavigate();
 
   const handleSaveScenario = async () => {
@@ -18,7 +19,7 @@ const NewScenarioPage = () => {
     if (scenarioInfoRef.current) {
       scenarioInfoRef.current.handleSubmitUserInfo();
     } // scenario endpoint also pushes all local storage to database
-    navigate("/scenario");
+    //navigate("/scenario", {state: {showSingleScenario: true}});
   };
 
   const handleFileChange = (event) => {
