@@ -7,15 +7,15 @@ export async function createTablesIfNotExist(connection) {
   // annual_pre_tax_contribution_limit DECIMAL(10, 2),  
   // annual_after_tax_contribution_limit DECIMAL(10, 2),
 
-  // const createUsersTable = `
-  //     CREATE TABLE users (
-  //      id varchar(255) NOT NULL , 
-  //      name varchar(100), 
-  //      lastName varchar(100), 
-  //      email varchar(255), 
-  //      UNIQUE(email), 
-  //      PRIMARY KEY(id));
-  // `;
+  const createUsersTable = `
+      CREATE TABLE users (
+       id varchar(255) NOT NULL , 
+       name varchar(100), 
+       lastName varchar(100), 
+       email varchar(255), 
+       UNIQUE(email), 
+       PRIMARY KEY(id));
+  `;
   
   // User scenario info table has user_id which is foreign key to reference the user that owns the scenario
   const createUserScenarioInfoTable = `

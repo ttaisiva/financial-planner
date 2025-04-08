@@ -20,9 +20,9 @@ import {sample} from './preliminaries.js';
  * @param {number} previousYearAmount - The amount from the previous year.
  * @returns {Object} The calculated data for the income event.
  */
-export async function get_income_events_data(scenario_id, previousYearAmounts) {
-    //need to update this to get data from localStorage instead....
-    const [rows] = await db.execute(
+export async function get_income_events_data(scenarioId, previousYearAmounts) {
+    //this is only for logged in user, for guest user, we need to fetch the data from local storage
+    const [rows] = await connection.execute(
         `SELECT 
             id,
             annual_change_type, 
@@ -38,7 +38,7 @@ export async function get_income_events_data(scenario_id, previousYearAmounts) {
             is_social_security
          FROM events 
          WHERE scenario_id = ? AND event_type = 'income'`,
-        [scenario_id]
+        [scenarioId]
     );
 
     return rows.map(event => {
@@ -80,7 +80,7 @@ export async function get_income_events_data(scenario_id, previousYearAmounts) {
  * @returns {Object} The updated financial data.
  */
 export async function process_income_event(
-    scenario_id,
+    scenarioId,
     previousYearAmounts,
     inflationRate,
     isUserAlive,
@@ -90,7 +90,7 @@ export async function process_income_event(
     curYearSS
 ) {
     // Get all income events and calculate current amounts
-    const incomeEvents = await get_income_events_data(scenario_id, previousYearAmounts);
+    const incomeEvents = await get_income_events_data(scenarioId, previousYearAmounts);
 
     const updatedAmounts = {}; // To store currentAmount for each event
 

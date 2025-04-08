@@ -4,9 +4,11 @@
  * @param {number} scenarioId - The ID of the scenario.
  * @returns {Object} The preliminary data, including inflation assumptions.
  */
-export async function get_preliminaries_data(scenarioId) {
+export async function get_preliminaries_data(scenarioId, connection) {
     // Query the database to fetch inflation assumptions and other necessary data
-    const [rows] = await db.execute(
+    // this would be different from guest 
+
+    const [rows] = await connection.execute(
         `SELECT 
             inflation_assumption_type AS type,
             inflation_assumption_value AS value,
@@ -44,12 +46,10 @@ export async function get_preliminaries_data(scenarioId) {
  * 
  */
 
-export async function run_preliminaries(current_simulation_year, scenario) {
-    const {
-        
-    } = await get_data_prelims(scenario.id);
+export async function run_preliminaries(current_simulation_year, scenarioId, connection) {
+    const inflation_assumption = await get_data_prelims(scenarioId, connection);
 
-    const inflation_rate = sample(scenario.inflation_assumption);
+    const inflation_rate = sample(inflation_assumption);
 
     
 
