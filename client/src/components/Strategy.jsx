@@ -12,6 +12,26 @@ import "../styles/NewScenario.css";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import {tooltipContent} from "../utils";
 
+const updateStrategySettings = async (endpoint, data) => { // pass endpoint as string parameter
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data), // Now it uses the latest formData
+    });
+
+    if (response.ok) {
+      console.log("Strategy settings updated successfully");
+    } else {
+      console.error("Failed to update strategy settings");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
+
 const Strategy = ({ investments, showEventsForm }) => {
   // States to manage form data
   const [rothData, setRothData] = useState({
@@ -40,29 +60,9 @@ const Strategy = ({ investments, showEventsForm }) => {
 
   // Roth Strategy Updates sent to server
     useEffect(() => {
-      const updateStrategySettings = async () => {
-        try {
-          const response = await fetch("http://localhost:3000/api/roth-strategy", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(rothData), // Now it uses the latest formData
-          });
-  
-          if (response.ok) {
-            console.log("Roth strategy settings updated successfully");
-          } else {
-            console.error("Failed to update Roth strategy settings");
-          }
-        } catch (error) {
-          console.error("Error:", error);
-        }
-      };
       if (rothData.optimizer){
-        updateStrategySettings();
-      }
-        
+        updateStrategySettings("http://localhost:3000/api/roth-strategy", rothData);
+      }   
   }, [rothData]);
   
   // RMD Strategy Updates
@@ -72,26 +72,7 @@ const Strategy = ({ investments, showEventsForm }) => {
   
   // RMD Strategy Updates sent to server
   useEffect(() => {
-    const updateStrategySettings = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/api/rmd-strategy", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(rmdStrat), // Now it uses the latest formData
-        });
-
-        if (response.ok) {
-          console.log("RMD strategy settings updated successfully");
-        } else {
-          console.error("Failed to update RMD strategy settings");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    };
-      updateStrategySettings();
+      updateStrategySettings("http://localhost:3000/api/rmd-strategy", rmdStrat);
   }, [rmdStrat]);
 
   // expense withdrawal strategy updates
@@ -101,26 +82,7 @@ const Strategy = ({ investments, showEventsForm }) => {
 
   // expense withdrawal strategy updates sent to server
   useEffect(() => {
-    const updateStrategySettings = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/api/expense-withdrawal-strategy", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(expenseStrat),
-        });
-
-        if (response.ok) {
-          console.log("Expense withdrawal strategy settings updated successfully");
-        } else {
-          console.error("Failed to update expense withdrawal strategy settings");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    };
-      updateStrategySettings();
+      updateStrategySettings("http://localhost:3000/api/expense-withdrawal-strategy", expenseStrat);
   }, [expenseStrat]);
 
   // spending strategy updates
@@ -130,26 +92,7 @@ const Strategy = ({ investments, showEventsForm }) => {
 
   // spending strategy updates sent to server
   useEffect(() => {
-    const updateStrategySettings = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/api/spending-strategy", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(spendingStrat),
-        });
-
-        if (response.ok) {
-          console.log("Expense withdrawal strategy settings updated successfully");
-        } else {
-          console.error("Failed to update expense withdrawal strategy settings");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    };
-      updateStrategySettings();
+      updateStrategySettings("http://localhost:3000/api/spending-strategy", spendingStrat);
   }, [spendingStrat]);
 
   return (
