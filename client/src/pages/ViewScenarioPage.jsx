@@ -163,6 +163,7 @@ export const ViewSingleScenario = () => {
               user_retirement_age_value: scenario.user_retirement_age_value,
               user_retirement_age_mean: scenario.user_retirement_age_mean,
               user_retirement_age_std_dev: scenario.user_retirement_age_std_dev,
+              user_birth_year: scenario.user_birth_year,
             })}
           </div>
 
@@ -179,6 +180,7 @@ export const ViewSingleScenario = () => {
                 spouse_retirement_age_value: scenario.spouse_retirement_age_value,
                 spouse_retirement_age_mean: scenario.spouse_retirement_age_mean,
                 spouse_retirement_age_std_dev: scenario.spouse_retirement_age_std_dev,
+                spouse_birth_year: scenario.spouse_birth_year,
               })}
             </div>
             )

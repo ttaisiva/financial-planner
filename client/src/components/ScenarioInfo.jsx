@@ -188,8 +188,9 @@ const ScenarioInfo = forwardRef((props, ref) => {
     const parts = name.split(".");
     const parentKey = parts[0];  // inflation_assumption
     const childKey = parts[1];   // type
+
     
-    if (name.startsWith("inflation_assumption")) {  //nested once
+    if (name.startsWith("inflation_assumption") || name.startsWith("user.birthYear") || name.startsWith("spouse.birthYear") ) {  //nested once
       updateNestedState(parentKey, childKey, value, setFormData);
 
     } else if (name.startsWith("user") || name.startsWith("spouse"))  { //nested twice
