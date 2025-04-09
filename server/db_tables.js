@@ -147,7 +147,6 @@ export async function createTablesIfNotExist(connection) {
       FOREIGN KEY (investment_id) REFERENCES investments(id),
       FOREIGN KEY (expense_id) REFERENCES events(id)
     );
-
   `;
 
   // Create tables

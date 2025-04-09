@@ -302,7 +302,6 @@ router.get('/single-scenario', async (req, res) => {
 
 });
 
-
 router.get('/scenarios', async (req, res) => {
   console.log("Display scenarios in server");
   console.log(req.session.user);

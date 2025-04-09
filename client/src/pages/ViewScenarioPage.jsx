@@ -12,13 +12,6 @@ export const ViewScenarioPage = () => {
   const [isRunning, setIsRunning] = useState(false);
   
 
-
-  // const location = useLocation();
-  // const showSingleScenario = location.state?.showSingleScenario || false; // Access the prop
-  // console.log("showSingleScenario", showSingleScenario);
-  // const location = useLocation();
-  // const passedScenarioId = location.state?.scenario_id;
-
   const handleRunSimulation = async () => {
     setIsRunning(true);
     try {

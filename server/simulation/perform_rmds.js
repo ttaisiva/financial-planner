@@ -40,7 +40,7 @@ export async function performRMDs(userId, currentSimulationYear, curYearIncome) 
 
     let preTaxInvestments; //fetch pre tax investments from db or local storage for guest use
     try {
-        const response = await axios.get('http://localhost:3000/pre-tax-investments'); 
+        const response = await axios.get('http://localhost:3000/investments-pretax'); 
         preTaxInvestments = response.data;
     } catch (err) {
         console.error("Failed to fetch pre-tax investments:", err);
