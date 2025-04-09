@@ -1,14 +1,42 @@
 export async function createTablesIfNotExist(connection) {
+  const createTaxBracketsTable = `
+    CREATE TABLE IF NOT EXISTS tax_brackets (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      year INT NOT NULL,
+      filing_status VARCHAR(20) NOT NULL,
+      tax_rate DECIMAL(3, 2) NOT NULL,
+      income_min DECIMAL(10, 0) NOT NULL,
+      income_max DECIMAL(10, 0)
+    )
+  `;
 
+  const createStandardDeductionsTable = `
+    CREATE TABLE IF NOT EXISTS standard_deductions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      year INT NOT NULL,
+      filing_status VARCHAR(20) NOT NULL,
+      standard_deduction DECIMAL(10, 0) NOT NULL
+    )
+  `;
 
+  const createCapitalGainsTaxTable = `
+    CREATE TABLE IF NOT EXISTS capital_gains_tax (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      year INT NOT NULL,
+      filing_status VARCHAR(20) NOT NULL,
+      cap_gains_tax_rate DECIMAL(3, 2) NOT NULL,
+      income_min DECIMAL(10, 0) NOT NULL,
+      income_max DECIMAL(10, 0)
+    )
+  `;
 
   // need to add this into taxes section
-  // inflation_assumption DECIMAL(5, 2),    
-  // annual_pre_tax_contribution_limit DECIMAL(10, 2),  
+  // inflation_assumption DECIMAL(5, 2),
+  // annual_pre_tax_contribution_limit DECIMAL(10, 2),
   // annual_after_tax_contribution_limit DECIMAL(10, 2),
 
   const createUsersTable = `
-      CREATE TABLE users (
+      CREATE TABLE IF NOT EXISTS users (
        id varchar(255) NOT NULL , 
        name varchar(100), 
        lastName varchar(100), 
@@ -16,7 +44,7 @@ export async function createTablesIfNotExist(connection) {
        UNIQUE(email), 
        PRIMARY KEY(id));
   `;
-  
+
   // User scenario info table has user_id which is foreign key to reference the user that owns the scenario
   const createUserScenarioInfoTable = `
   CREATE TABLE IF NOT EXISTS user_scenario_info (
@@ -52,7 +80,6 @@ export async function createTablesIfNotExist(connection) {
   );
 `;
 
-
   // Create investment type table has scenario ID which references the scenario that the investment type is attached to
   const createInvestmentTypesTable = `
   CREATE TABLE IF NOT EXISTS investment_types (
@@ -75,7 +102,6 @@ export async function createTablesIfNotExist(connection) {
     FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
   );
 `;
-  
 
   const createInvestmentsTable = `
     CREATE TABLE IF NOT EXISTS investments (
@@ -128,13 +154,12 @@ export async function createTablesIfNotExist(connection) {
     );
   `;
 
-
   //allocation_type VARCHAR(255) CHECK (allocation_type IN ('fixed', 'glide_path')), <- take a look
 
-  // spending strategy (ordering on discretionary expenses), 
+  // spending strategy (ordering on discretionary expenses),
   // expense withdrawal strategy (order in which ivestments are sold to generate cash)
   // Roth conversion strategy
-  // RMD strategy 
+  // RMD strategy
   const createStrategyTable = `
     CREATE TABLE IF NOT EXISTS strategy (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -151,10 +176,13 @@ export async function createTablesIfNotExist(connection) {
   `;
 
   // Create tables
+  await connection.execute(createTaxBracketsTable);
+  await connection.execute(createStandardDeductionsTable);
+  await connection.execute(createCapitalGainsTaxTable);
+  await connection.execute(createUsersTable);
   await connection.execute(createUserScenarioInfoTable);
   await connection.execute(createInvestmentsTable);
   await connection.execute(createInvestmentTypesTable);
   await connection.execute(createEventsTable);
-  await connection.execute (createStrategyTable);
-
+  await connection.execute(createStrategyTable);
 }

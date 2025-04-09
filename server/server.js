@@ -16,7 +16,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:5175'],
+    origin: ["http://localhost:5173", "http://localhost:5175"],
     credentials: true,
   })
 );
@@ -62,12 +62,11 @@ startServer();
 async function startServer() {
   try {
     await connectToDatabase();
-   
+
     await scrapeData();
-    console.log("Scraping completed.");
     await createTablesIfNotExist(connection);
+    console.log("Scraping completed.");
     console.log("All tables created or already exist.");
-    
   } catch (err) {
     console.error("Error:", err.message);
     throw err;
@@ -87,9 +86,5 @@ app.use("/api", scenarioRouter);
 
 import userRouter from "./routers/user.js";
 app.use("/user", userRouter);
-
-
-
-
 
 export { connectToDatabase, connection };
