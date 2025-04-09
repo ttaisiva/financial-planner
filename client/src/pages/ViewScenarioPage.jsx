@@ -115,7 +115,13 @@ export const ViewSingleScenario = () => {
           .filter(([_, value]) => value != null) // Filter out null or undefined values
           .map(([key, value]) => (
             <p key={key}>
-              <strong>{key.replace(/_/g, " ")}:</strong> {value.toString()}
+              <strong>
+                {key
+                  .replace(/_/g, " ") // Replace underscores with spaces
+                  .replace(/user /i, "") // Remove "user" (case-insensitive)
+                  .replace(/spouse /i, "") // Remove "spouse" (case-insensitive)
+                }:
+                </strong> {value.toString()}
             </p>
           ))}
       </div>
