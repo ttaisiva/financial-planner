@@ -7,7 +7,7 @@ import { performRMDs } from './perform_rmds.js';
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export function simulation(date=2025, num_simulations, userId, scenarioId, connection) { 
+export function simulation(date , num_simulations, userId, scenarioId, connection) { 
     const total_years = get_total_years(date, scenario);
 
     const simulation_results = [];

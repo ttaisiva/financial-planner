@@ -130,7 +130,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
         value: "", 
         mean: "",  
         stdDev: "", 
-      }
+      },
+      birthYear: ""
    
     },
     spouse: {
@@ -146,7 +147,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
         value: "", 
         mean: "",  
         stdDev: "", 
-      }
+      },
+      birthYear: ""
     },
     inflation_assumption: {
       type: "", 
@@ -422,6 +424,21 @@ const ScenarioInfo = forwardRef((props, ref) => {
             handleChange={handleChange}
             formData={formData}
           />
+
+          <div>
+            <label> <h4>Your birth year:</h4> </label>
+            <input
+              type="number"
+              name="user.birthYear"
+              value={formData.user.birthYear}
+              onChange={handleChange}
+              placeholder=""
+              min="1900"
+              max={new Date().getFullYear()} // Restrict to valid years
+              required
+            />
+          </div>
+          
         </div>
 
         <h2 className="fade-in">Add Spouse</h2>
@@ -444,6 +461,21 @@ const ScenarioInfo = forwardRef((props, ref) => {
               handleChange={handleChange}
               formData={formData}
             />
+            <div>
+              <label> <h4>Spouse's birth year:</h4> </label>
+              <input
+                type="number"
+                name="spouse.birthYear"
+                value={formData.spouse.birthYear}
+                onChange={handleChange}
+                placeholder=""
+                min="1900"
+                max={new Date().getFullYear()} // Restrict to valid years
+                required
+              />
+            </div>
+
+
           </div>
         )}
 
