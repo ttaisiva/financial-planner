@@ -30,6 +30,15 @@ export async function createTablesIfNotExist(connection) {
     )
   `;
 
+  const createRMDTable = `
+    CREATE TABLE IF NOT EXISTS rmds (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      year INT NOT NULL,
+      age INT NOT NULL,
+      distribution_period DECIMAL(10, 1) NOT NULL
+    )
+  `;
+
   // need to add this into taxes section
   // inflation_assumption DECIMAL(5, 2),
   // annual_pre_tax_contribution_limit DECIMAL(10, 2),

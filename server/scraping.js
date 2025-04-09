@@ -414,6 +414,20 @@ async function insertCapitalGains(capitalGainsTaxRates) {
   }
 }
 
+async function scrapeRMD() {
+  const $ = await cheerio.fromURL("https://www.irs.gov/publications/p590b");
+
+  let year = extractYear($("title").text().trim());
+
+  if (await isStandardDeductYearInDB(year)) {
+    // If year already in database, don't scrape and exit out of this function
+    console.log(
+      `Standard deductions data for ${year} already in database. Scrape canceled.`
+    );
+    return;
+  }
+}
+
 /**
  *
  * @param {String} text
