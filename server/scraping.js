@@ -9,7 +9,11 @@ async function scrapeData() {
 }
 
 /**
+ * Scrapes IRS website for tax rates and tax bracket information and inserts it into the database.
+ *
  * taxBrackets [ {year, filingStatus, taxRate, incomeMin, incomeMax} ]
+ *
+ * @returns
  * TP: ChatGPT, prompt: "how do i scrape specifically tax rates and brackets for single and marid jointly"
  */
 var taxBrackets = [];
@@ -77,10 +81,15 @@ async function scrapeTaxBrackets() {
       if (currFilingStatus == "married") currFilingStatus = ""; // Change to "" so that no tax rate information is scraped after "married jointly"
     }
   });
-  // console.log(taxBrackets);
   insertTaxBrackets(taxBrackets);
 }
 
+/**
+ * Checks if tax bracket information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ * @returns boolean
+ */
 async function isTaxBracketYearInDB(year) {
   try {
     const connection = await connectToDatabase();
@@ -104,6 +113,11 @@ async function isTaxBracketYearInDB(year) {
   }
 }
 
+/**
+ * Inserts tax bracket information into the database.
+ *
+ * @param {*} taxBrackets
+ */
 async function insertTaxBrackets(taxBrackets) {
   try {
     const connection = await connectToDatabase();
@@ -123,7 +137,11 @@ async function insertTaxBrackets(taxBrackets) {
 }
 
 /**
+ * Scrapes IRS website for standard deduction information and inserts it into the database.
+ *
  * standardDeductions [ {year, filingStatus, standardDeduction} ]
+ *
+ * @returns
  */
 var standardDeductions = [];
 async function scrapeStandardDeductions() {
@@ -174,10 +192,15 @@ async function scrapeStandardDeductions() {
       isCorrectTable = false; // Set to False again so that no more tables are scraped after this
     }
   });
-  // console.log(standardDeductions);
   insertStandardDeductions(standardDeductions);
 }
 
+/**
+ * Checks if standard deduction information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ * @returns boolean
+ */
 async function isStandardDeductYearInDB(year) {
   try {
     const connection = await connectToDatabase();
@@ -201,6 +224,11 @@ async function isStandardDeductYearInDB(year) {
   }
 }
 
+/**
+ * Inserts standard deduction information into the database.
+ *
+ * @param {*} taxBrackets
+ */
 async function insertStandardDeductions(standardDeductions) {
   try {
     const connection = await connectToDatabase();
@@ -220,7 +248,11 @@ async function insertStandardDeductions(standardDeductions) {
 }
 
 /**
+ * Scrapes IRS website for capital gains tax rate information and inserts it into the database.
+ *
  * capitalGainsTaxRates [ {year, filingStatus, capitalGainsTaxRate, incomeMin, incomeMax} ]
+ *
+ * @returns
  */
 var capitalGainsTaxRates = [];
 async function scrapeCapitalGainsTax() {
@@ -327,10 +359,15 @@ async function scrapeCapitalGainsTax() {
         });
     }
   });
-  // console.log(capitalGainsTaxRates);
   insertCapitalGains(capitalGainsTaxRates);
 }
 
+/**
+ * Checks if capital gains tax rate information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ * @returns boolean
+ */
 async function isCapitalGainsYearInDB(year) {
   try {
     const connection = await connectToDatabase();
@@ -354,6 +391,11 @@ async function isCapitalGainsYearInDB(year) {
   }
 }
 
+/**
+ * Inserts capital gains tax rate information into the database.
+ *
+ * @param {*} taxBrackets
+ */
 async function insertCapitalGains(capitalGainsTaxRates) {
   try {
     const connection = await connectToDatabase();
@@ -416,7 +458,7 @@ function extractMoney(text) {
 }
 
 /**
- *
+ * Returns all extractions of a string that consist of digits that are preceded by '$' and may have commas within it followed by 3 digits intervals
  * @param {String} text
  * @returns Array
  * TP: ChatGPT, prompt - "does this work if there are two instances in one string? ex: "I have $4000 and she has $3000""
