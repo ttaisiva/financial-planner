@@ -63,8 +63,8 @@ async function startServer() {
   try {
     await connectToDatabase();
 
-    await scrapeData();
     await createTablesIfNotExist(connection);
+    await scrapeData();
     console.log("Scraping completed.");
     console.log("All tables created or already exist.");
   } catch (err) {
