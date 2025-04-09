@@ -71,6 +71,7 @@ export async function createTablesIfNotExist(connection) {
     user_retirement_age_value DECIMAL(10, 2),
     user_retirement_age_mean DECIMAL(10, 2),
     user_retirement_age_std_dev DECIMAL(10, 2),
+    user_birth_year INT,
     spouse_life_expectancy_type VARCHAR(255),
     spouse_life_expectancy_value DECIMAL(10, 2),
     spouse_life_expectancy_mean DECIMAL(10, 2),
@@ -79,6 +80,7 @@ export async function createTablesIfNotExist(connection) {
     spouse_retirement_age_value DECIMAL(10, 2),
     spouse_retirement_age_mean DECIMAL(10, 2),
     spouse_retirement_age_std_dev DECIMAL(10, 2),
+    spouse_birth_year INT,
     inflation_assumption_type VARCHAR(255),
     inflation_assumption_value DECIMAL(10, 2),
     inflation_assumption_mean DECIMAL(10, 2),
@@ -181,7 +183,6 @@ export async function createTablesIfNotExist(connection) {
       FOREIGN KEY (investment_id) REFERENCES investments(id),
       FOREIGN KEY (expense_id) REFERENCES events(id)
     );
-
   `;
 
   // Create tables
