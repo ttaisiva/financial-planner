@@ -118,12 +118,12 @@ router.post("/user-scenario-info", async (req, res) => {
     INSERT INTO user_scenario_info (
       user_id, scenario_name, financial_goal, filing_status, state_of_residence,
       user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev,
-      user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev,
+      user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev, user_birth_year,
       spouse_life_expectancy_type, spouse_life_expectancy_value, spouse_life_expectancy_mean, spouse_life_expectancy_std_dev,
-      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev,
+      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev, spouse_birth_year,
       inflation_assumption_type, inflation_assumption_value, inflation_assumption_mean, inflation_assumption_stdev,
       inflation_assumption_lower, inflation_assumption_upper
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ? ,?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ? ,?, ?, ?)
   `;
 
   const values = [
@@ -140,6 +140,7 @@ router.post("/user-scenario-info", async (req, res) => {
     user.retirementAge.value || null,
     user.retirementAge.mean || null,
     user.retirementAge.stdDev || null,
+    user.birthYear || null,
     spouse.lifeExpectancy.type || null,
     spouse.lifeExpectancy.value || null,
     spouse.lifeExpectancy.mean || null,
@@ -148,6 +149,7 @@ router.post("/user-scenario-info", async (req, res) => {
     spouse.retirementAge.value || null,
     spouse.retirementAge.mean || null,
     spouse.retirementAge.stdDev || null,
+    spouse.birthYear || null,
     inflation_assumption.type || null,
     inflation_assumption.value || null, 
     inflation_assumption.mean || null, 
@@ -222,8 +224,9 @@ router.post("/run-simulation", async (req, res) => {
     console.log("scenario id", req.session.user['scenario_id']);
     userId = req.session.user['id'];
     scenarioId = req.session.user['scenario_id'];
-    const currentYear = req.body.currentYear || new Date().getFullYear();
-    const numSimulations = req.body.numSimulations || 1000;
+    const currentYear = new Date().getFullYear();
+    const numSimulations = req.body.numSimulations || 1;
+    console.log("number of simualations: ", numSimulations);
 
     // Call the Monte Carlo simulation function
     const results = simulation(currentYear, numSimulations, userId, scenarioId, connection);
@@ -301,7 +304,6 @@ router.get('/single-scenario', async (req, res) => {
 
 
 });
-
 
 router.get('/scenarios', async (req, res) => {
   console.log("Display scenarios in server");

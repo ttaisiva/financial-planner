@@ -90,8 +90,9 @@ export async function process_income_event(
     curYearSS
 ) {
     // Get all income events and calculate current amounts
-    const incomeEvents = await get_income_events_data(scenarioId, previousYearAmounts);
     
+    const incomeEvents = await get_income_events_data(scenarioId, previousYearAmounts);
+
 
     const updatedAmounts = {}; // To store currentAmount for each event
 
