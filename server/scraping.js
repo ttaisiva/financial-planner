@@ -6,6 +6,7 @@ async function scrapeData() {
   scrapeTaxBrackets();
   scrapeStandardDeductions();
   scrapeCapitalGainsTax();
+  scrapeRMD();
 }
 
 /**
@@ -414,17 +415,128 @@ async function insertCapitalGains(capitalGainsTaxRates) {
   }
 }
 
+var RMDs = [];
 async function scrapeRMD() {
   const $ = await cheerio.fromURL("https://www.irs.gov/publications/p590b");
 
   let year = extractYear($("title").text().trim());
 
-  if (await isStandardDeductYearInDB(year)) {
+  if (await isRMDYearInDB(year)) {
     // If year already in database, don't scrape and exit out of this function
-    console.log(
-      `Standard deductions data for ${year} already in database. Scrape canceled.`
-    );
+    console.log(`RMD data for ${year} already in database. Scrape canceled.`);
     return;
+  }
+
+  $("table").each((_, element) => {
+    // Scrape RMD data
+    const tag = $(element).prop("tagName").toLowerCase();
+    const summary = $(element).attr("summary");
+
+    if (tag === "table" && summary === "Appendix B. Uniform Lifetime Table") {
+      $(element)
+        .find("tr")
+        .each((i, row) => {
+          // Rows 5 through 29 in this table contain the data for RMDs
+          if (i > 4 && i < 30) {
+            const columns = $(row).find("td");
+            const age1 = $(columns[0]).text().trim();
+            const distPeriod1 = $(columns[1]).text().trim();
+            const age2 = $(columns[2]).text().trim();
+            const distPeriod2 = $(columns[3]).text().trim();
+
+            // Age may be listed as "[int] and over", and if so, the age will be stored as the [int] listed in the string,
+            // and will be considered as 120 and over implicitly
+            if (age1) {
+              if (age1.includes("and over")) {
+                const newAge = extractInt(age1);
+                RMDs.push({
+                  year: year,
+                  age: newAge,
+                  distribution_period: distPeriod1,
+                });
+                console.log("new age", newage);
+              } else {
+                RMDs.push({
+                  year: year,
+                  age: age1,
+                  distribution_period: distPeriod1,
+                });
+              }
+            }
+
+            // Age may be listed as "[int] and over", and if so, the age will be stored as the [int] listed in the string,
+            // and will be considered as 120 and over implicitly
+            if (age2) {
+              if (age2.includes("and over")) {
+                const newAge = extractInt(age2);
+                RMDs.push({
+                  year: year,
+                  age: newAge,
+                  distribution_period: distPeriod2,
+                });
+              } else {
+                RMDs.push({
+                  year: year,
+                  age: age2,
+                  distribution_period: distPeriod2,
+                });
+              }
+            }
+          }
+        });
+    }
+  });
+  insertRMDs(RMDs);
+}
+
+/**
+ * Checks if RMD information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ */
+async function isRMDYearInDB(year) {
+  try {
+    const connection = await connectToDatabase();
+    const sql = "SELECT year FROM rmds WHERE year=?";
+    const params = [year];
+
+    const [rows] = await connection.execute(sql, params);
+
+    await connection.end();
+
+    if (rows.length == 0) {
+      console.log(
+        `RMD data for ${year} NOT found in database. Continue scraping.`
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Database error:", err.message);
+    throw err;
+  }
+}
+
+/**
+ * Inserts RMD information into the database.
+ *
+ * @param {*} RMDs
+ */
+async function insertRMDs(RMDs) {
+  try {
+    const connection = await connectToDatabase();
+    const sql =
+      "INSERT INTO `rmds`(`year`, `age`, `distribution_period`) VALUES (?, ?, ?)";
+
+    RMDs.forEach((element) => {
+      const values = Object.values(element);
+      connection.execute(sql, values);
+    });
+
+    await connection.end();
+  } catch (err) {
+    console.error("Database error:", err.message);
+    throw err;
   }
 }
 
@@ -484,6 +596,11 @@ function extractAllMoney(text) {
 
 function extractYear(text) {
   let match = text.match(/(?:\d{4})/);
+  return match ? match[0] : null;
+}
+
+function extractInt(text) {
+  let match = text.match(/\d+/);
   return match ? match[0] : null;
 }
 
