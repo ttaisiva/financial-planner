@@ -65,7 +65,7 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
             
 
             // Update investments
-            updateInvestments(scenarioId, curYearIncome, currentSimulationYear );
+            updateInvestments(scenarioId, curYearIncome );
           
 
             // Pay non-discretionary expenses
