@@ -63,7 +63,6 @@ export async function updateInvestments(scenarioId, curYearIncome) {
         }
 
         // d. Calculate the change in value
-        let updatedValue;
         let changeInValue = 0;
         if (investmentType.expAnnReturnType === 'fixed') {
             changeInValue = investmentType.expAnnReturnValue || 0;
@@ -78,7 +77,7 @@ export async function updateInvestments(scenarioId, curYearIncome) {
         changeInValue = (changeInValue / 100) * initialValue;
 
         }
-        updatedValue += changeInValue;
+        let updatedValue = changeInValue;
 
         // c. Add the income to the value of the investment (inital val of investment) -> reinvest income back into investment
         updatedValue = initialValue + generatedIncome;
