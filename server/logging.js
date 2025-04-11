@@ -12,14 +12,14 @@ export async function log(userId, simResults) {
         console.log('Logs directory created:', dir);
     }
 
-    const [names] = await connection.execute(
-        `SELECT 
-            name,
-            lastName,
-        FROM users
-        WHERE id = ?`,
-        [userId]
-    );
+    // const [names] = await connection.execute(
+    //     `SELECT 
+    //         name,
+    //         lastName,
+    //     FROM users
+    //     WHERE id = ?`,
+    //     [userId]
+    // );
 
     const username = names[0]?.name + names[0]?.lastName || "Guest"; // uses guest if id not in db
     const timestamp = new Date()
@@ -46,5 +46,3 @@ export async function log(userId, simResults) {
     }
     
 }
-
-log(500, "tempresults");
