@@ -20,7 +20,7 @@
 
 
 import { connection } from "../server.js";
-import { get_user_birth_year } from "./monte_carlo_sim.js";
+import { getUserBirthYear } from "./monte_carlo_sim.js";
 
 /**
  * Performs the Required Minimum Distribution (RMD) for the previous year.
@@ -33,7 +33,7 @@ export async function performRMDs(scenarioId, currentSimulationYear, curYearInco
     console.log(`Starting RMD process for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`);
 
     // Step a: Get the user's birth year and calculate their age
-    const userBirthYear = await get_user_birth_year(scenarioId, connection);
+    const userBirthYear = await getUserBirthYear(scenarioId, connection);
     const userAge = currentSimulationYear - userBirthYear;
     console.log(`User birth year: ${userBirthYear}, current age: ${userAge}`);
 
