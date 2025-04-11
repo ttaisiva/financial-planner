@@ -80,7 +80,7 @@ export async function updateInvestments(scenarioId, curYearIncome) {
         let updatedValue = changeInValue;
 
         // c. Add the income to the value of the investment (inital val of investment) -> reinvest income back into investment
-        updatedValue = initialValue + generatedIncome;
+        updatedValue += initialValue + generatedIncome;
 
         // e. Calculate this year’s expenses
         const averageValue = (initialValue + updatedValue) / 2;
