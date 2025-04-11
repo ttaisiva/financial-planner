@@ -1,28 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { inputTypes, resetTypes } from '../utils';
+import { inputTypes,  updateNestedState } from '../utils';
 
-const EventsForm = ({ setShowEventsForm }) => {
+export const EventsForm = ({ events, setEvents ,setShowEventsForm }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    startType: '',
-    startValue: '',
-    startMean: '',
-    startStdDev: '',
-    startupper: '',
-    startlower: '',
-    durationType: '',
-    durationValue: '',
     eventType: '',
-    eventValue: '',
+    start: {
+      type: '',
+      value: '',
+      mean: '',
+      stdDev: '',
+      upper: '',
+      lower: '',
+      series_start: false,
+      series_end: false,
+    },
+    expected_annual_change: {
+      type: '',
+      value: '',
+      amtOrPct: '',
+      mean: '',
+      stdDev: '',
+      upper: '',
+      lower: '',
+    },
+    duration: {
+      type: '',
+      value: '',
+      mean: '',
+      stdDev: '',
+      upper: '',
+      lower: '',
+    },
     initialAmount: '', 
-    annualChangeType: '',
-    annualChangeValue: '',
+    maxCash: '',
     inflationAdjusted: false,
     userPercentage: '',
     spousePercentage: '',
     isSocialSecurity: false,
-    isWages: false,
     allocationMethod: '',
     discretionary: false, 
   });
@@ -30,18 +46,27 @@ const EventsForm = ({ setShowEventsForm }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    console.log("name", name);
+    console.log("value", value);
+    const parts = name.split(".");
+    const parentKey = parts[0];  // inflation_assumption
+    const childKey = parts[1];   // type
+    console.log("parts", parts);
 
-    if (name === "startType" || name === "durationType") {
-      const prefix = name === "startType" ? "start" : "duration";
-      setFormData((prev) => ({
-        ...prev,
-        ...resetTypes(value, prefix),
-      }));
+    if (parts.length > 1){ //meaning nested once
+      updateNestedState(parentKey, childKey, value, setFormData);
     }
+    else {
+      //update everything else and checkbox
+      const updated = setFormData((prevData) => ({
+        ...prevData,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+      console.log("updated", formData);
+      return updated;
+    }
+    
+    
 
   };
 
@@ -63,12 +88,14 @@ const EventsForm = ({ setShowEventsForm }) => {
 
         if (response.ok) {
           console.log('Events saved successfully');
+          const newEvent = await response.json();
+          setEvents((prevEvents) => [...prevEvents, newEvent]); 
           setShowEventsForm(false);
         } else {
           console.error('Failed to save events details');
         }
 
-       //TODO: not sure if this is the best way to handle this -> discuss with tai
+       
 
 
     } catch (error) {
@@ -84,6 +111,7 @@ const EventsForm = ({ setShowEventsForm }) => {
 
   return (
     <div className="content">
+
       <form onSubmit={handleSubmit}>
         <h3>Customize your event:</h3> {/* I should add a delete btn*/}
 
@@ -99,16 +127,16 @@ const EventsForm = ({ setShowEventsForm }) => {
 
         <div>
           <label>Start year:</label>
-          <select name="startType" value={formData.startType} onChange={handleChange}>
+          <select name="start.type" value={formData.start.type} onChange={handleChange}>
             <option value="" disabled>Select start year</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
-            <option value="same_year">Same year as event series</option>
-            <option value="year_after">Year after event series</option>
+            <option value="series_start">Same year as event series</option>
+            <option value="series_end">Year after event series</option>
           </select>
           
-          {inputTypes({ type: formData.startType, formData, handleChange, prefix: "start" })}
+          {inputTypes({ type: formData.start.type, formData, handleChange, prefix: "start" })}
         
       
 
@@ -116,14 +144,14 @@ const EventsForm = ({ setShowEventsForm }) => {
 
         <div>
           <label>Duration: </label>
-          <select name="durationType" value={formData.durationType} onChange={handleChange}>
+          <select name="duration.type" value={formData.duration.type} onChange={handleChange}>
             <option value="" disabled>Select Duration</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
 
-          {inputTypes({ type: formData.durationType, formData, handleChange, prefix: "duration"  })}
+          {inputTypes({ type: formData.duration.type, formData, handleChange, prefix: "duration"  })}
         </div>
 
         <div>
@@ -168,7 +196,7 @@ const EventsForm = ({ setShowEventsForm }) => {
   );
 };
 
-export default EventsForm;
+
 
 const IncomeEvent = ({ formData, handleChange }) => {
   return (
@@ -180,20 +208,20 @@ const IncomeEvent = ({ formData, handleChange }) => {
 
       <div>
           <label>Expected Annual Change: </label>
-          <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
-            <option value="" disabled>Select format</option>
+          <select name="expected_annual_change.type" value={formData.expected_annual_change.type} onChange={handleChange}>
+            <option value="" disabled>Select expected annual change</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
-          <select>
-            <option>Amount</option>
-            <option>Percentage</option>
-          </select>
+          <select name="expected_annual_change.amtOrPct" value={formData.expected_annual_change.amtOrPct} onChange={handleChange} required>
+            <option value="amt">Amount</option>
+            <option value="pct">Percentage</option>
+          </select>  
+          
 
-
-          {inputTypes({ type: formData.annualChangeType, formData, handleChange, prefix: "annualChange"  })}
-        </div>
+          {inputTypes({ type: formData.expected_annual_change.type, formData, handleChange, prefix: "expected_annual_change"  })}
+      </div>
   
       <div>
           <label>
@@ -410,7 +438,6 @@ const RebalanceEvent = ({ formData, handleChange }) => {
 const InvestEvent = ({ formData, handleChange }) => {
   const [accounts, setAccounts] = useState([]);
   const [allocationPercentages, setAllocationPercentages] = useState({});
-  const [maxCash, setMaxCash] = useState("");
   const [sumWarning, setSumWarning] = useState("");
 
   // Fetch investments not in pre-tax accounts
@@ -508,8 +535,8 @@ const InvestEvent = ({ formData, handleChange }) => {
         <input
           type="number"
           name="maxCash"
-          value={maxCash}
-          onChange={(e) => setMaxCash(e.target.value)}
+          value={formData.maxCash}
+          onChange={handleChange} 
           min={0}
         />
       </div>
@@ -585,15 +612,20 @@ const ExpenseEvent = ({formData, handleChange}) => {
 
       <div>
           <label>Expected Annual Change: </label>
-          <select name="annualChangeType" value={formData.annualChangeType} onChange={handleChange}>
-            <option value="" disabled>Select format</option>
+          <select name="expected_annual_change.type" value={formData.expected_annual_change.type} onChange={handleChange}>
+            <option value="" disabled>Select expected annual change</option>
             <option value="fixed">Fixed</option> 
             <option value="normal_distribution">Normal Distribution</option>
             <option value="uniform_distribution">Uniform Distribution</option>
           </select>
+          <select name="expected_annual_change.amtOrPct" value={formData.expected_annual_change.amtOrPct} onChange={handleChange} required>
+            <option value="amt">Amount</option>
+            <option value="pct">Percentage</option>
+          </select>  
+          
 
-          {inputTypes({ type: formData.annualChangeType, formData, handleChange, prefix: "annualChange"  })}
-        </div>
+          {inputTypes({ type: formData.expected_annual_change.type, formData, handleChange, prefix: "expected_annual_change"  })}
+      </div>
   
       <div>
           <label>
@@ -624,4 +656,88 @@ const ExpenseEvent = ({formData, handleChange}) => {
 }
 
 
+export const ViewEventsDetails = ({ events }) => {
+  useEffect(() => {
+    console.log("events", events);
+  }, [events]);
 
+  return (
+    <div className="p-4 border rounded-md mt-6">
+      <h3>Your Events</h3>
+      {events.length > 0 ? (
+        <ul>
+          {events.map((item, idx) => (
+            <li key={idx} className="item">
+              <strong>{item.name}</strong>: {item.description}, Type: {item.eventType}
+              {/* need to edit this */}
+              {/* {item.start?.value && (
+                <span>, Start: {item.start.type} ({item.start.value})</span>
+              )}
+              {item.duration?.value && (
+                <span>, Duration: {item.duration.type} ({item.duration.value})</span>
+              )} */}
+
+              {item.eventType === "income" && (
+                <>
+                  <br />
+                  Initial Amount: ${item.initialAmount}
+                  <br />
+                  Expected Annual Change:{" "}
+                  {item.expected_annual_change?.type}{" "}
+                  {item.expected_annual_change?.amtOrPct && `(${item.expected_annual_change.amtOrPct})`}
+                  <br />
+                  User %: {item.userPercentage}
+                  <br />
+                  Spouse %: {item.spousePercentage}
+                  <br />
+                  {item.isSocialSecurity && <span>Social Security: ✅</span>}
+                  <br />
+                  {item.inflationAdjusted && <span>Inflation Adjusted: ✅</span>}
+                </>
+              )}
+
+              {item.eventType === "expense" &&  (
+                <>
+                  <br />
+                  Initial Amount: ${item.initialAmount}
+                  <br />
+                  Expected Annual Change:{" "}
+                  {item.expected_annual_change?.type}{" "}
+                  {item.expected_annual_change?.amtOrPct && `(${item.expected_annual_change.amtOrPct})`}
+                  <br />
+                  User %: {item.userPercentage}
+                  <br />
+                  Spouse %: {item.spousePercentage}
+                  <br />
+                  {item.discretionary && <span>Discretionary: ✅</span>}
+                  <br />
+                  {item.inflationAdjusted && <span>Inflation Adjusted: ✅</span>}
+              
+                </>
+              )}
+
+              {item.eventType === "invest" && (
+                <>
+                  <br />
+                  Allocation method: {item.allocationMethod}
+                  <br />
+                  Max Cash: ${item.maxCash}
+                </>
+              )}
+              
+              {item.eventType === "rebalance" && (
+                <>
+                  <br />
+                  Allocation method: ${item.allocationMethod}
+                </>
+              )}
+
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No events added yet.</p>
+      )}
+    </div>
+  );
+};
