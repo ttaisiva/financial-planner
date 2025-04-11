@@ -388,7 +388,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
 
         <div>
-          <label>Inflation Assumption: </label>
+          <label>Inflation Assumption %: </label>
           <select name="inflation_assumption.type" value={formData.inflation_assumption.type} onChange={handleChange} required>
             <option value="" disabled>Select format</option>
             <option value="fixed">Fixed</option> 

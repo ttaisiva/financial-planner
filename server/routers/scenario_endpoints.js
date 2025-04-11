@@ -569,17 +569,6 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
       e.discretionary || false,  // Default to false if missing
       e.max_cash || 0,  // Default to 0 if missing
       
-      
-
-      e.initialAmount || 0, // Default to 0 if missing
-      e.inflationAdjusted || false, // Default to false if missing
-      e.userPercentage || 0, // Default to 0 if missing
-      e.spousePercentage || 0, // Default to 0 if missing
-
-      e.isSocialSecurity || false, // Default to false if missing
-      e.allocationMethod || null, // Default to null if missing
-      e.discretionary || false, // Default to false if missing
-      e.max_cash || 0, // Default to 0 if missing
     ];
 
     console.log("Inserting values:", eventsValues);

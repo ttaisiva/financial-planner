@@ -13,10 +13,10 @@ export async function get_preliminaries_data(scenarioId, connection) {
             inflation_assumption_type AS type,
             inflation_assumption_value AS value,
             inflation_assumption_mean AS mean,
-            inflation_assumption_std_dev AS std_dev,
-            inflation_assumption_min AS lower,
-            inflation_assumption_max AS upper
-         FROM scenarios
+            inflation_assumption_stdev AS std_dev,
+            inflation_assumption_lower AS lower,
+            inflation_assumption_upper AS upper
+         FROM user_scenario_info
          WHERE id = ?`,
         [scenarioId]
     );
@@ -47,13 +47,15 @@ export async function get_preliminaries_data(scenarioId, connection) {
  */
 
 export async function run_preliminaries(current_simulation_year, scenarioId, connection) {
-    const inflation_assumption = await get_data_prelims(scenarioId, connection);
+    console.log("Running preliminaries for year:", current_simulation_year);
+    const inflation_assumption = await get_preliminaries_data(scenarioId, connection);
+    console.log("Inflation assumption data:", inflation_assumption);
 
     const inflation_rate = sample(inflation_assumption);
 
-    
+    console.log("Sampled inflation rate for the current year:", inflation_rate);
 
-    return { inflation_rate };
+    return inflation_rate;
 }
 
 
@@ -70,6 +72,7 @@ export async function run_preliminaries(current_simulation_year, scenarioId, con
 export function sample(item) {
     let result;
 
+    console.log(`Sampling item: ${JSON.stringify(item)}, of type: ${item.type}`);
     switch (item.type) {
         case "fixed":
             // Use the fixed inflation rate
@@ -96,6 +99,7 @@ export function sample(item) {
             throw new Error("Invalid type");
     }
 
+    console.log("Resulting value of sampling:", result);
     return result;
 }
 
@@ -103,6 +107,7 @@ export function sample(item) {
  * Samples a value from a normal distribution using the Box-Muller transform.
  */
 export function sample_normal_distribution(mean, std_dev) {
+    console.log("Sampling normal distribution with mean:", mean, "and std_dev:", std_dev);
     if (std_dev <= 0) {
         throw new Error("Standard deviation must be greater than 0.");
     }
@@ -118,6 +123,7 @@ export function sample_normal_distribution(mean, std_dev) {
  * Samples a value from a uniform distribution.
  */
 export function sample_uniform_distribution(min, max) {
+    console.log("Sampling uniform distribution with min:", min, "and max:", max);
     if (min >= max) {
         throw new Error("Minimum value must be less than the maximum value.");
     }

@@ -12,14 +12,20 @@ import { ensureConnection, connection } from "../server.js";
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export async function simulation(date , num_simulations, userId, scenarioId, connection) {
-    const total_years = get_total_years(date, scenarioId, connection);
+export async function simulation(date , numSimulations, userId, scenarioId, connection) { 
+    log(userId, "Running Monte Carlo simulation...");
+    console.log("Running Monte Carlo simulation...");
 
-    const simulation_results = [];
+    const total_years = await get_total_years(date, scenarioId, connection);
+
+    
+
+    const simulationResults = [];
 
 
-    for (let sim = 0; sim < num_simulations; sim++) {
-        let yearly_results = [];
+    for (let sim = 0; sim < numSimulations; sim++) {
+        console.log("Running simulation number: ", sim);
+        let yearlyResults = [];
         let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
         let inflationRate;
         let isUserAlive = true;
@@ -29,21 +35,30 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
         let curYearSS = 0;
         const incomeEvents = await getIncomeEvents(scenarioId, []); // Fetch income events to determine the number of events
         
-
+        console.log("Total years for simulation: ", total_years);
         for (let year = 0; year < total_years; year++) { //years in which the simulation is  being run
             
             const currentSimulationYear = date + year; //actual year being simulated
 
             //run preliminaries -> need to further implement this
-            const { inflationRate } = run_preliminaries(currentSimulationYear, scenarioId, connection);
-
-            // Run income events
+            const inflationRate = await run_preliminaries(currentSimulationYear, scenarioId, connection);
+            console.log("Inflation rate for year ", currentSimulationYear, " is: ", inflationRate);
+            
             if (year === 0) {
                 // Populate the object with initial amounts based on event IDs
+                if(incomeEvents.length === 0) {
+                    console.log("No income events found for this scenario.");
+                    continue; 
+                } else {
                 incomeEvents.forEach(event => {
                     previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
                 });
+                }
+                console.log("Previous year amounts for income events: ", previousYearAmounts);
             }
+
+            // Run income events
+            let updatedAmounts;
             ({
                 updatedAmounts,
                 cashInvestment,
@@ -61,14 +76,14 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
             ));
 
             // Perform required minimum distributions (RMDs)
-            ({ curYearIncome } = performRMDs(scenarioId, currentSimulationYear, curYearIncome));
+            ({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
           
 
             // Optimize Roth conversions
             runRothOptimizer(scenarioId);
 
             // Update investments
-            updateInvestments(scenarioId, curYearIncome );
+            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
 
             // Pay non-discretionary expenses
@@ -84,18 +99,19 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
         
 
             // Collect yearly results -> need to impelemnt this
-            yearly_results.push({
-                year: current_simulation_year,
+            yearlyResults.push({
+                year: currentSimulatioYear,
                 cash_flow: 0, 
                 investments: 0,
             });
         }
 
-        simulation_results.push(yearly_results);
-        if(sim==0) log(userId, yearly_results);
+        
+        if(sim==0) log(userId, yearlyResults);
+        simulationResults.push(yearlyResults);
     }
 
-    return calculate_stats(simulation_results); // Calculate median, mean, and other statistics
+    return calculate_stats(simulationResults); // Calculate median, mean, and other statistics
 }
 
 
@@ -107,21 +123,32 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
  * @returns {number} The total number of years for the simulation.
  */
 export async function get_total_years(date, scenarioId) {
-    const user_birth_year = await get_user_birth_year(scenarioId, connection);
-    const user_life_expectancy = await get_user_life_expectancy(scenarioId, connection);
-    const user_lifespan = await user_birth_year + user_life_expectancy;
+    console.log("Date: ", date);
+    const user_birth_year = Number(await get_user_birth_year(scenarioId, connection));
+    console.log("User birth year: ", user_birth_year);
+    const user_life_expectancy = Number(await get_user_life_expectancy(scenarioId, connection));
+    console.log("User life expectancy: ", user_life_expectancy);
+    
+    const user_lifespan = user_birth_year + user_life_expectancy;
+    console.log("User lifespan: ", user_lifespan);
+    
     const filing_status = await get_filing_status(scenarioId, connection);
+    console.log("Filing status: ", filing_status);
 
 
-    if (filing_status === 'SINGLE') {
+    if (filing_status === 'single') {
         // If filing status is single, return the user's lifespan minus the current year
         return user_lifespan - date;
     }
 
     // Calculate the spouse's lifespan
-    const spouse_birth_year = get_spouse_birth_year(scenarioId, connection);
-    const spouse_life_expectancy = get_spouse_life_expectancy(scenarioId, connection);
+    const spouse_birth_year = Number(await get_spouse_birth_year(scenarioId, connection));
+    console.log("Spouse birth year: ", spouse_birth_year);
+    const spouse_life_expectancy = Number(await get_spouse_life_expectancy(scenarioId, connection));
+    console.log("Spouse life expectancy: ", spouse_life_expectancy);
+    
     const spouse_lifespan = spouse_birth_year + spouse_life_expectancy;
+    console.log("Spouse lifespan: ", spouse_lifespan);
 
     // Return the greater of the two lifespans minus the current year
     if (user_lifespan >= spouse_lifespan) {
