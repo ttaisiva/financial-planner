@@ -12,7 +12,7 @@
 // expenses from the value.
 
 
-import { ensureConnection } from '../server.js';
+import { ensureConnection, connection } from '../server.js';
 import { sample } from './preliminaries.js'; // Assuming you have a sampling function for probability distributions
 
 /**

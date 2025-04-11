@@ -41,7 +41,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             const currentSimulationYear = date + year; //actual year being simulated
 
             //run preliminaries -> need to further implement this
-            const { inflationRate } = run_preliminaries(currentSimulationYear, scenarioId, connection);
+            const inflationRate = await run_preliminaries(currentSimulationYear, scenarioId, connection);
             console.log("Inflation rate for year ", currentSimulationYear, " is: ", inflationRate);
             
             if (year === 0) {
@@ -58,6 +58,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             }
 
             // Run income events
+            let updatedAmounts;
             ({
                 updatedAmounts,
                 cashInvestment,
@@ -75,14 +76,14 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             ));
 
             // Perform required minimum distributions (RMDs)
-            ({ curYearIncome } = performRMDs(scenarioId, currentSimulationYear, curYearIncome));
+            ({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
           
 
             // Optimize Roth conversions
             runRothOptimizer(scenarioId);
 
             // Update investments
-            updateInvestments(scenarioId, curYearIncome );
+            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
 
             // Pay non-discretionary expenses

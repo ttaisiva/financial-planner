@@ -13,10 +13,10 @@ export async function get_preliminaries_data(scenarioId, connection) {
             inflation_assumption_type AS type,
             inflation_assumption_value AS value,
             inflation_assumption_mean AS mean,
-            inflation_assumption_std_dev AS std_dev,
-            inflation_assumption_min AS lower,
-            inflation_assumption_max AS upper
-         FROM scenarios
+            inflation_assumption_stdev AS std_dev,
+            inflation_assumption_lower AS lower,
+            inflation_assumption_upper AS upper
+         FROM user_scenario_info
          WHERE id = ?`,
         [scenarioId]
     );
@@ -49,12 +49,13 @@ export async function get_preliminaries_data(scenarioId, connection) {
 export async function run_preliminaries(current_simulation_year, scenarioId, connection) {
     console.log("Running preliminaries for year:", current_simulation_year);
     const inflation_assumption = await get_preliminaries_data(scenarioId, connection);
+    console.log("Inflation assumption data:", inflation_assumption);
 
     const inflation_rate = sample(inflation_assumption);
 
-    
+    console.log("Sampled inflation rate for the current year:", inflation_rate);
 
-    return { inflation_rate };
+    return inflation_rate;
 }
 
 
