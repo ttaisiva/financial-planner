@@ -3,8 +3,6 @@ import { ensureConnection, connection } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
 import { simulation } from "../simulation/monte_carlo_sim.js";
 // const { simulation } = require("./monte_carlo_sim");
-import { simulation } from "../simulation/monte_carlo_sim.js";
-// const { simulation } = require("./monte_carlo_sim");
 
 const router = express.Router();
 
@@ -12,50 +10,36 @@ let investmentsLocalStorage = [];
 let investmentTypesLocalStorage = [];
 let eventsLocalStorage = [];
 let rothLocalStorage = [];
-let rothLocalStorage = [];
 let rmdLocalStorage = [];
 let expenseWithdrawalLocalStorage = [];
 let spendingLocalStorage = [];
 
 // Route to handle temporary storage:
 router.post("/investment-type", (req, res) => {
-// Route to handle temporary storage:
-router.post("/investment-type", (req, res) => {
   const investmentTypeData = req.body;
   investmentTypeData.id = investmentTypesLocalStorage.length;
   investmentTypesLocalStorage.push(investmentTypeData);
-  console.log("Investment type stored temporarily:", investmentTypeData);
   console.log("Investment type stored temporarily:", investmentTypeData);
   res.status(200).json(investmentTypeData);
 });
 
 router.post("/investments", (req, res) => {
-router.post("/investments", (req, res) => {
   const investmentData = req.body;
   investmentData.id = investmentsLocalStorage.length; // Assign a unique ID
   investmentsLocalStorage.push(investmentData);
   console.log("Investment stored temporarily:", investmentData);
-  console.log("Investment stored temporarily:", investmentData);
   res.status(200).json(investmentData);
-  console.log("All investments: ", investmentsLocalStorage);
   console.log("All investments: ", investmentsLocalStorage);
 });
 
-router.post("/events", (req, res) => {
 router.post("/events", (req, res) => {
   const eventsData = req.body;
   eventsData.id = eventsLocalStorage.length; // Assign a unique ID
   eventsLocalStorage.push(eventsData);
   console.log("Event stored temporarily:", eventsData);
-  console.log("Event stored temporarily:", eventsData);
   res.status(200).json(eventsData);
 });
 
-router.get("/discretionary-expenses", (req, res) => {
-  console.log("Received request for locally stored discretionary expenses.");
-  const filtered = eventsLocalStorage.filter(
-    (event) => event.discretionary == true
-  );
 router.get("/discretionary-expenses", (req, res) => {
   console.log("Received request for locally stored discretionary expenses.");
   const filtered = eventsLocalStorage.filter(
@@ -67,14 +51,8 @@ router.get("/discretionary-expenses", (req, res) => {
 router.post("/roth-strategy", (req, res) => {
   rothLocalStorage = req.body;
   console.log("Roth strategy data stored temporarily.");
-router.post("/roth-strategy", (req, res) => {
-  rothLocalStorage = req.body;
-  console.log("Roth strategy data stored temporarily.");
   res.status(200).json(req.body);
 });
-router.post("/rmd-strategy", (req, res) => {
-  rmdLocalStorage = req.body;
-  console.log("RMD strategy data stored temporarily.");
 router.post("/rmd-strategy", (req, res) => {
   rmdLocalStorage = req.body;
   console.log("RMD strategy data stored temporarily.");
@@ -580,6 +558,18 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
       e.expected_annual_change?.stdDev || null,
       e.expected_annual_change?.upper || null,
       e.expected_annual_change?.lower || null,
+      
+      e.initialAmount || 0,  // Default to 0 if missing
+      e.inflationAdjusted || false,  // Default to false if missing
+      e.userPercentage || 0,  // Default to 0 if missing
+      e.spousePercentage || 0,  // Default to 0 if missing
+      
+      e.isSocialSecurity || false,  // Default to false if missing
+      e.allocationMethod || null,  // Default to null if missing
+      e.discretionary || false,  // Default to false if missing
+      e.max_cash || 0,  // Default to 0 if missing
+      
+      
 
       e.initialAmount || 0, // Default to 0 if missing
       e.inflationAdjusted || false, // Default to false if missing
