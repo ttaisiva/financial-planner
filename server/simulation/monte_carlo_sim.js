@@ -1,7 +1,9 @@
 import { process_income_event } from './run_income_events.js';
 import { run_preliminaries } from './preliminaries.js';
 import { performRMDs } from './perform_rmds.js';
-
+import { runRothOptimizer } from './roth_optimizer.js';
+import { payNondiscExpenses } from './nondisc_expenses.js';
+import { payDiscExpenses } from './disc_expenses.js';
 
 
 /**
@@ -39,16 +41,16 @@ export function simulation(date=2025, num_simulations, userId, scenarioId, conne
           
 
             // Optimize Roth conversions
-          
+            runRothOptimizer(scenarioId);
 
             // Update investments
             
 
             // Pay non-discretionary expenses
-          
+            payNondiscExpenses(scenarioId);
 
             // Pay discretionary expenses
-         
+            payDiscExpenses(scenarioId);
 
             // Process investment events
        
