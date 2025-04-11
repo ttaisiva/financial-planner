@@ -10,17 +10,20 @@ export const ViewScenarioPage = () => {
   const [numSimulations, setNumSimulations] = useState(""); // Default value for simulations
   const [simulationResults, setSimulationResults] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [userId, setUserId] = useState(null); // State to store user ID
+  const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
+
   
 
   const handleRunSimulation = async () => {
     setIsRunning(true);
     try {
-      const response = await fetch("http://localhost:3000/run-simulation", {
+      const response = await fetch("http://localhost:3000/api/run-simulation", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ numSimulations }), // Send the number of simulations to the backend
+        body: JSON.stringify({ numSimulations, userId, scenarioId }), // Send the number of simulations to the backend
       });
 
       if (response.ok) {
@@ -40,7 +43,12 @@ export const ViewScenarioPage = () => {
     <div className="viewscenario-container">
       <Header />
       <h1> Your Scenario </h1>
-      <ViewSingleScenario />
+            <ViewSingleScenario
+        scenarioId={scenarioId}
+        setScenarioId={setScenarioId}
+        userId={userId}
+        setUserId={setUserId}
+      />
   
       <div className="simulation-controls">
         <h3>Simulation</h3>
@@ -67,12 +75,14 @@ export const ViewScenarioPage = () => {
 
 export default ViewScenarioPage;
 
-export const ViewSingleScenario = () => {
+export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId}) => {
   //placeholder need to implmement this
   const [scenario, setScenario] = useState([]);
   const location = useLocation();
-  const scenarioId = location.state?.scenario_id; // Access the scenario_id from the state
-  console.log("Scenario ID:", scenarioId);
+  const tempScenarioId = location.state?.scenario_id; // Access the scenario_id from the state
+  setScenarioId(tempScenarioId);
+ 
+  console.log("Temp Scenario ID:", scenarioId);
 
   const fetchScenario = async () => {
     try {
@@ -85,6 +95,12 @@ export const ViewSingleScenario = () => {
         const data = await response.json();
         console.log("Scenario data:", data);
         setScenario(data);
+
+        if (data.user_id) {
+          setUserId(data.user_id);
+          console.log("User ID from scenario:", data.user_id);
+        }
+
       } else {
         console.error("Failed to fetch scenario");
       }
@@ -93,18 +109,16 @@ export const ViewSingleScenario = () => {
     }
   };
   
+  
   useEffect(() => {
     if (scenarioId) {
       fetchScenario();
+      console.log("Scenario:", scenario);
+      //pass scenarioId and const userId= scenario.user_id to  view scenario page component
     } else {
       console.error("No scenario ID provided");
     }
   }, [scenarioId]);
-
-
-
-    console.log("Scenario:", scenario);
-
 
 
   // Utility to render list of key-value fields from an object
@@ -192,23 +206,16 @@ export const ViewSingleScenario = () => {
             )
           }
 
-
-
-
         </div>
       </div>
 
-
-
       <div>
-        
-
-
       </div>
 
       
       {/* Render related data if available */}
       <div >
+        
         {scenario.investments?.length > 0 && (
           <>
             <h3 style={{ textAlign: "center" }}>Investments</h3>
@@ -254,11 +261,12 @@ export const ViewSingleScenario = () => {
       </div>
 
       <div>
-        {scenario.strategies?.length > 0 && (
+        
+        {scenario.strategy?.length > 0 && (
           <>
             <h3 style={{ textAlign: "center" }}>Strategies</h3>
             <div className="grid">
-            {scenario.strategies.map((strategy, index) => (
+            {scenario.strategy.map((strategy, index) => (
               <div key={index} className="item">
                 {renderAttributes(strategy)}
               </div>
