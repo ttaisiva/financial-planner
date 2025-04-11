@@ -11,7 +11,7 @@
 // investment (i.e., the average of its value at the beginning and end of the year). Subtract the
 // expenses from the value.
 
-import e from 'express';
+
 import { ensureConnection } from '../server.js';
 import { sample } from './preliminaries.js'; // Assuming you have a sampling function for probability distributions
 
@@ -21,8 +21,8 @@ import { sample } from './preliminaries.js'; // Assuming you have a sampling fun
  * @returns {Object} Updated investments and curYearIncome.
  */
 export async function updateInvestments(scenarioId, curYearIncome) {
-    const investments = getAllInvestments();
-    const investmentTypes = getAllInvestmentTypes();
+    const investments = getAllInvestments(scenarioId);
+    const investmentTypes = getAllInvestmentTypes(scenarioId);
 
     for (const investment of investments) {
     
@@ -62,7 +62,7 @@ export async function updateInvestments(scenarioId, curYearIncome) {
             curYearIncome += generatedIncome;
         }
 
-        // d. Calculate the change in value
+        // d. Calculate the change in value why did i have to flip these steps..
         let changeInValue = 0;
         if (investmentType.expAnnReturnType === 'fixed') {
             changeInValue = investmentType.expAnnReturnValue || 0;

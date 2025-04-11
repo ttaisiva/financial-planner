@@ -9,14 +9,14 @@ import { ensureConnection, connection } from "../server.js";
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export async function simulation(date , num_simulations, userId, scenarioId, connection) { 
+export async function simulation(date , numSimulations, userId, scenarioId, connection) { 
     const total_years = get_total_years(date, scenarioId, connection);
 
-    const simulation_results = [];
+    const simulationResults = [];
 
 
-    for (let sim = 0; sim < num_simulations; sim++) {
-        let yearly_results = [];
+    for (let sim = 0; sim < numSimulations; sim++) {
+        let yearlyResults = [];
         let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
         let inflationRate;
         let isUserAlive = true;
@@ -34,13 +34,20 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
             //run preliminaries -> need to further implement this
             const { inflationRate } = run_preliminaries(currentSimulationYear, scenarioId, connection);
 
-            // Run income events
+            
             if (year === 0) {
                 // Populate the object with initial amounts based on event IDs
+                if(incomeEvents.length === 0) {
+                    console.log("No income events found for this scenario.");
+                    continue; 
+                } else {
                 incomeEvents.forEach(event => {
                     previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
                 });
+                }
             }
+
+            // Run income events
             ({
                 updatedAmounts,
                 cashInvestment,
@@ -81,17 +88,17 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
         
 
             // Collect yearly results -> need to impelemnt this
-            yearly_results.push({
-                year: current_simulation_year,
+            yearlyResults.push({
+                year: currentSimulatioYear,
                 cash_flow: 0, 
                 investments: 0,
             });
         }
 
-        simulation_results.push(yearly_results);
+        simulationResults.push(yearlyResults);
     }
 
-    return calculate_stats(simulation_results); // Calculate median, mean, and other statistics
+    return calculate_stats(simulationResults); // Calculate median, mean, and other statistics
 }
 
 

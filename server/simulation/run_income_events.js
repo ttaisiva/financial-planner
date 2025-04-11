@@ -96,6 +96,7 @@ export async function process_income_event(
     };
 }
 
+// TODO: edge case: no income events found, what to do then
 /**
  * Fetches and calculates necessary data for an income event from the database.
  * @param {number} eventId - The ID of the income event.
@@ -126,6 +127,11 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
         [scenarioId]
     );
 
+    if (rows.length === 0) {
+        console.warn(`No income events found for scenario ID ${scenarioId}.`);
+        return []; // Return an empty array
+    }
+    
     return rows.map(event => {
         const prevAmount = previousYearAmounts[event.id] || 0;  
 
