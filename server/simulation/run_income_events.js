@@ -10,6 +10,7 @@
 
 import { ensureConnection, connection } from "../server.js";
 
+
 import {sample} from './preliminaries.js';
 
 
@@ -38,7 +39,7 @@ export async function process_income_event(
 ) {
     // Get all income events and calculate current amounts
     
-    const incomeEvents = await getIncomeEvents(scenarioId);
+    const incomeEvents = await getIncomeEvents(scenarioId); // what if this is empty? need to apply a check for that
 
     const updatedAmounts = {}; // To store currentAmount for each event
 
@@ -126,7 +127,7 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
     );
 
     return rows.map(event => {
-        const prevAmount = previousYearAmounts[event.id] || 0; //need to fix this
+        const prevAmount = previousYearAmounts[event.id] || 0;  
 
         const sampledChange = sample({
             type: event.annual_change_type,

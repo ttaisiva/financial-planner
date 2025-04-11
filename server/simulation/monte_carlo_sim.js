@@ -58,7 +58,7 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
             ));
 
             // Perform required minimum distributions (RMDs)
-            performRMDs(userId, currentSimulationYear, curYearIncome);
+            ({ curYearIncome } = performRMDs(scenarioId, currentSimulationYear, curYearIncome));
           
 
             // Optimize Roth conversions
