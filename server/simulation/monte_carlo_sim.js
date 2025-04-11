@@ -6,11 +6,12 @@ import { runRothOptimizer } from './roth_optimizer.js';
 import { payNondiscExpenses } from './nondisc_expenses.js';
 import { payDiscExpenses } from './disc_expenses.js';
 
+import { log } from '../logging.js';
 import { ensureConnection, connection } from "../server.js";
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export async function simulation(date , num_simulations, userId, scenarioId, connection) { 
+export async function simulation(date , num_simulations, userId, scenarioId, connection) {
     const total_years = get_total_years(date, scenarioId, connection);
 
     const simulation_results = [];
@@ -90,6 +91,7 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
         }
 
         simulation_results.push(yearly_results);
+        if(sim==0) log(userId, yearly_results);
     }
 
     return calculate_stats(simulation_results); // Calculate median, mean, and other statistics
