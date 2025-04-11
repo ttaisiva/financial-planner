@@ -94,7 +94,6 @@ router.get("/investment-types", (req, res) => {
 });
 
 router.post("/user-scenario-info", async (req, res) => {
-  //TODO: modularize this code a bit
   console.log("Server received user info request from client..");
 
   let userId;
@@ -208,6 +207,7 @@ router.post("/user-scenario-info", async (req, res) => {
     console.error("Failed to insert user scenario info:", err);
     res.status(500).send("Failed to save user scenario info and related data.");
   }
+
 });
 
 router.get("/pre-tax-investments", async (req, res) => {
@@ -230,13 +230,18 @@ router.get("/pre-tax-investments", async (req, res) => {
 router.post("/run-simulation", async (req, res) => {
   try {
     console.log("Running simulation...");
-    console.log("user id", req.session.user["id"]);
-    console.log("scenario id", req.session.user["scenario_id"]);
-    userId = req.session.user["id"];
-    scenarioId = req.session.user["scenario_id"];
+    const { userId, scenarioId, numSimulations} = req.body;
+
+    // userId = req.session.user['id'];
+    // scenarioId = req.session.user['scenario_id'];
+    // console.log("user id", req.session.user['id']); //why are these undefined??
+    // console.log("scenario id", req.session.user['scenario_id']);
+
     const currentYear = new Date().getFullYear();
-    const numSimulations = req.body.numSimulations || 1;
     console.log("number of simualations: ", numSimulations);
+    console.log("user id: ", userId);
+    console.log("scenario id: ", scenarioId);
+    console.log("connection", connection)
 
     // Call the Monte Carlo simulation function
     const results = simulation(
@@ -423,7 +428,8 @@ router.get("/get-investments", (req, res) => {
 
 export default router;
 
-//note: this is rly slow but because how the strategies are sent to server it cant be changed
+
+
 async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
   const strategyTypes = {
     0: "rothConversionStrat",
@@ -552,6 +558,18 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
       e.expected_annual_change?.stdDev || null,
       e.expected_annual_change?.upper || null,
       e.expected_annual_change?.lower || null,
+      
+      e.initialAmount || 0,  // Default to 0 if missing
+      e.inflationAdjusted || false,  // Default to false if missing
+      e.userPercentage || 0,  // Default to 0 if missing
+      e.spousePercentage || 0,  // Default to 0 if missing
+      
+      e.isSocialSecurity || false,  // Default to false if missing
+      e.allocationMethod || null,  // Default to null if missing
+      e.discretionary || false,  // Default to false if missing
+      e.max_cash || 0,  // Default to 0 if missing
+      
+      
 
       e.initialAmount || 0, // Default to 0 if missing
       e.inflationAdjusted || false, // Default to false if missing
