@@ -30,6 +30,17 @@ export async function createTablesIfNotExist(connection) {
     )
   `;
 
+  // The highest age in this table will be considered as "that age and up."
+  // For example, if 120 is the highest age in the table, it will be considred as ages 120 and up.
+  const createRMDsTable = `
+    CREATE TABLE IF NOT EXISTS rmds (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      year INT NOT NULL,
+      age INT NOT NULL,
+      distribution_period DECIMAL(10, 1) NOT NULL
+    )
+  `;
+
   // need to add this into taxes section
   // inflation_assumption DECIMAL(5, 2),
   // annual_pre_tax_contribution_limit DECIMAL(10, 2),
@@ -180,6 +191,7 @@ export async function createTablesIfNotExist(connection) {
   await connection.execute(createTaxBracketsTable);
   await connection.execute(createStandardDeductionsTable);
   await connection.execute(createCapitalGainsTaxTable);
+  await connection.execute(createRMDsTable);
   await connection.execute(createUsersTable);
   await connection.execute(createUserScenarioInfoTable);
   await connection.execute(createInvestmentsTable);
