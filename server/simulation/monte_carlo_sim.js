@@ -121,6 +121,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
  */
 export async function getTotalYears(date, scenarioId) {
     console.log("Date: ", date);
+    await ensureConnection();
     const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
     console.log("User birth year: ", userBirthYear);
     const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId, connection));
@@ -211,7 +212,7 @@ export async function getSpouseBirthYear(scenarioId) {
 
 export async function getSpouseLifeExpectancy(scenarioId) {
     if (connection) {
-        const query = `SELECT spouse_life_expectancy FROM user_scenario_info WHERE id = ?`;
+        const query = `SELECT spouse_life_expectancy_value FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
             return results[0]?.spouseLifeExpectancy_value || 0; // Return the life expectancy or 0 if not found
