@@ -31,7 +31,7 @@ export async function createTablesIfNotExist(connection) {
   `;
 
   // The highest age in this table will be considered as "that age and up."
-  // For example, if 120 is the highest age in the table, it will be considred as ages 120 and up.
+  // For example, if 120 is the highest age in the table, it will be considered as ages 120 and up.
   const createRMDsTable = `
     CREATE TABLE IF NOT EXISTS rmds (
       id INT AUTO_INCREMENT PRIMARY KEY,
