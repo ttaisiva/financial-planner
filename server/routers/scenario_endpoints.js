@@ -229,7 +229,6 @@ router.get("/pre-tax-investments", async (req, res) => {
 // edit this endpoint to run-simulation-auth and run-simulation-guest for guest send all localStorageData
 router.post("/run-simulation", async (req, res) => {
   try {
-    console.log("Running simulation...");
     const { userId, scenarioId, numSimulations} = req.body;
 
     // userId = req.session.user['id'];
@@ -238,10 +237,7 @@ router.post("/run-simulation", async (req, res) => {
     // console.log("scenario id", req.session.user['scenario_id']);
 
     const currentYear = new Date().getFullYear();
-    console.log("number of simualations: ", numSimulations);
-    console.log("user id: ", userId);
-    console.log("scenario id: ", scenarioId);
-    console.log("connection", connection)
+    console.log(`User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`);
 
     // Call the Monte Carlo simulation function
     const results = simulation(

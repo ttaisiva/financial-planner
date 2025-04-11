@@ -1,9 +1,19 @@
-
+import { connection } from "../server.js";
+import { ensureConnection } from "../server.js";
 
 export async function payNondiscExpenses(scenarioId) {
 
-    //this is only for logged in user, for guest user, we need to fetch the data from local storage
-    // non discretionary: non-optional
+    expenses = await getNonDiscExpenses(scenarioId);
+    if (expenses.length === 0) {
+        console.log("No non-discretionary expenses found for scenario ID #", scenarioId);
+        return;
+    }
+
+}
+async function getNonDiscExpenses(scenarioId) {
+    console.log(`Fetching non discretionary expenses from DB for scenario ID: ${scenarioId}`);
+    await ensureConnection();
+
     const [rows] = await connection.execute(
         `SELECT 
             id,
@@ -35,5 +45,6 @@ export async function payNondiscExpenses(scenarioId) {
          WHERE scenario_id = ? AND event_type = '' AND discretionary = true`,
         [scenarioId]
     );
-
+    return rows;
+    
 }

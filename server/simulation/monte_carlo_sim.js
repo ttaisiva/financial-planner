@@ -77,8 +77,9 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
           
 
             // Optimize Roth conversions
-            runRothOptimizer(scenarioId);
+            await runRothOptimizer(scenarioId);
 
+            
             // Update investments
             ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
