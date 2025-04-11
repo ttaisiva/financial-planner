@@ -50,7 +50,7 @@ export async function getUsername(userId) {
 
     try {
         const [rows] = await connection.execute(
-            `SELECT CONCAT(name, ' ', lastName) AS fullName FROM users WHERE id = ?`,
+            `SELECT CONCAT(name, '-', lastName) AS fullName FROM users WHERE id = ?`,
             [userId]
         );
 
