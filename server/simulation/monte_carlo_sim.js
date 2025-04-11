@@ -3,8 +3,11 @@ import { run_preliminaries } from './preliminaries.js';
 import { performRMDs } from './perform_rmds.js';
 import { getIncomeEvents } from './run_income_events.js';
 import { updateInvestments } from './update_investments.js';
+import { runRothOptimizer } from './roth_optimizer.js';
+import { payNondiscExpenses } from './nondisc_expenses.js';
+import { payDiscExpenses } from './disc_expenses.js';
 
-
+import { log } from '../logging.js';
 import { ensureConnection, connection } from "../server.js";
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
@@ -69,17 +72,17 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
           
 
             // Optimize Roth conversions
-            
+            runRothOptimizer(scenarioId);
 
             // Update investments
             updateInvestments(scenarioId, curYearIncome );
           
 
             // Pay non-discretionary expenses
-          
+            payNondiscExpenses(scenarioId);
 
             // Pay discretionary expenses
-         
+            payDiscExpenses(scenarioId);
 
             // Process investment events
        
@@ -95,6 +98,8 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             });
         }
 
+        
+        if(sim==0) log(userId, yearlyResults);
         simulationResults.push(yearlyResults);
     }
 
