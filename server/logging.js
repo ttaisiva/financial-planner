@@ -12,16 +12,9 @@ export async function log(userId, simResults) {
         console.log('Logs directory created:', dir);
     }
 
-    // const [names] = await connection.execute(
-    //     `SELECT 
-    //         name,
-    //         lastName,
-    //     FROM users
-    //     WHERE id = ?`,
-    //     [userId]
-    // );
+    const name = get_user_name(userId);
 
-    const username = names[0]?.name + names[0]?.lastName || "Guest"; // uses guest if id not in db
+    const username = name || "Guest"; // uses guest if id not in db
     const timestamp = new Date()
         .toISOString()
         .replace(/[:.]/g, '-')
@@ -45,4 +38,31 @@ export async function log(userId, simResults) {
         console.error("Error writing to CSV log at", path, e);
     }
     
+}
+
+/**
+ * Fetches the user's name from the database.
+ * @param {string} userId - The ID of the user.
+ * @returns {string|null} The user's full name if found, or null if the user is not found.
+ */
+export async function get_user_name(userId) {
+    await ensureConnection(); // Ensure the database connection is active
+
+    try {
+        const [rows] = await connection.execute(
+            `SELECT CONCAT(name, ' ', lastName) AS fullName FROM users WHERE id = ?`,
+            [userId]
+        );
+
+        // If no user is found, return null
+        if (rows.length === 0) {
+            return null;
+        }
+
+        // Return the full name directly
+        return rows[0].fullName || null;
+    } catch (error) {
+        console.error(`Error fetching user name for ID ${userId}:`, error);
+        throw new Error("Failed to fetch user name from the database.");
+    }
 }
