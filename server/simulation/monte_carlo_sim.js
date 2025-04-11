@@ -2,6 +2,7 @@ import { process_income_event } from './run_income_events.js';
 import { run_preliminaries } from './preliminaries.js';
 import { performRMDs } from './perform_rmds.js';
 import { getIncomeEvents } from './run_income_events.js';
+import { updateInvestments } from './update_investments.js';
 import { runRothOptimizer } from './roth_optimizer.js';
 import { payNondiscExpenses } from './nondisc_expenses.js';
 import { payDiscExpenses } from './disc_expenses.js';
@@ -38,7 +39,6 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
 
             // Run income events
             if (year === 0) {
-            
                 // Populate the object with initial amounts based on event IDs
                 incomeEvents.forEach(event => {
                     previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
@@ -68,7 +68,8 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
             runRothOptimizer(scenarioId);
 
             // Update investments
-            
+            updateInvestments(scenarioId, curYearIncome );
+          
 
             // Pay non-discretionary expenses
             payNondiscExpenses(scenarioId);
@@ -105,7 +106,7 @@ export async function simulation(date , num_simulations, userId, scenarioId, con
  * @param {Object} scenario - The scenario object containing user and spouse details.
  * @returns {number} The total number of years for the simulation.
  */
-export async function get_total_years(date, scenarioId, connection) {
+export async function get_total_years(date, scenarioId) {
     const user_birth_year = await get_user_birth_year(scenarioId, connection);
     const user_life_expectancy = await get_user_life_expectancy(scenarioId, connection);
     const user_lifespan = await user_birth_year + user_life_expectancy;
@@ -130,7 +131,6 @@ export async function get_total_years(date, scenarioId, connection) {
     return spouse_lifespan - date;
 }
 
-
 /**
  * Placeholder for calculating statistics from the simulation results.
  */
@@ -143,7 +143,7 @@ export function calculate_stats(simulationResults) {
     };
 }
 
-export async function get_user_birth_year(scenarioId, connection) {
+export async function get_user_birth_year(scenarioId) {
     if (connection) {
         const query = `SELECT user_birth_year FROM user_scenario_info WHERE id = ?`;
         try {
@@ -157,7 +157,7 @@ export async function get_user_birth_year(scenarioId, connection) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function get_user_life_expectancy(scenarioId, connection) {
+export async function get_user_life_expectancy(scenarioId) {
     if (connection) {
         const query = `SELECT user_life_expectancy_value FROM user_scenario_info WHERE id = ?`;
         try {
@@ -171,7 +171,7 @@ export async function get_user_life_expectancy(scenarioId, connection) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function get_spouse_birth_year(scenarioId, connection) {
+export async function get_spouse_birth_year(scenarioId) {
     if (connection) {
         const query = `SELECT spouse_birth_year FROM user_scenario_info WHERE id = ?`;
         try {
@@ -185,7 +185,7 @@ export async function get_spouse_birth_year(scenarioId, connection) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function get_spouse_life_expectancy(scenarioId, connection) {
+export async function get_spouse_life_expectancy(scenarioId) {
     if (connection) {
         const query = `SELECT spouse_life_expectancy_value FROM user_scenario_info WHERE id = ?`;
         try {
@@ -199,7 +199,7 @@ export async function get_spouse_life_expectancy(scenarioId, connection) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function get_filing_status(scenarioId, connection) {
+export async function get_filing_status(scenarioId) {
     if (connection) {
         const query = `SELECT filing_status FROM user_scenario_info WHERE id = ?`;
         try {
