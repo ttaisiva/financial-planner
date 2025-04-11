@@ -12,7 +12,7 @@ export async function log(userId, simResults) {
         console.log('Logs directory created:', dir);
     }
 
-    const name = get_user_name(userId);
+    const name = await getUsername(userId);
 
     const username = name || "Guest"; // uses guest if id not in db
     const timestamp = new Date()
@@ -45,7 +45,7 @@ export async function log(userId, simResults) {
  * @param {string} userId - The ID of the user.
  * @returns {string|null} The user's full name if found, or null if the user is not found.
  */
-export async function get_user_name(userId) {
+export async function getUsername(userId) {
     await ensureConnection(); // Ensure the database connection is active
 
     try {
