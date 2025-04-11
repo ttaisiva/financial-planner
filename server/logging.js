@@ -32,7 +32,7 @@ export async function log(userId, simResults) {
 
     try {
         // simResults.forEach(row => csvStream.write(row)); // for array
-        csvStream.write(simResults); // for temp string testing
+        // csvStream.write(simResults); // for temp string testing
         csvStream.end();
     } catch(e) {
         console.error("Error writing to CSV log at", path, e);
