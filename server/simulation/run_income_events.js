@@ -8,6 +8,7 @@
 // e. Update running total curYearIncome,
 // f. Update running total curYearSS of social security benefits, if income type = social security.
 
+import { ensureConnection, connection } from "../server.js";
 
 
 import {sample} from './preliminaries.js';
@@ -15,62 +16,9 @@ import {sample} from './preliminaries.js';
 
 
 /**
- * Fetches and calculates necessary data for an income event from the database.
- * @param {number} eventId - The ID of the income event.
- * @param {number} previousYearAmount - The amount from the previous year.
- * @returns {Object} The calculated data for the income event.
- */
-export async function get_income_events_data(scenarioId, previousYearAmounts) {
-    //this is only for logged in user, for guest user, we need to fetch the data from local storage
-    const [rows] = await connection.execute(
-        `SELECT 
-            id,
-            annual_change_type, 
-            annual_change_value, 
-            annual_change_mean, 
-            annual_change_std_dev, 
-            annual_change_upper, 
-            annual_change_lower, 
-            annual_change_type_amt_or_pct
-            inflation_adjusted, 
-            user_percentage, 
-            spouse_percentage, 
-            is_social_security
-         FROM events 
-         WHERE scenario_id = ? AND event_type = 'income'`,
-        [scenarioId]
-    );
-
-    return rows.map(event => {
-        const prevAmount = previousYearAmounts[event.id] || 0;
-
-        const sampledChange = sample({
-            type: event.annual_change_type,
-            value: event.annual_change_value,
-            mean: event.annual_change_mean,
-            std_dev: event.annual_change_std_dev, 
-            upper: event.annual_change_upper,     
-            lower: event.annual_change_lower,
-        });
-
-        const currentAmount = prevAmount + sampledChange;
-
-        return {
-            id: event.id,
-            currentAmount,
-            inflationAdjusted: event.inflation_adjusted || false,
-            userPercentage: event.user_percentage || 0,
-            spousePercentage: event.spouse_percentage || 0,
-            isSocialSecurity: event.is_social_security || false,
-        };
-    });
-}
-
-
-/**
  * Processes an income event and updates financial data.
  * @param {number} eventId - The ID of the income event.
- * @param {number} previousYearAmount - The amount from the previous year.
+ * @param {object} previousYearAmount - The amount from the previous year.
  * @param {number} inflationRate - The inflation rate.
  * @param {boolean} isUserAlive - Whether the user is alive.
  * @param {boolean} isSpouseAlive - Whether the spouse is alive.
@@ -90,12 +38,14 @@ export async function process_income_event(
     curYearSS
 ) {
     // Get all income events and calculate current amounts
-    const incomeEvents = await get_income_events_data(scenarioId, previousYearAmounts);
     
+    const incomeEvents = await getIncomeEvents(scenarioId); // what if this is empty? need to apply a check for that
 
     const updatedAmounts = {}; // To store currentAmount for each event
 
+    
     for (const event of incomeEvents) {
+        
         let adjustedAmount = event.currentAmount;
 
         // Apply inflation adjustment
@@ -120,6 +70,22 @@ export async function process_income_event(
         }
 
         updatedAmounts[event.id] = event.currentAmount; // Save the pre-adjusted amount
+
+        //update income event in db? should i do this because technically the updated amounts are stored in updated amounts array
+        // try {
+        //     await connection.execute(
+        //         `UPDATE events 
+        //          SET current_amount = ? 
+        //          WHERE id = ? AND scenario_id = ?`,
+        //         [adjustedAmount, event.id, scenarioId]
+        //     );
+        // } catch (error) {
+        //     console.error(`Error updating income event with ID ${event.id}:`, error);
+        //     throw error; // Re-throw the error for the caller to handle
+        // }
+
+        
+        
     }
 
     return {
@@ -129,5 +95,63 @@ export async function process_income_event(
         curYearSS
     };
 }
+
+/**
+ * Fetches and calculates necessary data for an income event from the database.
+ * @param {number} eventId - The ID of the income event.
+ * @param {number} previousYearAmount - The amount from the previous year.
+ * @returns {Object} The calculated data for the income event.
+ */
+export async function getIncomeEvents(scenarioId, previousYearAmounts) {
+    //this is only for logged in user, for guest user, we need to fetch the data from local storage
+
+    await ensureConnection();
+    const [rows] = await connection.execute(
+        `SELECT 
+            id,
+            annual_change_type, 
+            annual_change_value, 
+            annual_change_mean, 
+            annual_change_std_dev, 
+            annual_change_upper, 
+            annual_change_lower, 
+            annual_change_type_amt_or_pct
+            inflation_adjusted, 
+            user_percentage, 
+            spouse_percentage, 
+            is_social_security
+            
+         FROM events 
+         WHERE scenario_id = ? AND event_type = 'income'`,
+        [scenarioId]
+    );
+
+    return rows.map(event => {
+        const prevAmount = previousYearAmounts[event.id] || 0;  
+
+        const sampledChange = sample({
+            type: event.annual_change_type,
+            value: event.annual_change_value,
+            mean: event.annual_change_mean,
+            std_dev: event.annual_change_std_dev, 
+            upper: event.annual_change_upper,     
+            lower: event.annual_change_lower,
+        });
+
+        const currentAmount = prevAmount + sampledChange;
+
+        return {
+            id: event.id,
+            currentAmount,
+            inflationAdjusted: event.inflation_adjusted || false,
+            userPercentage: event.user_percentage || 0,
+            spousePercentage: event.spouse_percentage || 0,
+            isSocialSecurity: event.is_social_security || false,
+        };
+    });
+}
+
+
+
 
 

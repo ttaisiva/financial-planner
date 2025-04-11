@@ -10,24 +10,20 @@ export const ViewScenarioPage = () => {
   const [numSimulations, setNumSimulations] = useState(""); // Default value for simulations
   const [simulationResults, setSimulationResults] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [userId, setUserId] = useState(null); // State to store user ID
+  const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
+
   
-
-
-  // const location = useLocation();
-  // const showSingleScenario = location.state?.showSingleScenario || false; // Access the prop
-  // console.log("showSingleScenario", showSingleScenario);
-  // const location = useLocation();
-  // const passedScenarioId = location.state?.scenario_id;
 
   const handleRunSimulation = async () => {
     setIsRunning(true);
     try {
-      const response = await fetch("http://localhost:3000/run-simulation", {
+      const response = await fetch("http://localhost:3000/api/run-simulation", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ numSimulations }), // Send the number of simulations to the backend
+        body: JSON.stringify({ numSimulations, userId, scenarioId }), // Send the number of simulations to the backend
       });
 
       if (response.ok) {
@@ -47,7 +43,12 @@ export const ViewScenarioPage = () => {
     <div className="viewscenario-container">
       <Header />
       <h1> Your Scenario </h1>
-      <ViewSingleScenario />
+            <ViewSingleScenario
+        scenarioId={scenarioId}
+        setScenarioId={setScenarioId}
+        userId={userId}
+        setUserId={setUserId}
+      />
   
       <div className="simulation-controls">
         <h3>Simulation</h3>
@@ -74,12 +75,14 @@ export const ViewScenarioPage = () => {
 
 export default ViewScenarioPage;
 
-export const ViewSingleScenario = () => {
+export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId}) => {
   //placeholder need to implmement this
   const [scenario, setScenario] = useState([]);
   const location = useLocation();
-  const scenarioId = location.state?.scenario_id; // Access the scenario_id from the state
-  console.log("Scenario ID:", scenarioId);
+  const tempScenarioId = location.state?.scenario_id; // Access the scenario_id from the state
+  setScenarioId(tempScenarioId);
+ 
+  console.log("Temp Scenario ID:", scenarioId);
 
   const fetchScenario = async () => {
     try {
@@ -92,6 +95,12 @@ export const ViewSingleScenario = () => {
         const data = await response.json();
         console.log("Scenario data:", data);
         setScenario(data);
+
+        if (data.user_id) {
+          setUserId(data.user_id);
+          console.log("User ID from scenario:", data.user_id);
+        }
+
       } else {
         console.error("Failed to fetch scenario");
       }
@@ -100,18 +109,16 @@ export const ViewSingleScenario = () => {
     }
   };
   
+  
   useEffect(() => {
     if (scenarioId) {
       fetchScenario();
+      console.log("Scenario:", scenario);
+      //pass scenarioId and const userId= scenario.user_id to  view scenario page component
     } else {
       console.error("No scenario ID provided");
     }
   }, [scenarioId]);
-
-
-
-    console.log("Scenario:", scenario);
-
 
 
   // Utility to render list of key-value fields from an object
@@ -122,7 +129,13 @@ export const ViewSingleScenario = () => {
           .filter(([_, value]) => value != null) // Filter out null or undefined values
           .map(([key, value]) => (
             <p key={key}>
-              <strong>{key.replace(/_/g, " ")}:</strong> {value.toString()}
+              <strong>
+                {key
+                  .replace(/_/g, " ") // Replace underscores with spaces
+                  .replace(/user /i, "") // Remove "user" (case-insensitive)
+                  .replace(/spouse /i, "") // Remove "spouse" (case-insensitive)
+                }:
+                </strong> {value.toString()}
             </p>
           ))}
       </div>
@@ -170,6 +183,7 @@ export const ViewSingleScenario = () => {
               user_retirement_age_value: scenario.user_retirement_age_value,
               user_retirement_age_mean: scenario.user_retirement_age_mean,
               user_retirement_age_std_dev: scenario.user_retirement_age_std_dev,
+              user_birth_year: scenario.user_birth_year,
             })}
           </div>
 
@@ -186,28 +200,22 @@ export const ViewSingleScenario = () => {
                 spouse_retirement_age_value: scenario.spouse_retirement_age_value,
                 spouse_retirement_age_mean: scenario.spouse_retirement_age_mean,
                 spouse_retirement_age_std_dev: scenario.spouse_retirement_age_std_dev,
+                spouse_birth_year: scenario.spouse_birth_year,
               })}
             </div>
             )
           }
 
-
-
-
         </div>
       </div>
 
-
-
       <div>
-        
-
-
       </div>
 
       
       {/* Render related data if available */}
       <div >
+        
         {scenario.investments?.length > 0 && (
           <>
             <h3 style={{ textAlign: "center" }}>Investments</h3>
@@ -253,11 +261,12 @@ export const ViewSingleScenario = () => {
       </div>
 
       <div>
-        {scenario.strategies?.length > 0 && (
+        
+        {scenario.strategy?.length > 0 && (
           <>
             <h3 style={{ textAlign: "center" }}>Strategies</h3>
             <div className="grid">
-            {scenario.strategies.map((strategy, index) => (
+            {scenario.strategy.map((strategy, index) => (
               <div key={index} className="item">
                 {renderAttributes(strategy)}
               </div>

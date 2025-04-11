@@ -18,9 +18,9 @@
 // already exists, and if so, adding the transferred amount to its value, otherwise creating an
 // investment with the same investment type, the target tax status, and value equal to the transferred amount.
 
-//import axios from 'axios';
 
-
+import {connection } from "../server.js";
+import { get_user_birth_year } from "./monte_carlo_sim.js";
 /**
  * Performs the Required Minimum Distribution (RMD) for the previous year.
  * @param {Object} user - The user object containing birth year and other details.
@@ -28,19 +28,19 @@
  * @param {number} curYearIncome - The current year's income total.
  * @returns {Object} Updated investments and curYearIncome after performing RMDs.
  */
-export async function performRMDs(userId, currentSimulationYear, curYearIncome) {
+export async function performRMDs(scenarioId, currentSimulationYear, curYearIncome) {
 
-
-    const userAge = currentYear - user.birthYear;
+    userBirthYear = await get_user_birth_year(scenarioId, connection);
+    const userAge = currentSimulationYear - userBirthYear;
 
     // Step a: Check if the user is at least 74 and has pre-tax investments
-    if (user.birthYear + 73 != currentSimulationYear) { 
+    if (userBirthYear + 73 != currentSimulationYear) { 
         return; // No RMD required
     }
 
     let preTaxInvestments; //fetch pre tax investments from db or local storage for guest use
     try {
-        const response = await axios.get('http://localhost:3000/pre-tax-investments'); 
+        const response = await axios.get('http://localhost:3000/investments-pretax'); 
         preTaxInvestments = response.data;
     } catch (err) {
         console.error("Failed to fetch pre-tax investments:", err);
@@ -52,8 +52,8 @@ export async function performRMDs(userId, currentSimulationYear, curYearIncome) 
     }
 
     // Step b: Lookup distribution period (d) from the RMD table
-    //not rly sure how to access RMD table should have been scraped...
-    const distributionPeriod = rmdTable[userAge - 1]; // Assuming the table is indexed by age
+    const rmdTable = await getRMDTable(connection);
+    const distributionPeriod = rmdTable[userAge]; 
     if (!distributionPeriod) {
         throw new Error(`No distribution period found for age ${userAge}`);
     }
@@ -122,3 +122,27 @@ export async function performRMDs(userId, currentSimulationYear, curYearIncome) 
     return { curYearIncome };
 }
 
+/**
+ * Fetches the RMD table from the database.
+ * @param {Object} connection - The database connection object.
+ * @returns {Object} An object where the keys are ages and the values are distribution periods.
+ */
+export async function getRMDTable(connection) {
+    try {
+        // Query the RMD table
+        const [rows] = await connection.execute(
+            `SELECT age, distribution_period FROM rmds ORDER BY age ASC`
+        );
+
+        // Convert the rows into an object for easy lookup
+        const rmdTable = {};
+        rows.forEach(row => {
+            rmdTable[row.age] = row.distribution_period;
+        });
+
+        return rmdTable;
+    } catch (error) {
+        console.error("Error fetching RMD table from the database:", error);
+        throw new Error("Unable to fetch RMD table.");
+    }
+}

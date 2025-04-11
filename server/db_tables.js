@@ -30,6 +30,17 @@ export async function createTablesIfNotExist(connection) {
     )
   `;
 
+  // The highest age in this table will be considered as "that age and up."
+  // For example, if 120 is the highest age in the table, it will be considred as ages 120 and up.
+  const createRMDsTable = `
+    CREATE TABLE IF NOT EXISTS rmds (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      year INT NOT NULL,
+      age INT NOT NULL,
+      distribution_period DECIMAL(10, 1) NOT NULL
+    )
+  `;
+
   // need to add this into taxes section
   // inflation_assumption DECIMAL(5, 2),
   // annual_pre_tax_contribution_limit DECIMAL(10, 2),
@@ -62,6 +73,7 @@ export async function createTablesIfNotExist(connection) {
     user_retirement_age_value DECIMAL(10, 2),
     user_retirement_age_mean DECIMAL(10, 2),
     user_retirement_age_std_dev DECIMAL(10, 2),
+    user_birth_year INT,
     spouse_life_expectancy_type VARCHAR(255),
     spouse_life_expectancy_value DECIMAL(10, 2),
     spouse_life_expectancy_mean DECIMAL(10, 2),
@@ -70,6 +82,7 @@ export async function createTablesIfNotExist(connection) {
     spouse_retirement_age_value DECIMAL(10, 2),
     spouse_retirement_age_mean DECIMAL(10, 2),
     spouse_retirement_age_std_dev DECIMAL(10, 2),
+    spouse_birth_year INT,
     inflation_assumption_type VARCHAR(255),
     inflation_assumption_value DECIMAL(10, 2),
     inflation_assumption_mean DECIMAL(10, 2),
@@ -172,13 +185,13 @@ export async function createTablesIfNotExist(connection) {
       FOREIGN KEY (investment_id) REFERENCES investments(id),
       FOREIGN KEY (expense_id) REFERENCES events(id)
     );
-
   `;
 
   // Create tables
   await connection.execute(createTaxBracketsTable);
   await connection.execute(createStandardDeductionsTable);
   await connection.execute(createCapitalGainsTaxTable);
+  await connection.execute(createRMDsTable);
   await connection.execute(createUsersTable);
   await connection.execute(createUserScenarioInfoTable);
   await connection.execute(createInvestmentsTable);
