@@ -229,7 +229,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
         const data = await response.json();
         console.log("Scenario saved successfully:", data);
         console.log("scenario id: ", data.scenario_id);
-        navigate("/scenario", { state: { scenario_id: data.scenario_id } });
+        navigate(`/scenario/${data.scenario_id}`);
+
       } else {
         console.error("Failed to save user details");
       }
