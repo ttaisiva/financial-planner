@@ -1,5 +1,5 @@
 import { process_income_event } from './run_income_events.js';
-import { run_preliminaries } from './preliminaries.js';
+import { run_preliminaries, sample } from './preliminaries.js';
 import { performRMDs } from './perform_rmds.js';
 import { getIncomeEvents } from './run_income_events.js';
 import { updateInvestments } from './update_investments.js';
@@ -40,7 +40,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             
             const currentSimulationYear = date + year; //actual year being simulated
 
-            //run preliminaries -> need to further implement this
+            //Step 0: run preliminaries -> need to further implement this
             const inflationRate = await run_preliminaries(currentSimulationYear, scenarioId, connection);
             console.log("Inflation rate for year ", currentSimulationYear, " is: ", inflationRate);
             
@@ -48,16 +48,17 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
                 // Populate the object with initial amounts based on event IDs
                 if(incomeEvents.length === 0) {
                     console.log("No income events found for this scenario.");
-                    continue; 
+                    
                 } else {
                 incomeEvents.forEach(event => {
                     previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
+                    console.log("Previous year amounts for income events: ", previousYearAmounts);
                 });
                 }
-                console.log("Previous year amounts for income events: ", previousYearAmounts);
+                
             }
 
-            // Run income events
+            // Step 1: Run income events
             let updatedAmounts;
             ({
                 updatedAmounts,
@@ -75,22 +76,23 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
                 curYearSS
             ));
 
-            // Perform required minimum distributions (RMDs)
+            // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
             ({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
           
 
-            // Optimize Roth conversions
-            runRothOptimizer(scenarioId);
+            // Step 3: Optimize Roth conversions
+            
+            //await runRothOptimizer(scenarioId);
 
-            // Update investments
-            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
+            // Step 4: Update investments
+            // ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
 
             // Pay non-discretionary expenses
-            payNondiscExpenses(scenarioId);
+            //payNondiscExpenses(scenarioId);
 
             // Pay discretionary expenses
-            payDiscExpenses(scenarioId);
+            //payDiscExpenses(scenarioId);
 
             // Process investment events
        
@@ -100,7 +102,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
 
             // Collect yearly results -> need to impelemnt this
             yearlyResults.push({
-                year: currentSimulatioYear,
+                year: currentSimulationYear,
                 cash_flow: 0, 
                 investments: 0,
             });
@@ -171,6 +173,7 @@ export function calculate_stats(simulationResults) {
 }
 
 export async function get_user_birth_year(scenarioId) {
+    ensureConnection(); // Ensure the database connection is active
     if (connection) {
         const query = `SELECT user_birth_year FROM user_scenario_info WHERE id = ?`;
         try {
@@ -184,12 +187,22 @@ export async function get_user_birth_year(scenarioId) {
     return 0; // Return 0 if connection is not available
 }
 
+
 export async function get_user_life_expectancy(scenarioId) {
+    ensureConnection(); // Ensure the database connection is active
     if (connection) {
-        const query = `SELECT user_life_expectancy_value FROM user_scenario_info WHERE id = ?`;
+        const query = `SELECT 
+            user_life_expectancy_type AS type,
+            user_life_expectancy_value AS value,
+            user_life_expectancy_mean AS mean,
+            user_life_expectancy_std_dev AS std_dev
+        
+        
+            FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.user_life_expectancy_value || 0; // Return the life expectancy or 0 if not found
+            return sample(results[0])
+            
         } catch (error) {
             console.error("Error fetching user life expectancy:", error);
             throw error; // Re-throw the error for the caller to handle
@@ -214,10 +227,16 @@ export async function get_spouse_birth_year(scenarioId) {
 
 export async function get_spouse_life_expectancy(scenarioId) {
     if (connection) {
-        const query = `SELECT spouse_life_expectancy_value FROM user_scenario_info WHERE id = ?`;
+        const query = `SELECT 
+        spouse_life_expectancy_type,
+        spouse_life_expectancy_value,
+        spouse_life_expectancy_mean,
+        spouse_life_expectancy_std_dev
+    
+        FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.spouse_life_expectancy_value || 0; // Return the life expectancy or 0 if not found
+            return sample(results[0])
         } catch (error) {
             console.error("Error fetching spouse life expectancy:", error);
             throw error; // Re-throw the error for the caller to handle

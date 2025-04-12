@@ -72,7 +72,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           />
           <input
             type="number"
-            min="0"
+            min="0.000001"
             name={`${prefix}.stdDev`}
             placeholder="Enter standard deviation"
             value={

@@ -16,8 +16,11 @@ export const ViewScenarioPage = () => {
   
 
   const handleRunSimulation = async () => {
+    
     setIsRunning(true);
     try {
+    
+      //const MYuserId = '107981191838034384868';
       const response = await fetch("http://localhost:3000/api/run-simulation", {
         method: "POST",
         headers: {

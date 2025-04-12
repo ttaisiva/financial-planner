@@ -449,7 +449,7 @@ async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
     console.log(`Processing type: ${strategyTypes[i]}, Items:`, items);
 
     if (!Array.isArray(items)) {
-      console.log(`No valid items found for strategy type: ${type}`);
+      console.log(`No valid items found for strategy type: ${strategyTypes[i]}`);
       continue;
     }
 

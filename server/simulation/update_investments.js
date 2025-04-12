@@ -64,7 +64,7 @@ export async function updateInvestments(scenarioId, curYearIncome) {
 
         // b. Add the income to curYearIncome if applicable
         if (
-            investment.tax_status === 'non-retirement' &&
+            investment.tax_status === 'Non-Retirement' &&
             investmentType.taxability === 'taxable'
         ) {
             curYearIncome += generatedIncome;
