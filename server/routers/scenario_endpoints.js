@@ -259,9 +259,8 @@ router.post("/run-simulation", async (req, res) => {
 router.get("/single-scenario", async (req, res) => {
   console.log("Display single scenario in server");
   console.log(req.session.user);
-
   //const scenarioId = await waitForScenarioId();
-  const scenarioId = req.session.user["scenario_id"];
+  const scenarioId = req.query.scenarioId;
   const userId = req.session.user["id"];
 
   console.log("scenario id: ", scenarioId);
