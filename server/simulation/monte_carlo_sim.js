@@ -13,15 +13,11 @@ import { ensureConnection, connection } from "../server.js";
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
 export async function simulation(date , numSimulations, userId, scenarioId, connection) { 
-    log(userId, "Running Monte Carlo simulation...");
     console.log("Running Monte Carlo simulation...");
 
-    const total_years = await get_total_years(date, scenarioId, connection);
-
-    
+    const totalYears = await getTotalYears(date, scenarioId, connection);
 
     const simulationResults = [];
-
 
     for (let sim = 0; sim < numSimulations; sim++) {
         console.log("Running simulation number: ", sim);
@@ -35,8 +31,8 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
         let curYearSS = 0;
         const incomeEvents = await getIncomeEvents(scenarioId, []); // Fetch income events to determine the number of events
         
-        console.log("Total years for simulation: ", total_years);
-        for (let year = 0; year < total_years; year++) { //years in which the simulation is  being run
+        console.log("Total years for simulation: ", totalYears);
+        for (let year = 0; year < totalYears; year++) { //years in which the simulation is  being run
             
             const currentSimulationYear = date + year; //actual year being simulated
 
@@ -113,7 +109,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
         simulationResults.push(yearlyResults);
     }
 
-    return calculate_stats(simulationResults); // Calculate median, mean, and other statistics
+    return calculateStats(simulationResults); // Calculate median, mean, and other statistics
 }
 
 
@@ -124,46 +120,48 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
  * @param {Object} scenario - The scenario object containing user and spouse details.
  * @returns {number} The total number of years for the simulation.
  */
-export async function get_total_years(date, scenarioId) {
+export async function getTotalYears(date, scenarioId) {
     console.log("Date: ", date);
-    const user_birth_year = Number(await get_user_birth_year(scenarioId, connection));
-    console.log("User birth year: ", user_birth_year);
-    const user_life_expectancy = Number(await get_user_life_expectancy(scenarioId, connection));
-    console.log("User life expectancy: ", user_life_expectancy);
+    await ensureConnection();
+    const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
+    console.log("User birth year: ", userBirthYear);
+    const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId, connection));
+    console.log("User life expectancy: ", userLifeExpectancy);
     
-    const user_lifespan = user_birth_year + user_life_expectancy;
-    console.log("User lifespan: ", user_lifespan);
+    const userLifespan = userBirthYear + userLifeExpectancy;
+    console.log("User lifespan: ", userLifespan);
     
-    const filing_status = await get_filing_status(scenarioId, connection);
-    console.log("Filing status: ", filing_status);
+    const filingStatus = await getFilingStatus(scenarioId, connection);
+    console.log("Filing status: ", filingStatus);
 
 
-    if (filing_status === 'single') {
+    if (filingStatus === 'single') {
         // If filing status is single, return the user's lifespan minus the current year
-        return user_lifespan - date;
+        return userLifespan - date;
     }
 
     // Calculate the spouse's lifespan
-    const spouse_birth_year = Number(await get_spouse_birth_year(scenarioId, connection));
-    console.log("Spouse birth year: ", spouse_birth_year);
-    const spouse_life_expectancy = Number(await get_spouse_life_expectancy(scenarioId, connection));
-    console.log("Spouse life expectancy: ", spouse_life_expectancy);
+    const spouseBirthYear = Number(await getSpouseBirthYear(scenarioId, connection));
+    console.log("Spouse birth year: ", spouseBirthYear);
+    const spouseLifeExpectancy = Number(await getSpouseLifeExpectancy(scenarioId, connection));
+    console.log("Spouse life expectancy: ", spouseLifeExpectancy);
     
-    const spouse_lifespan = spouse_birth_year + spouse_life_expectancy;
-    console.log("Spouse lifespan: ", spouse_lifespan);
+    const spouseLifespan = spouseBirthYear + spouseLifeExpectancy;
+    console.log("Spouse lifespan: ", spouseLifespan);
 
     // Return the greater of the two lifespans minus the current year
-    if (user_lifespan >= spouse_lifespan) {
-        return user_lifespan - date;
+    if (userLifespan >= spouseLifespan) {
+        return userLifespan - date;
     }
 
-    return spouse_lifespan - date;
+    return spouseLifespan - date;
 }
+
 
 /**
  * Placeholder for calculating statistics from the simulation results.
  */
-export function calculate_stats(simulationResults) {
+export function calculateStats(simulationResults) {
     console.log('Calculating statistics from simulation results');
     return {
         median: 0, 
@@ -172,8 +170,7 @@ export function calculate_stats(simulationResults) {
     };
 }
 
-export async function get_user_birth_year(scenarioId) {
-    ensureConnection(); // Ensure the database connection is active
+export async function getUserBirthYear(scenarioId) {
     if (connection) {
         const query = `SELECT user_birth_year FROM user_scenario_info WHERE id = ?`;
         try {
@@ -188,8 +185,7 @@ export async function get_user_birth_year(scenarioId) {
 }
 
 
-export async function get_user_life_expectancy(scenarioId) {
-    ensureConnection(); // Ensure the database connection is active
+export async function getUserLifeExpectancy(scenarioId) {
     if (connection) {
         const query = `SELECT 
             user_life_expectancy_type AS type,
@@ -211,7 +207,7 @@ export async function get_user_life_expectancy(scenarioId) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function get_spouse_birth_year(scenarioId) {
+export async function getSpouseBirthYear(scenarioId) {
     if (connection) {
         const query = `SELECT spouse_birth_year FROM user_scenario_info WHERE id = ?`;
         try {
@@ -225,7 +221,7 @@ export async function get_spouse_birth_year(scenarioId) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function get_spouse_life_expectancy(scenarioId) {
+export async function getSpouseLifeExpectancy(scenarioId) {
     if (connection) {
         const query = `SELECT 
         spouse_life_expectancy_type,
@@ -245,7 +241,7 @@ export async function get_spouse_life_expectancy(scenarioId) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function get_filing_status(scenarioId) {
+export async function getFilingStatus(scenarioId) {
     if (connection) {
         const query = `SELECT filing_status FROM user_scenario_info WHERE id = ?`;
         try {
