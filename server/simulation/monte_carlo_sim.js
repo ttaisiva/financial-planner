@@ -55,25 +55,25 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             }
 
             // Step 1: Run income events
-            let updatedAmounts;
-            ({
-                updatedAmounts,
-                cashInvestment,
-                curYearIncome,
-                curYearSS,
-            } = await process_income_event(
-                scenarioId,
-                previousYearAmounts,
-                inflationRate,
-                isUserAlive,
-                isSpouseAlive,
-                cashInvestment,
-                curYearIncome,
-                curYearSS
-            ));
+            // let updatedAmounts;
+            // ({
+            //     updatedAmounts,
+            //     cashInvestment,
+            //     curYearIncome,
+            //     curYearSS,
+            // } = await process_income_event(
+            //     scenarioId,
+            //     previousYearAmounts,
+            //     inflationRate,
+            //     isUserAlive,
+            //     isSpouseAlive,
+            //     cashInvestment,
+            //     curYearIncome,
+            //     curYearSS
+            // ));
 
             // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-            ({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
+            //({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
           
 
             // Step 3: Optimize Roth conversions
@@ -81,7 +81,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             //await runRothOptimizer(scenarioId);
 
             // Step 4: Update investments
-            // ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
+            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
 
             // Pay non-discretionary expenses
