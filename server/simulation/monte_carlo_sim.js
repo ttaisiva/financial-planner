@@ -19,7 +19,6 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
 
     const simulationResults = [];
 
-
     for (let sim = 0; sim < numSimulations; sim++) {
         console.log("Running simulation number: ", sim);
         let yearlyResults = [];
@@ -157,6 +156,7 @@ export async function getTotalYears(date, scenarioId) {
     return spouseLifespan - date;
 }
 
+
 /**
  * Placeholder for calculating statistics from the simulation results.
  */
@@ -174,7 +174,7 @@ export async function getUserBirthYear(scenarioId) {
         const query = `SELECT user_birth_year FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.userBirthYear || 0; // Return the birth year or 0 if not found
+            return results[0]?.user_birth_year || 0; // Return the birth year or 0 if not found
         } catch (error) {
             console.error("Error fetching user birth year:", error);
             throw error; // Re-throw the error for the caller to handle
@@ -188,7 +188,7 @@ export async function getUserLifeExpectancy(scenarioId) {
         const query = `SELECT user_life_expectancy_value FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.userLifeExpectancy_value || 0; // Return the life expectancy or 0 if not found
+            return results[0]?.user_life_expectancy_value || 0; // Return the life expectancy or 0 if not found
         } catch (error) {
             console.error("Error fetching user life expectancy:", error);
             throw error; // Re-throw the error for the caller to handle
@@ -202,7 +202,7 @@ export async function getSpouseBirthYear(scenarioId) {
         const query = `SELECT spouse_birth_year FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.spouseBirthYear || 0; // Return the spouse's birth year or 0 if not found
+            return results[0]?.spouse_birth_year || 0; // Return the spouse's birth year or 0 if not found
         } catch (error) {
             console.error("Error fetching spouse birth year:", error);
             throw error; // Re-throw the error for the caller to handle
@@ -216,7 +216,7 @@ export async function getSpouseLifeExpectancy(scenarioId) {
         const query = `SELECT spouse_life_expectancy_value FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.spouseLifeExpectancy_value || 0; // Return the life expectancy or 0 if not found
+            return results[0]?.spouse_life_expectancy_value || 0; // Return the life expectancy or 0 if not found
         } catch (error) {
             console.error("Error fetching spouse life expectancy:", error);
             throw error; // Re-throw the error for the caller to handle
@@ -230,7 +230,7 @@ export async function getFilingStatus(scenarioId) {
         const query = `SELECT filing_status FROM user_scenario_info WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.filingStatus || ""; // Return the filing status or an empty string if not found
+            return results[0]?.filing_status || ""; // Return the filing status or an empty string if not found
         } catch (error) {
             console.error("Error fetching filing status:", error);
             throw error; // Re-throw the error for the caller to handle
