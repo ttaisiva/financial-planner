@@ -24,6 +24,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/scenario" element={<ViewScenarioPage />} />
+        <Route path="/scenario/:id" element={<ViewScenarioPage />} />
       </Routes>
     </>
   );

@@ -229,7 +229,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
         const data = await response.json();
         console.log("Scenario saved successfully:", data);
         console.log("scenario id: ", data.scenario_id);
-        navigate("/scenario", { state: { scenario_id: data.scenario_id } });
+        navigate(`/scenario/${data.scenario_id}`);
+
       } else {
         console.error("Failed to save user details");
       }
@@ -388,7 +389,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
 
         <div>
-          <label>Inflation Assumption: </label>
+          <label>Inflation Assumption %: </label>
           <select name="inflation_assumption.type" value={formData.inflation_assumption.type} onChange={handleChange} required>
             <option value="" disabled>Select format</option>
             <option value="fixed">Fixed</option> 

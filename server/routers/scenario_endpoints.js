@@ -229,7 +229,6 @@ router.get("/pre-tax-investments", async (req, res) => {
 // edit this endpoint to run-simulation-auth and run-simulation-guest for guest send all localStorageData
 router.post("/run-simulation", async (req, res) => {
   try {
-    console.log("Running simulation...");
     const { userId, scenarioId, numSimulations} = req.body;
 
     // userId = req.session.user['id'];
@@ -238,10 +237,7 @@ router.post("/run-simulation", async (req, res) => {
     // console.log("scenario id", req.session.user['scenario_id']);
 
     const currentYear = new Date().getFullYear();
-    console.log("number of simualations: ", numSimulations);
-    console.log("user id: ", userId);
-    console.log("scenario id: ", scenarioId);
-    console.log("connection", connection)
+    console.log(`User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`);
 
     // Call the Monte Carlo simulation function
     const results = simulation(
@@ -263,9 +259,8 @@ router.post("/run-simulation", async (req, res) => {
 router.get("/single-scenario", async (req, res) => {
   console.log("Display single scenario in server");
   console.log(req.session.user);
-
   //const scenarioId = await waitForScenarioId();
-  const scenarioId = req.session.user["scenario_id"];
+  const scenarioId = req.query.scenarioId;
   const userId = req.session.user["id"];
 
   console.log("scenario id: ", scenarioId);
@@ -449,7 +444,7 @@ async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
     console.log(`Processing type: ${strategyTypes[i]}, Items:`, items);
 
     if (!Array.isArray(items)) {
-      console.log(`No valid items found for strategy type: ${type}`);
+      console.log(`No valid items found for strategy type: ${strategyTypes[i]}`);
       continue;
     }
 
@@ -569,17 +564,6 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
       e.discretionary || false,  // Default to false if missing
       e.max_cash || 0,  // Default to 0 if missing
       
-      
-
-      e.initialAmount || 0, // Default to 0 if missing
-      e.inflationAdjusted || false, // Default to false if missing
-      e.userPercentage || 0, // Default to 0 if missing
-      e.spousePercentage || 0, // Default to 0 if missing
-
-      e.isSocialSecurity || false, // Default to false if missing
-      e.allocationMethod || null, // Default to null if missing
-      e.discretionary || false, // Default to false if missing
-      e.max_cash || 0, // Default to 0 if missing
     ];
 
     console.log("Inserting values:", eventsValues);

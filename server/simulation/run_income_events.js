@@ -8,16 +8,14 @@
 // e. Update running total curYearIncome,
 // f. Update running total curYearSS of social security benefits, if income type = social security.
 
+
 import { ensureConnection, connection } from "../server.js";
-
-import {sample} from './preliminaries.js';
-
-
+import { sample } from './preliminaries.js';
 
 /**
  * Processes an income event and updates financial data.
- * @param {number} eventId - The ID of the income event.
- * @param {object} previousYearAmount - The amount from the previous year.
+ * @param {number} scenarioId - The ID of the scenario.
+ * @param {object} previousYearAmounts - The amount from the previous year.
  * @param {number} inflationRate - The inflation rate.
  * @param {boolean} isUserAlive - Whether the user is alive.
  * @param {boolean} isSpouseAlive - Whether the spouse is alive.
@@ -36,59 +34,68 @@ export async function process_income_event(
     curYearIncome,
     curYearSS
 ) {
+    console.log(`Processing income events for scenario ID: ${scenarioId}`);
+    console.log(`Initial cash investment: ${cashInvestment}, curYearIncome: ${curYearIncome}, curYearSS: ${curYearSS}`);
+
     // Get all income events and calculate current amounts
-    
-    const incomeEvents = await getIncomeEvents(scenarioId);
+    const incomeEvents = await getIncomeEvents(scenarioId, previousYearAmounts);
+
+    if (incomeEvents.length === 0) {
+        console.warn(`No income events found for scenario ID ${scenarioId}. Skipping income event processing.`);
+        return {
+            updatedAmounts: {},
+            cashInvestment,
+            curYearIncome,
+            curYearSS
+        };
+    }
+
+    console.log(`Found ${incomeEvents.length} income events for scenario ID ${scenarioId}.`);
 
     const updatedAmounts = {}; // To store currentAmount for each event
 
-    
     for (const event of incomeEvents) {
-        
+        console.log(`Processing income event ID: ${event.id}, currentAmount: ${event.currentAmount}`);
+
         let adjustedAmount = event.currentAmount;
 
         // Apply inflation adjustment
         if (event.inflationAdjusted) {
             adjustedAmount *= 1 + inflationRate;
+            console.log(`Applied inflation adjustment. New adjustedAmount: ${adjustedAmount}`);
         }
 
         // Omit user or spouse portion if they are dead
         if (!isUserAlive) {
-            adjustedAmount -= (event.userPercentage / 100) * event.currentAmount;
+            const userPortion = (event.userPercentage / 100) * event.currentAmount;
+            adjustedAmount -= userPortion;
+            console.log(`User is not alive. Omitted user portion: ${userPortion}. New adjustedAmount: ${adjustedAmount}`);
         }
         if (!isSpouseAlive) {
-            adjustedAmount -= (event.spousePercentage / 100) * event.currentAmount;
+            const spousePortion = (event.spousePercentage / 100) * event.currentAmount;
+            adjustedAmount -= spousePortion;
+            console.log(`Spouse is not alive. Omitted spouse portion: ${spousePortion}. New adjustedAmount: ${adjustedAmount}`);
         }
 
         // Add to cash investment and income totals
         cashInvestment += adjustedAmount;
         curYearIncome += adjustedAmount;
 
+        console.log(`Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${cashInvestment}, curYearIncome: ${curYearIncome}`);
+
         if (event.isSocialSecurity) {
             curYearSS += adjustedAmount;
+            console.log(`Added adjustedAmount to curYearSS. Updated curYearSS: ${curYearSS}`);
         }
 
         updatedAmounts[event.id] = event.currentAmount; // Save the pre-adjusted amount
-
-        //update income event in db? should i do this because technically the updated amounts are stored in updated amounts array
-        // try {
-        //     await connection.execute(
-        //         `UPDATE events 
-        //          SET current_amount = ? 
-        //          WHERE id = ? AND scenario_id = ?`,
-        //         [adjustedAmount, event.id, scenarioId]
-        //     );
-        // } catch (error) {
-        //     console.error(`Error updating income event with ID ${event.id}:`, error);
-        //     throw error; // Re-throw the error for the caller to handle
-        // }
-
-        
-        
     }
 
+    console.log(`Finished processing income events for scenario ID ${scenarioId}.`);
+    console.log(`Final cashInvestment: ${cashInvestment}, curYearIncome: ${curYearIncome}, curYearSS: ${curYearSS}`);
+
     return {
-        updatedAmounts,     
+        updatedAmounts,
         cashInvestment,
         curYearIncome,
         curYearSS
@@ -97,14 +104,14 @@ export async function process_income_event(
 
 /**
  * Fetches and calculates necessary data for an income event from the database.
- * @param {number} eventId - The ID of the income event.
- * @param {number} previousYearAmount - The amount from the previous year.
- * @returns {Object} The calculated data for the income event.
+ * @param {number} scenarioId - The ID of the scenario.
+ * @param {Object} previousYearAmounts - An object mapping event IDs to their previous year amounts.
+ * @returns {Array} The calculated data for the income events.
  */
 export async function getIncomeEvents(scenarioId, previousYearAmounts) {
-    //this is only for logged in user, for guest user, we need to fetch the data from local storage
-
+    console.log(`Fetching income events for scenario ID: ${scenarioId}`);
     await ensureConnection();
+
     const [rows] = await connection.execute(
         `SELECT 
             id,
@@ -114,30 +121,40 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
             annual_change_std_dev, 
             annual_change_upper, 
             annual_change_lower, 
-            annual_change_type_amt_or_pct
+            annual_change_type_amt_or_pct,
             inflation_adjusted, 
             user_percentage, 
             spouse_percentage, 
             is_social_security
-            
          FROM events 
          WHERE scenario_id = ? AND event_type = 'income'`,
         [scenarioId]
     );
 
+    if (rows.length === 0) {
+        console.warn(`No income events found for scenario ID ${scenarioId}.`);
+        return []; // Return an empty array
+    }
+
+    console.log(`Fetched ${rows.length} income events for scenario ID ${scenarioId}.`);
+
     return rows.map(event => {
-        const prevAmount = previousYearAmounts[event.id] || 0; //need to fix this
+        const prevAmount = previousYearAmounts[event.id] || 0;
+        console.log(`Calculating current amount for event ID: ${event.id}, previousYearAmount: ${prevAmount}`);
 
         const sampledChange = sample({
             type: event.annual_change_type,
             value: event.annual_change_value,
             mean: event.annual_change_mean,
-            std_dev: event.annual_change_std_dev, 
-            upper: event.annual_change_upper,     
+            std_dev: event.annual_change_std_dev,
+            upper: event.annual_change_upper,
             lower: event.annual_change_lower,
         });
 
+        console.log(`Sampled change for event ID: ${event.id}: ${sampledChange}`);
+
         const currentAmount = prevAmount + sampledChange;
+        console.log(`Calculated currentAmount for event ID: ${event.id}: ${currentAmount}`);
 
         return {
             id: event.id,
@@ -149,8 +166,3 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
         };
     });
 }
-
-
-
-
-
