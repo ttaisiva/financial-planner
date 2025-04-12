@@ -181,7 +181,7 @@ export const DisplayUserScenarios = () => {
 
   const handleScenarioClick = (scenarioId) => {
     // Redirect to the scenario page with the selected scenario ID
-    // navigate("/scenario", { scenarioIdInput: scenarioId });
+    navigate(`/scenario/${scenarioId}`);
   };
 
   return (

@@ -4,6 +4,7 @@ import Footer from "../components/Footer";
 import {useState, useEffect} from "react";
 import { loadAnimation } from "../utils";
 import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -13,8 +14,14 @@ export const ViewScenarioPage = () => {
   const [userId, setUserId] = useState(null); // State to store user ID
   const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
 
-  
+  const { id: scenarioIdFromUrl } = useParams(); // gets scenario id from url that took you to this page
+  useEffect(() => {
+    if (scenarioIdFromUrl) {
+      setScenarioId(scenarioIdFromUrl);
+    }
+  }, [scenarioIdFromUrl]);
 
+  
   const handleRunSimulation = async () => {
     setIsRunning(true);
     try {
@@ -80,14 +87,14 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
   const [scenario, setScenario] = useState([]);
   const location = useLocation();
   const tempScenarioId = location.state?.scenario_id; // Access the scenario_id from the state
-  setScenarioId(tempScenarioId);
+  // setScenarioId(tempScenarioId);
  
-  console.log("Temp Scenario ID:", scenarioId);
+  // console.log("Temp Scenario ID:", scenarioId);
 
   const fetchScenario = async () => {
     try {
       setScenario([]);
-      const response = await fetch("http://localhost:3000/api/single-scenario", {
+      const response = await fetch(`http://localhost:3000/api/single-scenario?scenarioId=${scenarioId}`, {
         method: "GET",
         credentials: "include",
       });
