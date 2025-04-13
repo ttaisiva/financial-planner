@@ -91,7 +91,7 @@ export async function createTablesIfNotExist(connection) {
 
   const createInvestmentsTable = `
     CREATE TABLE IF NOT EXISTS investments (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id VARCHAR(255),
       scenario_id INT,
       investment_type VARCHAR(255) NOT NULL,
       value DECIMAL(10, 2) NOT NULL,
