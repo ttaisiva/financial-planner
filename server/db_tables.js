@@ -85,7 +85,7 @@ export async function createTablesIfNotExist(connection) {
     income_distribution JSON,
     income_amt_or_pct ENUM('amount', 'percent'),
     taxability BOOL,
-    FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
+    FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
   );
   `;
 
@@ -96,7 +96,7 @@ export async function createTablesIfNotExist(connection) {
       investment_type VARCHAR(255) NOT NULL,
       value DECIMAL(10, 2) NOT NULL,
       tax_status VARCHAR(255) NOT NULL,
-      FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
+      FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
     );
   `;
 
@@ -120,7 +120,7 @@ export async function createTablesIfNotExist(connection) {
     asset_allocation2 JSON,
     discretionary BOOLEAN,
     max_cash DECIMAL(10, 2), 
-    FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
+    FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
   );
 `;
 
@@ -140,7 +140,7 @@ export async function createTablesIfNotExist(connection) {
       investment_id VARCHAR(255) DEFAULT NULL, -- applies to investment-based strategies
       expense_id INT DEFAULT NULL,    -- applies to spending strategie
       strategy_order INT NOT NULL,    -- indicates the order
-      FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id),
+      FOREIGN KEY (scenario_id) REFERENCES scenarios(id),
       FOREIGN KEY (expense_id) REFERENCES events(id)
     );
   `;

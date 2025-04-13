@@ -95,6 +95,9 @@ router.get("/investment-types", (req, res) => {
   res.status(200).json(investmentTypesLocalStorage);
 });
 
+/**
+ * Creates a scenario from the new scenario form
+ */
 router.post("/create-scenario", async (req, res) => {
   console.log("Server received user info request from client..");
 
@@ -206,6 +209,9 @@ router.post("/run-simulation", async (req, res) => {
   }
 });
 
+/**
+ * Sends a single scenario to the client for display
+ */
 router.get("/single-scenario", async (req, res) => {
   console.log("Display single scenario in server");
   console.log(req.session.user);
@@ -268,6 +274,9 @@ router.get("/single-scenario", async (req, res) => {
   res.status(200).json(scenarioWithDetails);
 });
 
+/**
+ * Sends a map of scenarios to the client for display
+ */
 router.get("/scenarios", async (req, res) => {
   console.log("Display scenarios in server");
   console.log(req.session.user);
@@ -371,6 +380,9 @@ router.get("/get-investments", (req, res) => {
   );
 });
 
+/**
+ * Imports a scenario from a .YAML or .YML file
+ */
 router.post("/import-scenario", async (req, res) => {
   console.log("Server received user info request from client..");
 
@@ -437,6 +449,12 @@ router.post("/import-scenario", async (req, res) => {
 
 export default router;
 
+/**
+ * Finds the expense id for a given scenario
+ * @param connection MySQL connection
+ * @param scenario_id id for given scenario
+ * @param expense name of expense
+ */
 async function findExpenseId(connection, scenario_id, expense) {
   const query = `SELECT id FROM events WHERE scenario_id = ? AND name = ?`;
   const values = [scenario_id, expense];
