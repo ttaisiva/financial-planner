@@ -1,53 +1,54 @@
 import React, { useState, useEffect } from "react";
-import { inputTypes,  updateNestedState } from '../utils';
+import { inputTypes, updateNestedState } from "../utils";
 
-export const Investment = ( { investments, setInvestments, setShowInvestmentForm } ) => {
+export const Investment = ({
+  investments,
+  setInvestments,
+  setShowInvestmentForm,
+}) => {
   const [formData, setFormData] = useState({
-    investment_type: "",
-    dollar_value: "",
-    tax_status: "",
+    investmentType: "",
+    dollarValue: "",
+    taxStatus: "",
   });
-
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === "dollar_value" ? parseFloat(value) : value,
+      [name]: name === "dollarValue" ? parseFloat(value) : value,
     });
   };
 
-  const handleSubmit =  async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Investment Submitted:", formData);
     // send to server
-    
+
     try {
-      const response = await fetch('http://localhost:3000/api/investments', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3000/api/investments", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        console.log('Investment saved successfully');
+        console.log("Investment saved successfully");
         const newInvestment = await response.json(); // ERROR HERE
         setInvestments((prev) => [...prev, newInvestment]);
 
-        console.log("New investment: " ,newInvestment);
-      
+        console.log("New investment: ", newInvestment);
+
         setShowInvestmentForm(false);
       } else {
         setInvestments((prev) => [...prev, formData]);
-        console.error('Failed to save investment');
+        console.error("Failed to save investment");
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
-
 
     setShowInvestmentForm(false);
   };
@@ -60,7 +61,6 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
     <div>
       <h3>Create an Investment</h3>
 
-
       <form onSubmit={handleSubmit}>
         {/* Investment Type */}
         {/* TODO: choose from existing investment types created by user instead of text field */}
@@ -68,8 +68,8 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
           <label>Investment Type: </label>
           <input
             type="text"
-            name="investment_type"
-            value={formData.investment_type}
+            name="investmentType"
+            value={formData.investmentType}
             onChange={handleChange}
             required
           />
@@ -80,10 +80,10 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
           <label>Dollar Amount: $</label>
           <input
             type="number"
-            name="dollar_value"
-            min = "0"
-            placeholder = "0.00"
-            value={formData.dollar_value}
+            name="dollarValue"
+            min="0"
+            placeholder="0.00"
+            value={formData.dollarValue}
             onChange={handleChange}
             required
           />
@@ -93,27 +93,34 @@ export const Investment = ( { investments, setInvestments, setShowInvestmentForm
         <div>
           <label>Taxability: </label>
           <select
-            name="tax_status"
-            value={formData.tax_status}
+            name="taxStatus"
+            value={formData.taxStatus}
             onChange={handleChange}
             required
           >
-            <option value="" disabled>Select Tax Status</option>
-            <option value="Pre-Tax">Pre Tax</option>
-            <option value="Non-Retirement">Non Retirement</option>
-            <option value="After-Tax">After Tax</option>
+            <option value="" disabled>
+              Select Tax Status
+            </option>
+            <option value="pre-tax">Pre Tax</option>
+            <option value="non-retirement">Non Retirement</option>
+            <option value="after-tax">After Tax</option>
           </select>
         </div>
-        <button type="button" onClick={handleBack}>Back</button>
+        <button type="button" onClick={handleBack}>
+          Back
+        </button>
         <button type="submit">Save</button>
       </form>
     </div>
   );
 };
 
-
 //TODO: send stuff to database, validate inputs, fix expense ratio, view, edit
-export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowInvestmentTypeForm }) => {
+export const InvestmentType = ({
+  investmentTypes,
+  setInvestmentTypes,
+  setShowInvestmentTypeForm,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -135,7 +142,6 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
     taxability: "",
   });
 
-  
   // const resetValues = (type, value) => {
   //   if (type === "expAnnReturnType") {
   //     if (value === "fixed") {
@@ -170,49 +176,47 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
     const { name, value } = e.target;
 
     const parts = name.split(".");
-    const parentKey = parts[0];  
-    const childKey = parts[1];   
+    const parentKey = parts[0];
+    const childKey = parts[1];
 
-
-    if (parts.length > 1){ //meaning nested once
+    if (parts.length > 1) {
+      //meaning nested once
       updateNestedState(parentKey, childKey, value, setFormData);
-    }    
-    else{
+    } else {
       setFormData({ ...formData, [name]: value });
     }
-
-
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Investment Type Submitted:", formData);
 
-    
-
     try {
-      const response = await fetch('http://localhost:3000/api/investment-type', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        "http://localhost:3000/api/investment-type",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (response.ok) {
-        console.log('Investment type saved successfully');
+        console.log("Investment type saved successfully");
         const newType = await response.json();
         setInvestmentTypes((prev) => [...prev, newType]); //add new investmenttype to list
         setShowInvestmentTypeForm(false);
       } else {
-        console.error('Failed to save investment type');
+        console.error("Failed to save investment type");
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       setInvestmentTypes((prev) => [...prev, formData]);
     }
-  
-      setShowInvestmentTypeForm(false);
+
+    setShowInvestmentTypeForm(false);
   };
 
   const handleBack = () => {
@@ -226,80 +230,131 @@ export const InvestmentType = ({ investmentTypes, setInvestmentTypes , setShowIn
       <form onSubmit={handleSubmit}>
         <div>
           <label>Name: </label>
-          <input type="text" name="name" placeholder="Investment name" value={formData.name} onChange={handleChange} required />
+          <input
+            type="text"
+            name="name"
+            placeholder="Investment name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div>
           <label>Description: </label>
-          <textarea name="description" placeholder="Describe your investment..." value={formData.description} onChange={handleChange} required />
+          <textarea
+            name="description"
+            placeholder="Describe your investment..."
+            value={formData.description}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        
         <div>
           <label>Expected Annual Return: </label>
-          <select name="expAnnReturn.type" value={formData.expAnnReturn.type} onChange={handleChange}>
-            <option value="" disabled>Select expected annual return</option>
+          <select
+            name="expAnnReturn.type"
+            value={formData.expAnnReturn.type}
+            onChange={handleChange}
+          >
+            <option value="" disabled>
+              Select expected annual return
+            </option>
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
           </select>
-          <select name="expAnnReturn.amtOrPct" value={formData.expAnnReturn.amtOrPct} onChange={handleChange} required>
+          <select
+            name="expAnnReturn.amtOrPct"
+            value={formData.expAnnReturn.amtOrPct}
+            onChange={handleChange}
+            required
+          >
             <option value="amt">Amount</option>
             <option value="pct">Percentage</option>
-          </select> 
+          </select>
 
-          {inputTypes({ type: formData.expAnnReturn.type, formData, handleChange, prefix: "expAnnReturn"  })} 
-   
-
+          {inputTypes({
+            type: formData.expAnnReturn.type,
+            formData,
+            handleChange,
+            prefix: "expAnnReturn",
+          })}
         </div>
-
 
         {/* Expense Ratio */}
         <div>
           <label>Expense Ratio Percentage: </label>
-          <input type="number" name="expenseRatio" value={formData.expenseRatio} min="0" max="100" placeholder="0%" onChange={handleChange} required />
+          <input
+            type="number"
+            name="expenseRatio"
+            value={formData.expenseRatio}
+            min="0"
+            max="100"
+            placeholder="0%"
+            onChange={handleChange}
+            required
+          />
         </div>
 
         {/* Expected Annual Income - Only shows if "fixed" is selected */}
         <div>
-        <label>Expected Annual Income: </label>
-          <select name="expAnnIncome.type" value={formData.expAnnIncome.type} onChange={handleChange}>
-            <option value="" disabled>Select expected annual income</option>
+          <label>Expected Annual Income: </label>
+          <select
+            name="expAnnIncome.type"
+            value={formData.expAnnIncome.type}
+            onChange={handleChange}
+          >
+            <option value="" disabled>
+              Select expected annual income
+            </option>
             <option value="fixed">Fixed</option>
             <option value="normal_distribution">Normal Distribution</option>
           </select>
-          <select name="expAnnIncome.amtOrPct" value={formData.expAnnIncome.amtOrPct} onChange={handleChange} required>
+          <select
+            name="expAnnIncome.amtOrPct"
+            value={formData.expAnnIncome.amtOrPct}
+            onChange={handleChange}
+            required
+          >
             <option value="amt">Amount</option>
             <option value="pct">Percentage</option>
-          </select> 
+          </select>
 
-          {inputTypes({ type: formData.expAnnIncome.type, formData, handleChange, prefix: "expAnnIncome"  })} 
-   
-          
+          {inputTypes({
+            type: formData.expAnnIncome.type,
+            formData,
+            handleChange,
+            prefix: "expAnnIncome",
+          })}
         </div>
 
         {/* Taxability */}
         <div>
           <label>Taxability: </label>
-          <select name="taxability" value={formData.taxability} onChange={handleChange}>
-            <option value="" disabled>Select taxability</option>
+          <select
+            name="taxability"
+            value={formData.taxability}
+            onChange={handleChange}
+          >
+            <option value="" disabled>
+              Select taxability
+            </option>
             <option value="taxable">Taxable</option>
             <option value="tax-exempt">Tax-Exempt</option>
           </select>
         </div>
 
-        <button type="button" onClick={handleBack}>Back</button>
+        <button type="button" onClick={handleBack}>
+          Back
+        </button>
         <button type="submit">Save</button>
       </form>
     </div>
   );
 };
 
-
-
-
-
 export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
-
   useEffect(() => {
     console.log("investments", investments);
     console.log("investmentTypes", investmentTypes);
@@ -312,7 +367,8 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
         <ul>
           {investmentTypes.map((item, idx) => (
             <li key={idx} className="item">
-              <strong>{item.name}</strong>: {item.description}, Expected Annual Return:{" "}
+              <strong>{item.name}</strong>: {item.description}, Expected Annual
+              Return:{" "}
               {item.expAnnReturn.type === "fixed"
                 ? `$${item.expAnnReturn.value}`
                 : `Mean: ${item.expAnnReturn.mean}, Std Dev: ${item.expAnnReturn.stdDev}`}
@@ -331,7 +387,8 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
         <ul>
           {investments.map((item, idx) => (
             <li key={idx} className="item">
-              <strong>{item.investment_type}</strong>: ${item.dollar_value} ({item.tax_status})
+              <strong>{item.investmentType}</strong>: ${item.dollarValue} (
+              {item.taxStatus})
             </li>
           ))}
         </ul>
@@ -339,9 +396,3 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
     </div>
   );
 };
-
-
-
-
-
-
