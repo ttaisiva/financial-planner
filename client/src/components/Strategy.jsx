@@ -499,7 +499,7 @@ const SortableInvestment = ({ id, account }) => {
       {...attributes}
       {...listeners}
     >
-      {account.investment_type}: ${account.dollar_value}, ({account.tax_status})
+      {account.investment_type}: ${account.value}, ({account.tax_status})
     </div>
   );
 };

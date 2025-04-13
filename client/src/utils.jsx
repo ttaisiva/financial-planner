@@ -29,8 +29,9 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   /**
    * This function handles the display for user options for fixed, normal, and uniform distributions.
    */
-
-  const prefixParts = prefix.split(".");
+  const data = formData[prefix] || {};
+  console.log("key:", prefix);
+  console.log("data:", data);
 
   switch (type) {
     case "fixed":
@@ -40,11 +41,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           min="0"
           name={`${prefix}.value`} //should be .value instead oops
           placeholder="Enter value"
-          value={
-            prefixParts.length === 1
-              ? formData[prefixParts[0]]?.value || "" // If only one part, access directly
-              : formData[prefixParts[0]]?.[prefixParts[1]]?.value || "" // If two parts, use nested access
-          }
+          value={data.value || ""}
           onChange={handleChange}
           required
         />
@@ -57,11 +54,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
             min="0"
             name={`${prefix}.mean`}
             placeholder="Enter mean"
-            value={
-              prefixParts.length === 1
-                ? formData[prefixParts[0]]?.mean || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.mean || "" // If two parts, use nested access
-            }
+            value={data.mean || ""}
             onChange={handleChange}
             required
           />
@@ -70,11 +63,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
             min="0.000001"
             name={`${prefix}.stdDev`}
             placeholder="Enter standard deviation"
-            value={
-              prefixParts.length === 1
-                ? formData[prefixParts[0]]?.stdDev || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.stdDev || "" // If two parts, use nested access
-            }
+            value={data.stdDev || ""}
             onChange={handleChange}
             required
           />
@@ -88,11 +77,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
             min="0"
             name={`${prefix}.lower`}
             placeholder="Enter lower bound"
-            value={
-              prefixParts.length === 1
-                ? formData[prefixParts[0]]?.lower || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.lower || "" // If two parts, use nested access
-            }
+            value={data.lower || ""}
             onChange={handleChange}
             required
           />
@@ -101,11 +86,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
             min="0"
             name={`${prefix}.upper`}
             placeholder="Enter upper bound"
-            value={
-              prefixParts.length === 1
-                ? formData[prefixParts[0]]?.upper || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.upper || "" // If two parts, use nested access
-            }
+            value={data.upper || ""}
             onChange={handleChange}
             required
           />
