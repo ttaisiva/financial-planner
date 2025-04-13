@@ -8,7 +8,7 @@ import { payNondiscExpenses } from './nondisc_expenses.js';
 import { payDiscExpenses } from './disc_expenses.js';
 import { getRothYears } from './roth_optimizer.js';
 import { getRothStrategy } from './roth_optimizer.js';
-
+import { initLogs } from '../logging.js';
 import { log } from '../logging.js';
 import { ensureConnection, connection } from "../server.js";
 /**
@@ -16,7 +16,7 @@ import { ensureConnection, connection } from "../server.js";
  */
 export async function simulation(date , numSimulations, userId, scenarioId, connection) { 
     console.log("Running Monte Carlo simulation...");
-
+    const csvlog = await initLogs(userId); // open log file for writing
     const totalYears = await getTotalYears(date, scenarioId, connection);
 
     const simulationResults = [];
@@ -37,12 +37,13 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
 
         console.log("Initializing simulation investments.");
         let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
-
         
         console.log("Total years for simulation: ", totalYears);
         for (let year = 0; year < totalYears; year++) { //years in which the simulation is  being run
             
             const currentSimulationYear = date + year; //actual year being simulated
+            if(sim===0) log(csvlog, investments, currentSimulationYear-1);
+
 
             //Step 0: run preliminaries -> need to further implement this
             const inflationRate = await run_preliminaries(currentSimulationYear, scenarioId, connection);
@@ -116,10 +117,10 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
                 cash_flow: 0, 
                 investments: 0,
             });
+            
+            if(sim==0) log(csvlog, investments, currentSimulationYear);
         }
 
-        
-        if(sim==0) log(userId, yearlyResults);
         simulationResults.push(yearlyResults);
     }
 
