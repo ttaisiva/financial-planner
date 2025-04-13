@@ -95,7 +95,7 @@ router.get("/investment-types", (req, res) => {
   res.status(200).json(investmentTypesLocalStorage);
 });
 
-router.post("/user-scenario-info", async (req, res) => {
+router.post("/create-scenario", async (req, res) => {
   console.log("Server received user info request from client..");
 
   // for (const investment of investments) {
@@ -133,7 +133,7 @@ router.post("/user-scenario-info", async (req, res) => {
       scenarioSnakeCase
     );
 
-    // Insert into user_scenario_info and get the inserted scenario_id
+    // Insert into sccenarios and get the inserted scenario_id
     console.log("insert user scenario info to database..");
     const scenario_id = scenarioResult.insertId; //the id of the scenario is the ID it was insert with
     req.session.user["scenario_id"] = scenario_id; // Store the scenario ID in the session
@@ -371,6 +371,81 @@ router.get("/get-investments", (req, res) => {
   );
 });
 
+router.post("/import-scenario", async (req, res) => {
+  console.log("Server received user info request from client..");
+
+  let userId;
+  if (req.session.user) {
+    userId = req.session.user.id;
+    console.log("Authenticated user ID:", userId);
+  }
+
+  console.log("authenticated", req.session.user);
+  const scenario = req.body.scenario;
+
+  const query = `
+    INSERT INTO scenarios (
+      user_id, name, marital_status, birth_years, life_expectancy, 
+      inflation_assumption, financial_goal, residence_state
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  const values = [
+    userId ?? null,
+    scenario.name ?? null,
+    scenario.maritalStatus ?? null,
+    JSON.stringify(scenario.birthYears) ?? null,
+    JSON.stringify(scenario.lifeExpectancy) ?? null,
+    JSON.stringify(scenario.inflationAssumption) ?? null,
+    scenario.financialGoal ?? null,
+    scenario.residenceState ?? null,
+  ];
+
+  //Insert all Scenario data into DB
+  try {
+    await ensureConnection();
+    await createTablesIfNotExist(connection);
+
+    // Insert into sccenarios and get the inserted scenario_id
+    console.log("insert user scenario info to database..");
+    const [results] = await connection.execute(query, values);
+    const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
+    req.session.user["scenario_id"] = scenario_id; // Store the scenario ID in the session
+    console.log("Scenario ID:", scenario_id);
+
+    // insert all data into db
+    await insertInvestmentTypes(connection, scenario_id, req.body.investmentTypes);
+    await insertInvestment(connection, scenario_id, req.body.investments);
+    await insertEvents(connection, scenario_id, req.body.eventSeries);
+
+    const strategies = req.body.strategies;
+    await insertStrategies(connection, scenario_id, strategies);
+
+    //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
+    console.log("All temporary storage cleared");
+    investmentsLocalStorage = [];
+    investmentTypesLocalStorage = [];
+    eventsLocalStorage = [];
+    rothLocalStorage = [];
+    rmdLocalStorage = [];
+    spendingLocalStorage = [];
+    expenseWithdrawalLocalStorage = [];
+    strategyLocalStorage = [];
+
+    console.log("User scenario info and related data saved successfully.");
+    res
+      .status(200)
+      .json({
+        message: "User scenario and related data saved successfully.",
+        scenario_id,
+      });
+  } catch (err) {
+    console.error("Failed to insert user scenario info:", err);
+    res.status(500).send("Failed to save user scenario info and related data.");
+  }
+
+});
+
 export default router;
 
 async function findInvestmentId(connection, scenario_id, investment) {
@@ -389,190 +464,179 @@ async function findExpenseId(connection, scenario_id, expense) {
   const [rows] = await connection.execute(query, values);
   return rows.length > 0 ? rows[0].id : null;
 }
-async function insertStrategies(
-  connection,
-  scenario_id,
-  rothLocalStorage,
-  rmdLocalStorage,
-  expenseWithdrawalLocalStorage,
-  spendingLocalStorage
-) {
+
+/**
+ * Inserts each strategy for the scenario currently being uploaded
+ * 
+ * @param connection MySQL Connection for DB
+ * @param scenario_id ID for Current Scenario
+ * @param strategies List of strategies to be inserted into DB
+ */
+async function insertStrategies(connection, scenario_id, strategies) {
   // Roth
-  console.log("Roth info before inserting to db:", rothLocalStorage);
-  rothLocalStorage.rothStartYear = parseInt(rothLocalStorage.rothStartYear, 10);
-  rothLocalStorage.rothEndYear = parseInt(rothLocalStorage.rothEndYear, 10);
-  console.log(
-    "Roth years (int converted):",
-    rothLocalStorage.rothStartYear,
-    rothLocalStorage.rothEndYear
-  );
-  const investments = rothLocalStorage.rothConversionStrat;
-  for (let i = 0; i < investments.length; i++) {
-    // doesn't run for empty array (if optimizer disabled)
+  const roth = strategies.roth;
+  console.log("Roth info before inserting to db:", roth);
+  roth.start = parseInt(roth.start, 10);
+  roth.end = parseInt(roth.end, 10);
+  console.log("Roth years (int converted):", roth.start, roth.end);
+  const investments = roth.strategy;
+  for(let i = 0; i < investments.length; i++) { // doesn't run for empty array (if optimizer disabled)
     // make id the investment id from DB
     const id = await findInvestmentId(connection, scenario_id, investments[i]);
     const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
-      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const values = [
-      scenario_id,
+      scenario_id ?? null,
       "roth",
-      id,
+      id ?? null,
       null,
-      i,
-      rothLocalStorage.rothStartYear,
-      rothLocalStorage.rothEndYear,
+      i ?? null,
+      roth.start ?? null,
+      roth.end ?? null
     ];
     await connection.execute(query, values);
   }
 
   // RMD
-  for (let i = 0; i < rmdLocalStorage.length; i++) {
-    // each element is investment
-    const id = await findInvestmentId(
-      connection,
-      scenario_id,
-      rmdLocalStorage[i]
-    );
+  for(let i = 0; i < strategies.rmd.length; i++) { // each element is investment
+    const id = await findInvestmentId(connection, scenario_id, strategies.rmd[i]);
     const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
-      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    const values = [scenario_id, "rmd", id, null, i, null, null];
+    expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const values = [
+      scenario_id,
+      "rmd",
+      id,
+      null,
+      i,
+      null,
+      null
+    ];
     await connection.execute(query, values);
   }
 
   // Expense Withdrawal
-  for (let i = 0; i < expenseWithdrawalLocalStorage.length; i++) {
-    // each element is investment
-    const id = await findInvestmentId(
-      connection,
-      scenario_id,
-      expenseWithdrawalLocalStorage[i]
-    );
+  for(let i = 0; i < strategies.expense.length; i++) { // each element is investment
+    const id = await findInvestmentId(connection, scenario_id, strategies.expense[i]);
     const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
-      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    const values = [scenario_id, "expense_withdrawal", id, null, i, null, null];
+    expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const values = [
+      scenario_id,
+      "expense_withdrawal",
+      id,
+      null,
+      i,
+      null,
+      null
+    ];
     await connection.execute(query, values);
   }
 
   // Spending
-  for (let i = 0; i < spendingLocalStorage.length; i++) {
-    // each element is expense
-    const id = await findExpenseId(
-      connection,
-      scenario_id,
-      spendingLocalStorage[i]
-    );
+  for(let i = 0; i < strategies.spend.length; i++) { // each element is expense
+    const id = await findExpenseId(connection, scenario_id, strategies.spend[i]);
     const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
-      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    const values = [scenario_id, "spending", null, id, i, null, null];
-    await connection.execute(query, values);
+    expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const values = [
+      scenario_id,
+      strategy_type,
+      investment_id,
+      expense_id,
+      strategy_order,
+    ];
+
+    await connection.execute(
+      `INSERT INTO strategy (scenario_id, strategy_type, investment_id, expense_id, strategy_order) VALUES (?, ?, ?, ?, ?)`,
+      [
+        scenario_id,
+        String(strategy_type),
+        investment_id,
+        expense_id,
+        strategy_order,
+      ]
+    );
   }
-  console.log("All strategies for scenario #", scenario_id, "sent to DB.");
 }
 
-async function insertEvents(connection, scenario_id, eventsLocal) {
-  for (const e of eventsLocal) {
+/**
+ * Inserts each event series for the scenario currently being uploaded
+ * 
+ * @param connection MySQL Connection for DB
+ * @param scenario_id ID for Current Scenario
+ * @param events List of event series to be inserted into DB
+ */
+async function insertEvents(connection, scenario_id, events) {
+  for (const event of events) {
     const eventsQuery = `
       INSERT INTO events (
-        scenario_id, name, description, event_type, start_type, start_value, 
-        start_mean, start_std_dev, start_lower, start_upper,
-        start_series_start, start_series_end, duration_type, 
-        duration_value, duration_mean, duration_std_dev, 
-        duration_lower, duration_upper, annual_change_type, 
-        annual_change_value, annual_change_type_amt_or_pct,
-        annual_change_mean, annual_change_std_dev, annual_change_lower,
-        annual_change_upper, initial_amount, inflation_adjusted, 
-        user_percentage, spouse_percentage, is_social_security, asset_allocation,
-        discretionary, max_cash
+        scenario_id, name, description, type,
+        start, duration, change_distribution, initial_amount,
+        change_amt_or_pct, inflation_adjusted, user_fraction, social_security,
+        asset_allocation, glide_path, asset_allocation2, discretionary,
+        max_cash
       )
       VALUES (
-        ?, ?, ?, ?, ?, 
-        ?, ?, ?, ?, ?, 
-        ?, ?, ?, ?, ?, 
-        ?, ?, ?, ?, ?, 
-        ?, ?, ?, ?, ?, 
-        ?, ?, ?, ?, ?, 
-        ?, ?, ?
+        ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?
       )
-
-
     `;
 
     const eventsValues = [
-      scenario_id || null,
-      e.name || null,
-      e.description || null,
-      e.eventType || null,
-      e.start?.type || null,
-
-      e.start?.value || 0, // Default to 0 if value is missing
-      e.start?.mean || null,
-      e.start?.stdDev || null,
-      e.start?.upper || null,
-      e.start?.lower || null,
-
-      e.start?.series_start || false,
-      e.start?.series_end || false,
-      e.duration?.type || null,
-      e.duration?.value || 0, // Default to 0 if value is missing
-      e.duration?.mean || null,
-
-      e.duration?.stdDev || null,
-      e.duration?.upper || null,
-      e.duration?.lower || null,
-      e.expected_annual_change?.type || null,
-      e.expected_annual_change?.value || 0, // Default to 0 if missing
-
-      e.expected_annual_change?.type_amt_or_pct || null,
-      e.expected_annual_change?.mean || null,
-      e.expected_annual_change?.stdDev || null,
-      e.expected_annual_change?.upper || null,
-      e.expected_annual_change?.lower || null,
-
-      e.initialAmount || 0, // Default to 0 if missing
-      e.inflationAdjusted || false, // Default to false if missing
-      e.userPercentage || 0, // Default to 0 if missing
-      e.spousePercentage || 0, // Default to 0 if missing
-
-      e.isSocialSecurity || false, // Default to false if missing
-      e.allocationMethod || null, // Default to null if missing
-      e.discretionary || false, // Default to false if missing
-      e.max_cash || 0, // Default to 0 if missing
+      scenario_id ?? null, 
+      event.name ?? null,
+      event.description ?? "",
+      event.type ?? null,
+      JSON.stringify(event.start) ?? null,
+      JSON.stringify(event.duration) ?? null,
+      JSON.stringify(event.changeDistribution) ?? null,
+      event.initialAmount ?? null,
+      event.changeAmtOrPct ?? null,
+      event.inflationAdjusted ?? null,
+      event.userFraction ?? null,
+      event.socialSecurity ?? null,
+      event.assetAllocation ?? null,
+      event.glidePath ?? null,
+      event.assetAllocation2 ?? null,
+      event.discretionary ?? null,
+      event.maxCash ?? null,
     ];
 
     console.log("Inserting values:", eventsValues);
     await connection.execute(eventsQuery, eventsValues);
-    console.log(`Event ${e.name} saved to the database.`);
+    console.log(`Event ${event.name} saved to the database.`);
   }
 }
 
+/**
+ * Inserts each investment type for the scenario currently being uploaded
+ * 
+ * @param connection MySQL Connection
+ * @param scenario_id ID for Current Scenario
+ * @param investmentTypes List of investment types to be inserted into DB
+ */
 async function insertInvestmentTypes(
   connection,
   scenario_id,
-  investmentTypesLocal
+  investmentTypes
 ) {
-  for (const investmentType of investmentTypesLocalStorage) {
+  for (const investmentType of investmentTypes) {
     const investmentTypeQuery = `
-      INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnMean, expAnnReturnStdDev, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeMean, expAnnIncomeStdDev, expAnnIncomeTypeAmtOrPct, taxability) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO investment_types (scenario_id, name, description, return_distribution, 
+      return_amt_or_pct, expense_ratio, income_distribution, income_amt_or_pct, taxability) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const investmentTypeValues = [
-      scenario_id || null,
-      investmentType.name || null,
-      investmentType.description || null,
-      investmentType.expAnnReturn.type || null,
-      investmentType.expAnnReturn.value || null,
-
-      investmentType.expAnnReturn.mean || null,
-      investmentType.expAnnReturn.stdDev || null,
-      investmentType.expAnnReturn.amtOrPct || null,
-      investmentType.expenseRatio || null,
-      investmentType.expAnnIncome.type || null,
-
-      investmentType.expAnnIncome.value || null,
-      investmentType.expAnnIncome.mean || null,
-      investmentType.expAnnIncome.stdDev || null,
-      investmentType.expAnnIncome.amtOrPct || null,
-      investmentType.taxability || null,
+      scenario_id ?? null,
+      investmentType.name ?? null,
+      investmentType.description ?? null,
+      investmentType.returnDistribution ?? null,
+      investmentType.returnAmtOrPct ?? null,
+      investmentType.expenseRatio ?? null,
+      investmentType.incomeDistribution ?? null,
+      investmentType.incomeAmtOrPct ?? null,
+      investmentType.taxability ?? null,
     ];
     await connection.execute(investmentTypeQuery, investmentTypeValues);
     console.log(
@@ -581,21 +645,28 @@ async function insertInvestmentTypes(
   }
 }
 
+/**
+ * Inserts each investment for the scenario currently being uploaded
+ * 
+ * @param connection MySQL Connection
+ * @param scenario_id ID for Current Scenario
+ * @param investments List of investments to be inserted into DB
+ */
 async function insertInvestment(
   connection,
   scenario_id,
-  investmentsLocalStorage
+  investments
 ) {
-  for (const investment of investmentsLocalStorage) {
+  for (const investment of investments) {
     const investmentQuery = `
       INSERT INTO investments (scenario_id, investment_type, value, tax_status) 
       VALUES (?, ?, ?, ?)
     `;
     const investmentValues = [
-      scenario_id || null,
-      investment.investment_type || null,
-      investment.value || null,
-      investment.tax_status || null,
+      scenario_id ?? null,
+      investment.investmentType ?? null,
+      investment.value ?? null,
+      investment.taxStatus ?? null
     ];
     await connection.execute(investmentQuery, investmentValues);
     console.log(

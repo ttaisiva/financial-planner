@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { loadAnimation } from "../utils";
 import { useNavigate } from "react-router-dom";
 import { handleScenarioUpload } from "../utils";
+import yaml from "js-yaml";
 
 export const Dashboard = () => {
   const [username, setUsername] = useState("undefined");
@@ -133,12 +134,85 @@ const Popup = ({ togglePopup, isActive, toggleUpload }) => {
 };
 
 const UploadScenario = ({ toggleUpload, isActive }) => {
+  const uploadFile = async (e) => {
+    const file = e.target.files[0];
+    if (file && (file.name.split('.').pop().toLowerCase() == "yml" || file.name.split('.').pop().toLowerCase() == "yaml")) { // Parse and validate data into scenario object and send to server
+      try {
+        // RETRIEVE ALL RELEVANT SCENARIO INFORMATION
+        const fileContent = await file.text();
+        const yamlScn = yaml.load(fileContent);
+        console.log(yamlScn);
+
+        // SCENARIO FOR UPLOAD
+        const scenario = {
+          name: yamlScn.name,
+          maritalStatus: yamlScn.maritalStatus,
+          birthYears: yamlScn.birthYears,
+          lifeExpectancy: yamlScn.lifeExpectancy,
+          inflationAssumption: yamlScn.inflationAssumption,
+          financialGoal: yamlScn.financialGoal,
+          residenceState: yamlScn.residenceState,
+        }
+
+        // INVESTMENTS FOR UPLOAD
+        const investments = [];
+        yamlScn.investments.forEach(elem => {
+          investments.push({
+            investmentType: elem.investmentType,
+            value: elem.value,
+            taxStatus: elem.taxStatus,
+          });
+        });
+
+        // STRATEGIES FOR UPLOAD
+        const strategies = {
+          spend: yamlScn.spendingStrategy, // Discretionary Expenses
+          expense: yamlScn.expenseWithdrawalStrategy, // Investments
+          rmd: yamlScn.RMDStrategy,
+          roth: {
+            opt: yamlScn.RothConversionOpt,
+            start: yamlScn.RothConversionStart,
+            end: yamlScn.RothConversionEnd,
+            strategy: yamlScn.RothConversionStrategy,
+          }
+        }
+
+        // JSON FOR SERVER UPLOAD
+        const completeScenario = {
+          scenario: scenario,
+          investmentTypes: yamlScn.investmentTypes,
+          investments: investments,
+          eventSeries: yamlScn.eventSeries,
+          strategies: strategies,
+        }
+
+        // UPLOAD SCENARIO
+        fetch("http://localhost:3000/api/create-scenario", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(completeScenario)
+        })
+        .catch((error) => console.error("Error:", error));
+      }
+      catch {
+        console.log("Error parsing scenario object");
+      }
+      
+    }
+    else {
+
+    }
+  }
+
   return (
     <>
       <div className={`popup-upload ${isActive ? "active" : ""}`}>
         <div>
           <h3>Submit a YAML file.</h3>
-          <input type="file" accept=".yaml,.yml" />
+          <input onChange={uploadFile} type="file" accept=".yaml,.yml" />
         </div>
         <div>
           <button onClick={toggleUpload} className="btn-action-popup">
