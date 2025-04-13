@@ -134,77 +134,6 @@ const Popup = ({ togglePopup, isActive, toggleUpload }) => {
 };
 
 const UploadScenario = ({ toggleUpload, isActive }) => {
-  // HELPERS
-  /*
-    Creates a user object for the scenario importing
-  */
-  const parseUser = (yamlScn) => {
-    let lifeExpectancy;
-    if (yamlScn.lifeExpectancy[0].type == "fixed") {
-      lifeExpectancy = {
-        type: "fixed", 
-        value: yamlScn.lifeExpectancy[0].value, 
-        mean: null,
-        stdDev: null, 
-      }
-    }
-    else {
-      lifeExpectancy = {
-        type: "normal", 
-        value: null, 
-        mean: yamlScn.lifeExpectancy[0].mean,  
-        stdDev: yamlScn.lifeExpectancy[0].stdDev, 
-      }
-    }
-    const user = {
-      lifeExpectancy: lifeExpectancy,
-      birthYear: yamlScn.birthYears[0]
-    }
-    return user;
-  }
-  
-  /*
-    Creates a spouse object for the scenario importing; returns null fields if no spouse
-  */
-  const parseSpouse = (yamlScn) => {
-    let lifeExpectancy;
-    if (yamlScn.birthYears.length != 2) {
-      const spouse = {
-        lifeExpectancy: {
-          type: null,
-          value: null,
-          mean: null,
-          stdDev: null,
-        },
-        birthYear: null,
-      }
-      return spouse;
-    }
-
-    if (yamlScn.lifeExpectancy[1].type == "fixed") {
-      lifeExpectancy = {
-        type: "fixed", 
-        value: yamlScn.lifeExpectancy[1].value, 
-        mean: null,
-        stdDev: null, 
-      }
-    }
-    else {
-      lifeExpectancy = {
-        type: "normal", 
-        value: null, 
-        mean: yamlScn.lifeExpectancy[1].mean,  
-        stdDev: yamlScn.lifeExpectancy[1].stdDev, 
-      }
-    }
-    const spouse = {
-      lifeExpectancy: lifeExpectancy,
-      birthYear: yamlScn.birthYears[1]
-    }
-    return spouse;
-  }
-
-  // Handler
   const uploadFile = async (e) => {
     const file = e.target.files[0];
     if (file && (file.name.split('.').pop().toLowerCase() == "yml" || file.name.split('.').pop().toLowerCase() == "yaml")) { // Parse and validate data into scenario object and send to server
@@ -216,20 +145,13 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
 
         // SCENARIO FOR UPLOAD
         const scenario = {
-          scenarioName: yamlScn.name,
+          name: yamlScn.name,
+          maritalStatus: yamlScn.maritalStatus,
+          birthYears: yamlScn.birthYears,
+          lifeExpectancy: yamlScn.lifeExpectancy,
+          inflationAssumption: yamlScn.inflationAssumption,
           financialGoal: yamlScn.financialGoal,
-          filingStatus: yamlScn.maritalStatus,
-          stateOfResidence: ymclScn.residenceState,
-          user: parseUser(yamlScn),
-          spouse: parseSpouse(yamlScn),
-          inflation_assumption: {
-            type: yamlScn.inflationAssumption.type, 
-            value: yamlScn.inflationAssumption.value, 
-            mean: yamlScn.inflationAssumption.mean,  
-            stdDev: yamlScn.inflationAssumption.stdDev, 
-            lower: yamlScn.inflationAssumption.lower, 
-            upper: yamlScn.inflationAssumption.uppper, 
-          }
+          residenceState: yamlScn.residenceState,
         }
 
         // INVESTMENTS FOR UPLOAD
@@ -242,6 +164,8 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
           });
         });
 
+        // STRATEGIES FOR UPLOAD
+
         // JSON FOR SERVER UPLOAD
         const completeScenario = {
           scenario: scenario,
@@ -249,6 +173,17 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
           investments: investments,
           eventSeries: yamlScn.eventSeries,
         }
+
+        // UPLOAD SCENARIO
+        fetch("http://localhost:3000/api/create-scenario", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(completeScenario)
+        })
+        .catch((error) => console.error("Error:", error));
       }
       catch {
         console.log("Error parsing scenario object");

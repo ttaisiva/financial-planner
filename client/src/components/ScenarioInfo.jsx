@@ -214,7 +214,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
     console.log("User Scenario Info Submitted:", formData);
 
     try {
-      const response = await fetch('http://localhost:3000/api/user-scenario-info', {
+      const response = await fetch('http://localhost:3000/api/create-scenario', {
         method: 'POST',
         credentials: 'include',
         headers: {

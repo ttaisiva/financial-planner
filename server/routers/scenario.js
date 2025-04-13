@@ -93,7 +93,7 @@ router.get("/investment-types", (req, res) => {
   res.status(200).json(investmentTypesLocalStorage);
 });
 
-router.post("/user-scenario-info", async (req, res) => {
+router.post("/create-scenario", async (req, res) => {
   console.log("Server received user info request from client..");
 
   let userId;
@@ -103,58 +103,24 @@ router.post("/user-scenario-info", async (req, res) => {
   }
 
   console.log("authenticated", req.session.user);
-  const {
-    scenarioName,
-    financialGoal,
-    filingStatus,
-    stateOfResidence,
-    user,
-    spouse,
-    inflation_assumption,
-  } = req.body;
+  const scenario = req.body.scenario;
 
   const query = `
-    INSERT INTO user_scenario_info (
-      user_id, scenario_name, financial_goal, filing_status, state_of_residence,
-      user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev,
-      user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev, user_birth_year,
-      spouse_life_expectancy_type, spouse_life_expectancy_value, spouse_life_expectancy_mean, spouse_life_expectancy_std_dev,
-      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev, spouse_birth_year,
-      inflation_assumption_type, inflation_assumption_value, inflation_assumption_mean, inflation_assumption_stdev,
-      inflation_assumption_lower, inflation_assumption_upper
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ? ,?, ?, ?)
+    INSERT INTO scenarios (
+      user_id, name, marital_status, birth_years, life_expectancy, 
+      inflation_assumption, financial_goal, residence_state
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
-    userId || null,
-    scenarioName || null,
-    financialGoal || null,
-    filingStatus || null,
-    stateOfResidence || null,
-    user.lifeExpectancy.type || null,
-    user.lifeExpectancy.value || null,
-    user.lifeExpectancy.mean || null,
-    user.lifeExpectancy.stdDev || null,
-    user.retirementAge.type || null,
-    user.retirementAge.value || null,
-    user.retirementAge.mean || null,
-    user.retirementAge.stdDev || null,
-    user.birthYear || null,
-    spouse.lifeExpectancy.type || null,
-    spouse.lifeExpectancy.value || null,
-    spouse.lifeExpectancy.mean || null,
-    spouse.lifeExpectancy.stdDev || null,
-    spouse.retirementAge.type || null,
-    spouse.retirementAge.value || null,
-    spouse.retirementAge.mean || null,
-    spouse.retirementAge.stdDev || null,
-    spouse.birthYear || null,
-    inflation_assumption.type || null,
-    inflation_assumption.value || null,
-    inflation_assumption.mean || null,
-    inflation_assumption.stdDev || null,
-    inflation_assumption.upper || null,
-    inflation_assumption.lower || null,
+    userId,
+    scenario.name,
+    scenario.marital_status,
+    JSON.stringify(scenario.birthYears),
+    JSON.stringify(scenario.lifeExpectancy),
+    JSON.stringify(scenario.inflationAssumption),
+    scenario.financialGoal,
+    scenario.residenceState,
   ];
 
   //Insert all Scenario data into DB
@@ -162,7 +128,7 @@ router.post("/user-scenario-info", async (req, res) => {
     await ensureConnection();
     await createTablesIfNotExist(connection);
 
-    // Insert into user_scenario_info and get the inserted scenario_id
+    // Insert into sccenarios and get the inserted scenario_id
     console.log("insert user scenario info to database..");
     const [results] = await connection.execute(query, values);
     const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
@@ -170,13 +136,10 @@ router.post("/user-scenario-info", async (req, res) => {
     console.log("Scenario ID:", scenario_id);
 
     // insert all data into db
-    await insertInvestmentTypes(
-      connection,
-      scenario_id,
-      investmentTypesLocalStorage
-    );
-    await insertInvestment(connection, scenario_id, investmentsLocalStorage);
-    await insertEvents(connection, scenario_id, eventsLocalStorage);
+    await insertInvestmentTypes(connection, scenario_id, req.body.investmentTypes);
+    await insertInvestment(connection, scenario_id, req.body.investments);
+    await insertEvents(connection, scenario_id, req.body.eventSeries);
+
     let strategyLocalStorage = [
       rothLocalStorage,
       rmdLocalStorage,

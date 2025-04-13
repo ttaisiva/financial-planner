@@ -61,7 +61,7 @@ export async function createTablesIfNotExist(connection) {
   CREATE TABLE IF NOT EXISTS scenarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
-    scenario_name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     marital_status ENUM('individual', 'couple') NOT NULL,
     birth_years JSON,
     life_expectancy JSON,
