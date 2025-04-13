@@ -10,18 +10,17 @@ import yaml from "js-yaml";
 export const Dashboard = () => {
   const [username, setUsername] = useState("undefined");
 
-
   useEffect(() => {
     loadAnimation();
-      
+
     fetch("http://localhost:3000/auth/isAuth", {
       method: "GET",
       credentials: "include",
     })
-    .then((res) => res.json())
-    .then((data) => {
-      setUsername(data.name);
-    });
+      .then((res) => res.json())
+      .then((data) => {
+        setUsername(data.name);
+      });
   });
 
   return (
@@ -229,7 +228,6 @@ export const DisplayUserScenarios = () => {
   const [scenarios, setScenarios] = useState([]);
   const navigate = useNavigate();
 
-
   const fetchScenarios = async () => {
     try {
       setScenarios([]); // Reset existing data before fetching new
@@ -259,34 +257,32 @@ export const DisplayUserScenarios = () => {
   };
 
   return (
-
     <div className="content-dashboard fade-in">
       <div className="scenarios-list">
-      {scenarios.length > 0 ? (
+        {scenarios.length > 0 ? (
           scenarios.map((scenario, index) => {
             const renderFields = (fields) =>
               fields
                 .filter(({ value }) => value != null)
                 .map(({ label, value }) => `${label}: ${value}`)
-                .join(', ');
+                .join(", ");
 
-    
-          return (
-            <div key={index} className="scenario-item" >
-            <h3><strong>Scenario Name: </strong>{scenario.scenario_name}</h3>
-            <button onClick={() => handleScenarioClick(scenario.id)}>View</button>
-                
-            </div>
+            return (
+              <div key={index} className="scenario-item">
+                <h3>
+                  <strong>Scenario Name: </strong>
+                  {scenario.name}
+                </h3>
+                <button onClick={() => handleScenarioClick(scenario.id)}>
+                  View
+                </button>
+              </div>
             );
-        
           })
         ) : (
           <p className="fade-in">No scenarios available</p>
-      )}
+        )}
+      </div>
     </div>
-    </div>
-
-
-
   );
 };

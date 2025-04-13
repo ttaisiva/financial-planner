@@ -1,4 +1,4 @@
-async function testConnectToDatabase() {
+export async function testConnectToDatabase() {
   console.log("DB_HOST:", process.env.DB_HOST);
   const connection = await mysql.createConnection({
     host: process.env.TEST_HOST,

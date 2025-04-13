@@ -2,6 +2,8 @@ import express from "express";
 import { ensureConnection, connection } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
 import { simulation } from "../simulation/monte_carlo_sim.js";
+import { keysToSnakeCase } from "../utils.js";
+import { pool } from "../utils.js";
 // const { simulation } = require("./monte_carlo_sim");
 
 const router = express.Router();
@@ -83,7 +85,7 @@ router.get("/investments-pretax", (req, res) => {
     "Received request for locally stored investments of type pre-tax."
   );
   const filtered = investmentsLocalStorage.filter(
-    (investment) => investment.tax_status === "Pre-Tax"
+    (investment) => investment.tax_status === "pre-tax"
   );
   res.status(200).json(filtered);
 });
@@ -96,76 +98,64 @@ router.get("/investment-types", (req, res) => {
 router.post("/create-scenario", async (req, res) => {
   console.log("Server received user info request from client..");
 
-  let userId;
-  if (req.session.user) {
-    userId = req.session.user.id;
-    console.log("Authenticated user ID:", userId);
-  }
+  // for (const investment of investments) {
+  //   await connection.query("INSERT INTO investments SET ?", {
+  //     ...investment,
+  //     scenario_id: scenarioId,
+  //   });
+  // }
 
-  console.log("authenticated", req.session.user);
-  const scenario = req.body.scenario;
+  const { scenario, cashData } = req.body;
 
-  const query = `
-    INSERT INTO scenarios (
-      user_id, name, marital_status, birth_years, life_expectancy, 
-      inflation_assumption, financial_goal, residence_state
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  const values = [
-    userId ?? null,
-    scenario.name ?? null,
-    scenario.maritalStatus ?? null,
-    JSON.stringify(scenario.birthYears) ?? null,
-    JSON.stringify(scenario.lifeExpectancy) ?? null,
-    JSON.stringify(scenario.inflationAssumption) ?? null,
-    scenario.financialGoal ?? null,
-    scenario.residenceState ?? null,
-  ];
+  const scenarioSnakeCase = keysToSnakeCase(scenario);
+  const cashSnakeCase = keysToSnakeCase(cashData);
 
   //Insert all Scenario data into DB
   try {
     await ensureConnection();
     await createTablesIfNotExist(connection);
+    console.log("Connecting to DB at:", process.env.DB_HOST);
+    // const connection = await pool.getConnection();
+    // console.log("connection", connection);
+
+    let userId;
+    if (req.session.user) {
+      userId = req.session.user.id;
+      console.log("Authenticated user ID:", userId);
+    }
+
+    scenarioSnakeCase.user_id = userId;
+
+    console.log("authenticated", req.session.user);
+
+    const [scenarioResult] = await connection.query(
+      "INSERT INTO scenarios SET ?",
+      scenarioSnakeCase
+    );
 
     // Insert into sccenarios and get the inserted scenario_id
     console.log("insert user scenario info to database..");
-    const [results] = await connection.execute(query, values);
-    const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
+    const scenario_id = scenarioResult.insertId; //the id of the scenario is the ID it was insert with
     req.session.user["scenario_id"] = scenario_id; // Store the scenario ID in the session
     console.log("Scenario ID:", scenario_id);
 
-    // insert all data into db
-    await insertInvestmentTypes(connection, scenario_id, req.body.investmentTypes);
-    await insertInvestment(connection, scenario_id, req.body.investments);
-    await insertEvents(connection, scenario_id, req.body.eventSeries);
-
-    const strategies = req.body.strategies;
-    await insertStrategies(connection, scenario_id, strategies);
-
-    //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
-    console.log("All temporary storage cleared");
-    investmentsLocalStorage = [];
-    investmentTypesLocalStorage = [];
-    eventsLocalStorage = [];
-    rothLocalStorage = [];
-    rmdLocalStorage = [];
-    spendingLocalStorage = [];
-    expenseWithdrawalLocalStorage = [];
-    strategyLocalStorage = [];
+    const [cashResult] = await connection.query(
+      "INSERT INTO investments SET ?",
+      {
+        ...cashSnakeCase,
+        scenario_id: scenario_id,
+      }
+    );
 
     console.log("User scenario info and related data saved successfully.");
-    res
-      .status(200)
-      .json({
-        message: "User scenario and related data saved successfully.",
-        scenario_id,
-      });
+    res.status(200).json({
+      message: "User scenario and related data saved successfully.",
+      scenario_id,
+    });
   } catch (err) {
     console.error("Failed to insert user scenario info:", err);
     res.status(500).send("Failed to save user scenario info and related data.");
   }
-
 });
 
 router.get("/pre-tax-investments", async (req, res) => {
@@ -187,7 +177,7 @@ router.get("/pre-tax-investments", async (req, res) => {
 // edit this endpoint to run-simulation-auth and run-simulation-guest for guest send all localStorageData
 router.post("/run-simulation", async (req, res) => {
   try {
-    const { userId, scenarioId, numSimulations} = req.body;
+    const { userId, scenarioId, numSimulations } = req.body;
 
     // userId = req.session.user['id'];
     // scenarioId = req.session.user['scenario_id'];
@@ -195,7 +185,9 @@ router.post("/run-simulation", async (req, res) => {
     // console.log("scenario id", req.session.user['scenario_id']);
 
     const currentYear = new Date().getFullYear();
-    console.log(`User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`);
+    console.log(
+      `User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`
+    );
 
     // Call the Monte Carlo simulation function
     const results = simulation(
@@ -233,7 +225,7 @@ router.get("/single-scenario", async (req, res) => {
 
   // 1. Fetch user scenario info
   const [scenarios] = await connection.execute(
-    `SELECT * FROM user_scenario_info WHERE user_id = ? AND id = ?`,
+    `SELECT * FROM scenarios WHERE user_id = ? AND id = ?`,
     [userId, scenarioId]
   );
 
@@ -293,7 +285,7 @@ router.get("/scenarios", async (req, res) => {
 
     // 1. Fetch user scenarios
     const [scenarios] = await connection.execute(
-      `SELECT * FROM user_scenario_info WHERE user_id = ?`,
+      `SELECT * FROM scenarios WHERE user_id = ?`,
       [userId]
     );
 
@@ -458,7 +450,11 @@ export default router;
 
 async function findInvestmentId(connection, scenario_id, investment) {
   const query = `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ?`;
-  const values = [scenario_id, investment.investment_type, investment.tax_status];
+  const values = [
+    scenario_id,
+    investment.investment_type,
+    investment.tax_status,
+  ];
   const [rows] = await connection.execute(query, values);
   return rows.length > 0 ? rows[0].id : null;
 }
