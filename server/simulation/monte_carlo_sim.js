@@ -34,6 +34,10 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
         const incomeEvents = await getIncomeEvents(scenarioId, []); // Fetch income events to determine the number of events
         const rothYears = await getRothYears(scenarioId);
         const rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
+
+        console.log("Initializing simulation investments.");
+        const investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+
         
         console.log("Total years for simulation: ", totalYears);
         for (let year = 0; year < totalYears; year++) { //years in which the simulation is  being run
@@ -177,6 +181,24 @@ export function calculateStats(simulationResults) {
         mean: 0, 
         otherInfo: {}, 
     };
+}
+
+async function initInvestments(scenarioId) {
+    console.log("Fetching user-defined investments for the scenario.");
+    await ensureConnection();
+    const [rows] = await connection.execute(
+        `SELECT 
+            id,
+            investment_type as type,
+            dollar_value as dollarValue,
+            tax_status as taxStatus
+         FROM investments
+         WHERE scenario_id = ?`,
+        [scenarioId]
+    );
+    console.log("Investment rows: ", rows);
+    console.log("Simulation investments initialized.");
+    return rows;
 }
 
 export async function getUserBirthYear(scenarioId) {
