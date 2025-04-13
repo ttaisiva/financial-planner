@@ -168,81 +168,6 @@ router.post("/create-scenario", async (req, res) => {
 
 });
 
-router.post("/import-scenario", async (req, res) => {
-  console.log("Server received user info request from client..");
-
-  let userId;
-  if (req.session.user) {
-    userId = req.session.user.id;
-    console.log("Authenticated user ID:", userId);
-  }
-
-  console.log("authenticated", req.session.user);
-  const scenario = req.body.scenario;
-
-  const query = `
-    INSERT INTO scenarios (
-      user_id, name, marital_status, birth_years, life_expectancy, 
-      inflation_assumption, financial_goal, residence_state
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  const values = [
-    userId ?? null,
-    scenario.name ?? null,
-    scenario.maritalStatus ?? null,
-    JSON.stringify(scenario.birthYears) ?? null,
-    JSON.stringify(scenario.lifeExpectancy) ?? null,
-    JSON.stringify(scenario.inflationAssumption) ?? null,
-    scenario.financialGoal ?? null,
-    scenario.residenceState ?? null,
-  ];
-
-  //Insert all Scenario data into DB
-  try {
-    await ensureConnection();
-    await createTablesIfNotExist(connection);
-
-    // Insert into sccenarios and get the inserted scenario_id
-    console.log("insert user scenario info to database..");
-    const [results] = await connection.execute(query, values);
-    const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
-    req.session.user["scenario_id"] = scenario_id; // Store the scenario ID in the session
-    console.log("Scenario ID:", scenario_id);
-
-    // insert all data into db
-    await insertInvestmentTypes(connection, scenario_id, req.body.investmentTypes);
-    await insertInvestment(connection, scenario_id, req.body.investments);
-    await insertEvents(connection, scenario_id, req.body.eventSeries);
-
-    const strategies = req.body.strategies;
-    await insertStrategies(connection, scenario_id, strategies);
-
-    //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
-    console.log("All temporary storage cleared");
-    investmentsLocalStorage = [];
-    investmentTypesLocalStorage = [];
-    eventsLocalStorage = [];
-    rothLocalStorage = [];
-    rmdLocalStorage = [];
-    spendingLocalStorage = [];
-    expenseWithdrawalLocalStorage = [];
-    strategyLocalStorage = [];
-
-    console.log("User scenario info and related data saved successfully.");
-    res
-      .status(200)
-      .json({
-        message: "User scenario and related data saved successfully.",
-        scenario_id,
-      });
-  } catch (err) {
-    console.error("Failed to insert user scenario info:", err);
-    res.status(500).send("Failed to save user scenario info and related data.");
-  }
-
-});
-
 router.get("/pre-tax-investments", async (req, res) => {
   console.log("Server received request for pre-tax type investments..");
 
@@ -452,6 +377,81 @@ router.get("/get-investments", (req, res) => {
     `Sent investments tax statuses ${taxStatus} to client:`,
     filteredInvestments
   );
+});
+
+router.post("/import-scenario", async (req, res) => {
+  console.log("Server received user info request from client..");
+
+  let userId;
+  if (req.session.user) {
+    userId = req.session.user.id;
+    console.log("Authenticated user ID:", userId);
+  }
+
+  console.log("authenticated", req.session.user);
+  const scenario = req.body.scenario;
+
+  const query = `
+    INSERT INTO scenarios (
+      user_id, name, marital_status, birth_years, life_expectancy, 
+      inflation_assumption, financial_goal, residence_state
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  const values = [
+    userId ?? null,
+    scenario.name ?? null,
+    scenario.maritalStatus ?? null,
+    JSON.stringify(scenario.birthYears) ?? null,
+    JSON.stringify(scenario.lifeExpectancy) ?? null,
+    JSON.stringify(scenario.inflationAssumption) ?? null,
+    scenario.financialGoal ?? null,
+    scenario.residenceState ?? null,
+  ];
+
+  //Insert all Scenario data into DB
+  try {
+    await ensureConnection();
+    await createTablesIfNotExist(connection);
+
+    // Insert into sccenarios and get the inserted scenario_id
+    console.log("insert user scenario info to database..");
+    const [results] = await connection.execute(query, values);
+    const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
+    req.session.user["scenario_id"] = scenario_id; // Store the scenario ID in the session
+    console.log("Scenario ID:", scenario_id);
+
+    // insert all data into db
+    await insertInvestmentTypes(connection, scenario_id, req.body.investmentTypes);
+    await insertInvestment(connection, scenario_id, req.body.investments);
+    await insertEvents(connection, scenario_id, req.body.eventSeries);
+
+    const strategies = req.body.strategies;
+    await insertStrategies(connection, scenario_id, strategies);
+
+    //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
+    console.log("All temporary storage cleared");
+    investmentsLocalStorage = [];
+    investmentTypesLocalStorage = [];
+    eventsLocalStorage = [];
+    rothLocalStorage = [];
+    rmdLocalStorage = [];
+    spendingLocalStorage = [];
+    expenseWithdrawalLocalStorage = [];
+    strategyLocalStorage = [];
+
+    console.log("User scenario info and related data saved successfully.");
+    res
+      .status(200)
+      .json({
+        message: "User scenario and related data saved successfully.",
+        scenario_id,
+      });
+  } catch (err) {
+    console.error("Failed to insert user scenario info:", err);
+    res.status(500).send("Failed to save user scenario info and related data.");
+  }
+
 });
 
 export default router;
