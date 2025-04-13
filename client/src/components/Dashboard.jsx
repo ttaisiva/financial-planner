@@ -166,6 +166,17 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
         });
 
         // STRATEGIES FOR UPLOAD
+        const strategies = {
+          spend: yamlScn.spendingStrategy, // Discretionary Expenses
+          expense: yamlScn.expenseWithdrawalStrategy, // Investments
+          rmd: yamlScn.RMDStrategy,
+          roth: {
+            opt: yamlScn.RothConversionOpt,
+            start: yamlScn.RothConversionStart,
+            end: yamlScn.RothConversionEnd,
+            strategy: yamlScn.RothConversionStrategy,
+          }
+        }
 
         // JSON FOR SERVER UPLOAD
         const completeScenario = {
@@ -173,6 +184,7 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
           investmentTypes: yamlScn.investmentTypes,
           investments: investments,
           eventSeries: yamlScn.eventSeries,
+          strategies: strategies,
         }
 
         // UPLOAD SCENARIO
