@@ -131,30 +131,8 @@ export async function getTotalYears(date, scenarioId) {
     const userLifespan = userBirthYear + userLifeExpectancy;
     console.log("User lifespan: ", userLifespan);
     
-    const filingStatus = await getFilingStatus(scenarioId, connection);
-    console.log("Filing status: ", filingStatus);
-
-
-    if (filingStatus === 'single') {
-        // If filing status is single, return the user's lifespan minus the current year
-        return userLifespan - date;
-    }
-
-    // Calculate the spouse's lifespan
-    const spouseBirthYear = Number(await getSpouseBirthYear(scenarioId, connection));
-    console.log("Spouse birth year: ", spouseBirthYear);
-    const spouseLifeExpectancy = Number(await getSpouseLifeExpectancy(scenarioId, connection));
-    console.log("Spouse life expectancy: ", spouseLifeExpectancy);
+    return userLifespan - date;
     
-    const spouseLifespan = spouseBirthYear + spouseLifeExpectancy;
-    console.log("Spouse lifespan: ", spouseLifespan);
-
-    // Return the greater of the two lifespans minus the current year
-    if (userLifespan >= spouseLifespan) {
-        return userLifespan - date;
-    }
-
-    return spouseLifespan - date;
 }
 
 
