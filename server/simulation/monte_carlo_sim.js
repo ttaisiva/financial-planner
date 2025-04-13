@@ -33,10 +33,10 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
         let curYearSS = 0;
         const incomeEvents = await getIncomeEvents(scenarioId, []); // Fetch income events to determine the number of events
         const rothYears = await getRothYears(scenarioId);
-        const rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
+        let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
         console.log("Initializing simulation investments.");
-        const investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+        let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
 
         
         console.log("Total years for simulation: ", totalYears);
@@ -87,14 +87,15 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             // Step 3: Optimize Roth conversions
             if(rothYears && currentSimulationYear >= rothYears.start_year && currentSimulationYear <= rothYears.end_year) {
                 console.log(`Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`);
-                await runRothOptimizer(scenarioId, rothStrategy, incomeEvents);
+                const rothResult = await runRothOptimizer(scenarioId, rothStrategy, incomeEvents, investments);
+                investments = rothResult.investments;
+                rothStrategy = rothResult.rothStrategy;
             } else {
                 console.log(`Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`);
             }
-            continue; // TEMP FOR TESTING
 
             // Step 4: Update investments
-            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
+            // ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
 
             // Pay non-discretionary expenses
@@ -196,7 +197,6 @@ async function initInvestments(scenarioId) {
          WHERE scenario_id = ?`,
         [scenarioId]
     );
-    console.log("Investment rows: ", rows);
     console.log("Simulation investments initialized.");
     return rows;
 }
