@@ -76,22 +76,22 @@ export function sample(item) {
     switch (item.type) {
         case "fixed":
             // Use the fixed inflation rate
-            result = item.value;
+            result = Number(item.value);
             break;
 
         case "normal_distribution":
             // Sample from a normal distribution
             result = sample_normal_distribution(
-                item.mean,
-                item.std_dev
+                Number(item.mean),
+                Number(item.std_dev)
             );
             break;
 
         case "uniform_distribution":
             // Sample from a uniform distribution
             result = sample_uniform_distribution(
-                item.upper,
-                item.lower
+                Number(item.upper),
+                Number(item.lower)
             );
             break;
 

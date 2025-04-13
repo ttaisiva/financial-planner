@@ -197,7 +197,6 @@ router.get("/pre-tax-investments", async (req, res) => {
 // edit this endpoint to run-simulation-auth and run-simulation-guest for guest send all localStorageData
 router.post("/run-simulation", async (req, res) => {
   try {
-    console.log("Running simulation...");
     const { userId, scenarioId, numSimulations} = req.body;
 
     // userId = req.session.user['id'];
@@ -206,10 +205,7 @@ router.post("/run-simulation", async (req, res) => {
     // console.log("scenario id", req.session.user['scenario_id']);
 
     const currentYear = new Date().getFullYear();
-    console.log("number of simualations: ", numSimulations);
-    console.log("user id: ", userId);
-    console.log("scenario id: ", scenarioId);
-    console.log("connection", connection)
+    console.log(`User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`);
 
     // Call the Monte Carlo simulation function
     const results = simulation(
@@ -231,9 +227,8 @@ router.post("/run-simulation", async (req, res) => {
 router.get("/single-scenario", async (req, res) => {
   console.log("Display single scenario in server");
   console.log(req.session.user);
-
   //const scenarioId = await waitForScenarioId();
-  const scenarioId = req.session.user["scenario_id"];
+  const scenarioId = req.query.scenarioId;
   const userId = req.session.user["id"];
 
   console.log("scenario id: ", scenarioId);
@@ -396,56 +391,84 @@ router.get("/get-investments", (req, res) => {
 
 export default router;
 
+async function findInvestmentId(connection, scenario_id, investment) {
+  const query = `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ?`;
+  const values = [scenario_id, investment.investment_type, investment.tax_status];
+  const [rows] = await connection.execute(query, values);
+  return rows.length > 0 ? rows[0].id : null;
+}
+async function findExpenseId(connection, scenario_id, expense) {
+  const query = `SELECT id FROM events WHERE scenario_id = ? AND name = ?`;
+  const values = [scenario_id, expense.name];
+  const [rows] = await connection.execute(query, values);
+  return rows.length > 0 ? rows[0].id : null;
+}
+async function insertStrategies(connection, scenario_id, rothLocalStorage, rmdLocalStorage, 
+  expenseWithdrawalLocalStorage, spendingLocalStorage) {
 
-
-async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
-  const strategyTypes = {
-    0: "rothConversionStrat",
-    1: "rmdStrat",
-    2: "spendingStrat",
-    3: "expenseWithdrawalStrat",
-  };
-
-  console.log(
-    "Strategy Local Storage:",
-    JSON.stringify(strategyLocalStorage, null, 2)
-  );
-
-  for (let i = 0; i < strategyLocalStorage.length; i++) {
-    //iterate through all these strategy types
-    const items = strategyLocalStorage[i];
-    console.log(`Processing type: ${strategyTypes[i]}, Items:`, items);
-
-    if (!Array.isArray(items)) {
-      console.log(`No valid items found for strategy type: ${type}`);
-      continue;
+    // Roth
+    console.log("Roth info before inserting to db:", rothLocalStorage);
+    rothLocalStorage.rothStartYear = parseInt(rothLocalStorage.rothStartYear, 10);
+    rothLocalStorage.rothEndYear = parseInt(rothLocalStorage.rothEndYear, 10);
+    console.log("Roth years (int converted):", rothLocalStorage.rothStartYear, rothLocalStorage.rothEndYear);
+    const investments = rothLocalStorage.rothConversionStrat;
+    for(let i = 0; i < investments.length; i++) { // doesn't run for empty array (if optimizer disabled)
+      // make id the investment id from DB
+      const id = await findInvestmentId(connection, scenario_id, investments[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        scenario_id,
+        "roth",
+        id,
+        null,
+        i,
+        rothLocalStorage.rothStartYear,
+        rothLocalStorage.rothEndYear
+      ];
+      await connection.execute(query, values);
     }
 
-    for (let j = 0; j < items.length; j++) {
-      const item = items[j];
-      const strategy_type = strategyTypes[i];
-      const strategy_order = j;
+    // RMD
+    for(let i = 0; i < rmdLocalStorage.length; i++) { // each element is investment
+      const id = await findInvestmentId(connection, scenario_id, rmdLocalStorage[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        scenario_id,
+        "rmd",
+        id,
+        null,
+        i,
+        null,
+        null
+      ];
+      await connection.execute(query, values);
+    }
 
-      let investment_id = null;
-      let expense_id = null;
+    // Expense Withdrawal
+    for(let i = 0; i < expenseWithdrawalLocalStorage.length; i++) { // each element is investment
+      const id = await findInvestmentId(connection, scenario_id, expenseWithdrawalLocalStorage[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        scenario_id,
+        "expense_withdrawal",
+        id,
+        null,
+        i,
+        null,
+        null
+      ];
+      await connection.execute(query, values);
+    }
 
-      if (strategy_type !== "spendingStrat" && item.investment_type) {
-        const [rows] = await connection.execute(
-          `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ? LIMIT 1`,
-          [scenario_id, item.investment_type, item.tax_status]
-        );
-        investment_id = rows.length > 0 ? rows[0].id : null;
-      }
-
-      if (strategy_type === "spendingStrat") {
-        const [rows] = await connection.execute(
-          `SELECT id FROM events WHERE scenario_id = ? AND name = ? LIMIT 1`,
-          [scenario_id, item.name]
-        );
-        expense_id = item.id;
-      }
-
-      console.log("Inserting strategy with values:", {
+    // Spending
+    for(let i = 0; i < spendingLocalStorage.length; i++) { // each element is expense
+      const id = await findExpenseId(connection, scenario_id, spendingLocalStorage[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
         scenario_id,
         strategy_type,
         investment_id,

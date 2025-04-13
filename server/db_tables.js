@@ -135,6 +135,8 @@ export async function createTablesIfNotExist(connection) {
       id INT AUTO_INCREMENT PRIMARY KEY,
       scenario_id INT,
       strategy_type VARCHAR(255) NOT NULL,
+      start_year INT DEFAULT NULL,
+      end_year INT DEFAULT NULL,
       investment_id INT DEFAULT NULL, -- applies to investment-based strategies
       expense_id INT DEFAULT NULL,    -- applies to spending strategie
       strategy_order INT NOT NULL,    -- indicates the order

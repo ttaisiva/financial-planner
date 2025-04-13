@@ -3,6 +3,7 @@ import "../styles/Dashboard.css";
 /* import display scenarios? how to display the different scenario tabs */
 import { Link } from "react-router-dom";
 import { loadAnimation } from "../utils";
+import { useNavigate } from "react-router-dom";
 import { handleScenarioUpload } from "../utils";
 import yaml from "js-yaml";
 
@@ -214,6 +215,8 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
 
 export const DisplayUserScenarios = () => {
   const [scenarios, setScenarios] = useState([]);
+  const navigate = useNavigate();
+
 
   const fetchScenarios = async () => {
     try {
@@ -238,6 +241,11 @@ export const DisplayUserScenarios = () => {
     fetchScenarios();
   }, []);
 
+  const handleScenarioClick = (scenarioId) => {
+    // Redirect to the scenario page with the selected scenario ID
+    navigate(`/scenario/${scenarioId}`);
+  };
+
   return (
 
     <div className="content-dashboard fade-in">
@@ -252,8 +260,9 @@ export const DisplayUserScenarios = () => {
 
     
           return (
-            <div key={index} className="scenario-item">
+            <div key={index} className="scenario-item" >
             <h3><strong>Scenario Name: </strong>{scenario.scenario_name}</h3>
+            <button onClick={() => handleScenarioClick(scenario.id)}>View</button>
                 
             </div>
             );

@@ -19,8 +19,9 @@
 // investment with the same investment type, the target tax status, and value equal to the transferred amount.
 
 
-import { connection } from "../server.js";
-import { get_user_birth_year } from "./monte_carlo_sim.js";
+import { connection, ensureConnection } from "../server.js";
+import { getUserBirthYear } from "./monte_carlo_sim.js";
+
 
 /**
  * Performs the Required Minimum Distribution (RMD) for the previous year.
@@ -33,28 +34,21 @@ export async function performRMDs(scenarioId, currentSimulationYear, curYearInco
     console.log(`Starting RMD process for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`);
 
     // Step a: Get the user's birth year and calculate their age
-    const userBirthYear = await get_user_birth_year(scenarioId, connection);
+    const userBirthYear = await getUserBirthYear(scenarioId, connection);
     const userAge = currentSimulationYear - userBirthYear;
     console.log(`User birth year: ${userBirthYear}, current age: ${userAge}`);
 
     // Check if the user is at least 74 and has pre-tax investments
-    if (userBirthYear + 73 !== currentSimulationYear) {
+    if (userAge < 73) {
         console.log(`No RMD required for user age ${userAge}.`);
         return { curYearIncome }; // No RMD required
     }
 
     console.log(`User is eligible for RMD. Fetching pre-tax investments...`);
 
-    // Step b: Fetch pre-tax investments
-    let preTaxInvestments;
-    try {
-        const response = await axios.get('http://localhost:3000/investments-pretax');
-        preTaxInvestments = response.data;
-        console.log(`Fetched ${preTaxInvestments.length} pre-tax investments.`);
-    } catch (err) {
-        console.error("Failed to fetch pre-tax investments:", err);
-        throw new Error("Unable to fetch pre-tax investments from the server.");
-    }
+    // Step b: Fetch pre-tax investments 
+    const preTaxInvestments = await getPreTaxInvestments(scenarioId, connection);
+    console.log(`Found ${preTaxInvestments.length} pre-tax investments.`);
 
     if (preTaxInvestments.length === 0) {
         console.warn("No pre-tax investments found. Skipping RMD process.");
@@ -72,33 +66,34 @@ export async function performRMDs(scenarioId, currentSimulationYear, curYearInco
     console.log(`Distribution period for age ${userAge}: ${distributionPeriod}`);
 
     // Step d: Calculate the sum of pre-tax investment values (s)
-    const totalPreTaxValue = preTaxInvestments.reduce((sum, inv) => sum + inv.dollar_value, 0);
+    const totalPreTaxValue = preTaxInvestments.reduce((sum, inv) => sum + Number(inv.dollar_value), 0);
     console.log(`Total pre-tax investment value: ${totalPreTaxValue}`);
 
     // Step e: Calculate the RMD (rmd = s / d)
-    const rmd = totalPreTaxValue / distributionPeriod;
+    let rmd = totalPreTaxValue / Number(distributionPeriod);
+    rmd = Math.round(rmd * 100) / 100; // Round to 2 decimal places
     console.log(`Calculated RMD: ${rmd}`);
 
     // Step f: Add RMD to curYearIncome
-    curYearIncome += rmd;
+    curYearIncome += Number(rmd);
     console.log(`Updated curYearIncome after adding RMD: ${curYearIncome}`);
 
     // Step g: Transfer investments in-kind to non-retirement accounts
-    let remainingRMD = rmd;
+    let remainingRMD = Number(rmd);
     console.log(`Starting in-kind transfer of investments to satisfy RMD...`);
 
     try {
         // Start a database transaction
-        await connection.beginTransaction();
-
+        
         for (const inv of preTaxInvestments) {
             if (remainingRMD <= 0) break;
 
-            const transferAmount = Math.min(inv.dollar_value, remainingRMD);
+            const transferAmount = Math.min(Number(inv.dollar_value), remainingRMD);
             remainingRMD -= transferAmount;
 
             console.log(`Transferring $${transferAmount} from investment ID ${inv.id}. Remaining RMD: ${remainingRMD}`);
 
+            await connection.beginTransaction();
             // Reduce the value of the source investment
             await connection.execute(
                 "UPDATE investments SET dollar_value = dollar_value - ? WHERE id = ?",
@@ -107,9 +102,10 @@ export async function performRMDs(scenarioId, currentSimulationYear, curYearInco
 
             // Check if a non-retirement investment with the same type exists
             const [targetRows] = await connection.execute(
-                "SELECT * FROM investments WHERE investment_type = ? AND tax_status = 'non-retirement'",
-                [inv.investment_type]
+                "SELECT * FROM investments WHERE investment_type = ? AND tax_status = 'Non-Retirement' AND scenario_id = ?",
+                [inv.investment_type, scenarioId]
             );
+            console.log(`Query result for investment_type=${inv.investment_type}, scenario_id=${scenarioId}:`, targetRows);
 
             if (targetRows.length > 0) {
                 // Add the transferred amount to the existing non-retirement investment
@@ -123,14 +119,17 @@ export async function performRMDs(scenarioId, currentSimulationYear, curYearInco
                 // Create a new non-retirement investment
                 console.log(`Creating new non-retirement investment for type ${inv.investment_type} with value $${transferAmount}.`);
                 await connection.execute(
-                    "INSERT INTO investments (investment_type, tax_status, dollar_value) VALUES (?, 'non-retirement', ?)",
-                    [inv.investment_type, transferAmount]
+                    "INSERT INTO investments (investment_type, tax_status, dollar_value, scenario_id) VALUES (?, 'Non-Retirement', ?, ?)",
+                    [inv.investment_type, transferAmount, scenarioId]
                 );
             }
+
+            await connection.commit();
+            console.log("Transaction committed for this iteration.");
+
+
         }
 
-        // Commit the transaction
-        await connection.commit();
         console.log("RMD process completed successfully.");
     } catch (err) {
         console.error("Failed to perform RMD transfers:", err);
@@ -167,5 +166,34 @@ export async function getRMDTable(connection) {
     } catch (error) {
         console.error("Error fetching RMD table from the database:", error);
         throw new Error("Unable to fetch RMD table.");
+    }
+}
+
+
+/**
+ * Fetches all pre-tax investments for a given scenario from the database.
+ * @param {number} scenarioId - The ID of the scenario.
+ * @returns {Array} A list of pre-tax investments.
+ */
+export async function getPreTaxInvestments(scenarioId) {
+    console.log(`Fetching pre-tax investments for scenario ID: ${scenarioId}`);
+
+    try {
+        const [rows] = await connection.execute(
+            `SELECT 
+                id, 
+                investment_type, 
+                dollar_value, 
+                tax_status 
+             FROM investments 
+             WHERE scenario_id = ? AND tax_status = 'pre-tax' AND dollar_value > 0`,
+            [scenarioId]
+        );
+
+        console.log(`Fetched ${rows.length} pre-tax investments for scenario ID: ${scenarioId}`);
+        return rows; // Return the list of pre-tax investments
+    } catch (error) {
+        console.error(`Error fetching pre-tax investments for scenario ID: ${scenarioId}`, error);
+        throw new Error("Unable to fetch pre-tax investments from the database.");
     }
 }
