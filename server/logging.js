@@ -21,9 +21,11 @@ export async function initLogs(userId) {
          .replace('T', '_') // separates date and time
          .slice(0, 19); // trim off milliseconds and Z
  
-     const path = `${dir}/${username}_${timestamp}.csv`; // do not change quotation type
-     const file = fs.createWriteStream(path); // creates/opens file
-     return file;
+     let path = `${dir}/${username}_${timestamp}.csv`; // do not change quotation type
+     const csvlog = fs.createWriteStream(path); // creates/opens file
+     path = `${dir}/${username}_${timestamp}.log`;
+     const evtlog = fs.createWriteStream(path);
+     return {csvlog, evtlog};
 
 }
 export async function log(csvlog, investments, year) {
@@ -46,21 +48,10 @@ export async function log(csvlog, investments, year) {
     csvStream.write(dataRow);
 
     csvStream.end();
-
-    // custom write stream
-    // const csvStream = format({ headers: true }) // with title row
-    //     .on('error', e => console.error(e));
-
-    // csvStream.pipe(file); // connect the write stream to the csv file
-
-    // try {
-    //     // simResults.forEach(row => csvStream.write(row)); // for array
-    //     // csvStream.write(simResults); // for temp string testing
-    //     csvStream.end();
-    // } catch(e) {
-    //     console.error("Error writing to CSV log at", path, e);
-    // }
     
+}
+
+export async function logEvent(evtlog, event) {
 }
 
 /**
