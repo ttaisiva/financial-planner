@@ -183,7 +183,9 @@ router.post("/user-scenario-info", async (req, res) => {
       spendingLocalStorage,
       expenseWithdrawalLocalStorage,
     ];
-    await insertStrategies(connection, scenario_id, strategyLocalStorage);
+    await insertStrategies(connection, scenario_id, rothLocalStorage, rmdLocalStorage,
+      expenseWithdrawalLocalStorage, spendingLocalStorage
+    );
 
     //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
     console.log("All temporary storage cleared");
@@ -423,76 +425,95 @@ router.get("/get-investments", (req, res) => {
 
 export default router;
 
+async function findInvestmentId(connection, scenario_id, investment) {
+  const query = `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ?`;
+  const values = [scenario_id, investment.investment_type, investment.tax_status];
+  const [rows] = await connection.execute(query, values);
+  return rows.length > 0 ? rows[0].id : null;
+}
+async function findExpenseId(connection, scenario_id, expense) {
+  const query = `SELECT id FROM events WHERE scenario_id = ? AND name = ?`;
+  const values = [scenario_id, expense.name];
+  const [rows] = await connection.execute(query, values);
+  return rows.length > 0 ? rows[0].id : null;
+}
+async function insertStrategies(connection, scenario_id, rothLocalStorage, rmdLocalStorage, 
+  expenseWithdrawalLocalStorage, spendingLocalStorage) {
 
-
-async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
-  const strategyTypes = {
-    0: "rothConversionStrat",
-    1: "rmdStrat",
-    2: "spendingStrat",
-    3: "expenseWithdrawalStrat",
-  };
-
-  console.log(
-    "Strategy Local Storage:",
-    JSON.stringify(strategyLocalStorage, null, 2)
-  );
-
-  for (let i = 0; i < strategyLocalStorage.length; i++) {
-    //iterate through all these strategy types
-    const items = strategyLocalStorage[i];
-    console.log(`Processing type: ${strategyTypes[i]}, Items:`, items);
-
-    if (!Array.isArray(items)) {
-      console.log(`No valid items found for strategy type: ${type}`);
-      continue;
-    }
-
-    for (let j = 0; j < items.length; j++) {
-      const item = items[j];
-      const strategy_type = strategyTypes[i];
-      const strategy_order = j;
-
-      let investment_id = null;
-      let expense_id = null;
-
-      if (strategy_type !== "spendingStrat" && item.investment_type) {
-        const [rows] = await connection.execute(
-          `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ? LIMIT 1`,
-          [scenario_id, item.investment_type, item.tax_status]
-        );
-        investment_id = rows.length > 0 ? rows[0].id : null;
-      }
-
-      if (strategy_type === "spendingStrat") {
-        const [rows] = await connection.execute(
-          `SELECT id FROM events WHERE scenario_id = ? AND name = ? LIMIT 1`,
-          [scenario_id, item.name]
-        );
-        expense_id = item.id;
-      }
-
-      console.log("Inserting strategy with values:", {
+    // Roth
+    console.log("Roth info before inserting to db:", rothLocalStorage);
+    rothLocalStorage.rothStartYear = parseInt(rothLocalStorage.rothStartYear, 10);
+    rothLocalStorage.rothEndYear = parseInt(rothLocalStorage.rothEndYear, 10);
+    console.log("Roth years (int converted):", rothLocalStorage.rothStartYear, rothLocalStorage.rothEndYear);
+    const investments = rothLocalStorage.rothConversionStrat;
+    for(let i = 0; i < investments.length; i++) { // doesn't run for empty array (if optimizer disabled)
+      // make id the investment id from DB
+      const id = await findInvestmentId(connection, scenario_id, investments[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
         scenario_id,
-        strategy_type,
-        investment_id,
-        expense_id,
-        strategy_order,
-      });
-
-      await connection.execute(
-        `INSERT INTO strategy (scenario_id, strategy_type, investment_id, expense_id, strategy_order) VALUES (?, ?, ?, ?, ?)`,
-        [
-          scenario_id,
-          String(strategy_type),
-          investment_id,
-          expense_id,
-          strategy_order,
-        ]
-      );
+        "roth",
+        id,
+        null,
+        i,
+        rothLocalStorage.rothStartYear,
+        rothLocalStorage.rothEndYear
+      ];
+      await connection.execute(query, values);
     }
-  }
-  //}
+
+    // RMD
+    for(let i = 0; i < rmdLocalStorage.length; i++) { // each element is investment
+      const id = await findInvestmentId(connection, scenario_id, rmdLocalStorage[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        scenario_id,
+        "rmd",
+        id,
+        null,
+        i,
+        null,
+        null
+      ];
+      await connection.execute(query, values);
+    }
+
+    // Expense Withdrawal
+    for(let i = 0; i < expenseWithdrawalLocalStorage.length; i++) { // each element is investment
+      const id = await findInvestmentId(connection, scenario_id, expenseWithdrawalLocalStorage[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        scenario_id,
+        "expense_withdrawal",
+        id,
+        null,
+        i,
+        null,
+        null
+      ];
+      await connection.execute(query, values);
+    }
+
+    // Spending
+    for(let i = 0; i < spendingLocalStorage.length; i++) { // each element is expense
+      const id = await findExpenseId(connection, scenario_id, spendingLocalStorage[i]);
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        scenario_id,
+        "spending",
+        null,
+        id,
+        i,
+        null,
+        null
+      ];
+      await connection.execute(query, values);
+    }
+    console.log("All strategies for scenario #", scenario_id, "sent to DB.");
 }
 
 async function insertEvents(connection, scenario_id, eventsLocal) {
