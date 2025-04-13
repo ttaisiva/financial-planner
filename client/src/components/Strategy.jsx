@@ -10,9 +10,10 @@ import { useSortable } from "@dnd-kit/sortable"; // dnd for individual items
 import { CSS } from "@dnd-kit/utilities"; // apply css to dnd items
 import "../styles/NewScenario.css";
 import { Tooltip as ReactTooltip } from "react-tooltip";
-import {tooltipContent} from "../utils";
+import { tooltipContent } from "../utils";
 
-const updateStrategySettings = async (endpoint, data) => { // pass endpoint as string parameter
+const updateStrategySettings = async (endpoint, data) => {
+  // pass endpoint as string parameter
   try {
     const response = await fetch(endpoint, {
       method: "POST",
@@ -40,7 +41,7 @@ const Strategy = ({ investments, showEventsForm }) => {
     rothEndYear: "",
     rothConversionStrat: [],
   });
-  const [rmdStrat , setRmdStrat] = useState([]);
+  const [rmdStrat, setRmdStrat] = useState([]);
   const [expenseStrat, setExpenseStrat] = useState([]);
   const [spendingStrat, setSpendingStrat] = useState([]);
 
@@ -52,37 +53,43 @@ const Strategy = ({ investments, showEventsForm }) => {
 
   // Roth Strategy Updates
   useEffect(() => {
-      setRothData((prevData) => ({
-        ...prevData,
-        rothConversionStrat: rothAccounts,
-      }));
+    setRothData((prevData) => ({
+      ...prevData,
+      rothConversionStrat: rothAccounts,
+    }));
   }, [rothAccounts]);
 
   // Roth Strategy Updates sent to server
-    useEffect(() => {
-      if (rothData.optimizer){
-        updateStrategySettings("http://localhost:3000/api/roth-strategy", rothData);
-      }   
+  useEffect(() => {
+    if (rothData.optimizer) {
+      updateStrategySettings(
+        "http://localhost:3000/api/roth-strategy",
+        rothData
+      );
+    }
   }, [rothData]);
-  
+
   // RMD Strategy Updates
-    useEffect(() => {
-      setRmdStrat(rmdAccounts);
+  useEffect(() => {
+    setRmdStrat(rmdAccounts);
   }, [rmdAccounts]);
-  
+
   // RMD Strategy Updates sent to server
   useEffect(() => {
-      updateStrategySettings("http://localhost:3000/api/rmd-strategy", rmdStrat);
+    updateStrategySettings("http://localhost:3000/api/rmd-strategy", rmdStrat);
   }, [rmdStrat]);
 
   // expense withdrawal strategy updates
   useEffect(() => {
     setExpenseStrat(expAccounts);
-}, [expAccounts]);
+  }, [expAccounts]);
 
   // expense withdrawal strategy updates sent to server
   useEffect(() => {
-      updateStrategySettings("http://localhost:3000/api/expense-withdrawal-strategy", expenseStrat);
+    updateStrategySettings(
+      "http://localhost:3000/api/expense-withdrawal-strategy",
+      expenseStrat
+    );
   }, [expenseStrat]);
 
   // spending strategy updates
@@ -92,34 +99,54 @@ const Strategy = ({ investments, showEventsForm }) => {
 
   // spending strategy updates sent to server
   useEffect(() => {
-      updateStrategySettings("http://localhost:3000/api/spending-strategy", spendingStrat);
+    updateStrategySettings(
+      "http://localhost:3000/api/spending-strategy",
+      spendingStrat
+    );
   }, [spendingStrat]);
 
   return (
     <div>
+      <div className="divider"></div>
       <h2>Strategies</h2>
 
-      <SpendingSettings expenses={expenses} setExpenses={setExpenses}
-        showEventsForm={showEventsForm} />
-      <ExpenseWithdrawSettings expAccounts={expAccounts} setExpAccounts={setExpAccounts}
-       investments={investments}/>
-      <RothConversionSettings rothData={rothData} setRothData={setRothData} 
-        rothAccounts={rothAccounts} setRothAccounts={setRothAccounts} investments={investments}/>
-      <RMDSettings rmdAccounts={rmdAccounts}
-        setRmdAccounts={setRmdAccounts} investments={investments} rothAccounts={rothAccounts}
-        rothData={rothData}/>
+      <SpendingSettings
+        expenses={expenses}
+        setExpenses={setExpenses}
+        showEventsForm={showEventsForm}
+      />
+      <ExpenseWithdrawSettings
+        expAccounts={expAccounts}
+        setExpAccounts={setExpAccounts}
+        investments={investments}
+      />
+      <RothConversionSettings
+        rothData={rothData}
+        setRothData={setRothData}
+        rothAccounts={rothAccounts}
+        setRothAccounts={setRothAccounts}
+        investments={investments}
+      />
+      <RMDSettings
+        rmdAccounts={rmdAccounts}
+        setRmdAccounts={setRmdAccounts}
+        investments={investments}
+        rothAccounts={rothAccounts}
+        rothData={rothData}
+      />
     </div>
   );
 };
 
-const ExpenseWithdrawSettings = ({investments, expAccounts, setExpAccounts}) => {
-
+const ExpenseWithdrawSettings = ({
+  investments,
+  expAccounts,
+  setExpAccounts,
+}) => {
   useEffect(() => {
     const fetchInvestments = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:3000/api/investments`
-        );
+        const response = await fetch(`http://localhost:3000/api/investments`);
         const data = await response.json();
         setExpAccounts(data);
       } catch (error) {
@@ -134,7 +161,7 @@ const ExpenseWithdrawSettings = ({investments, expAccounts, setExpAccounts}) => 
     const { active, over } = event;
 
     if (!active || !over) return;
-  
+
     setExpAccounts((prevExpAccounts) => {
       const newExpAccounts = switchOrder(prevExpAccounts, active.id, over.id);
       return [...newExpAccounts]; // Ensure new array reference
@@ -144,38 +171,52 @@ const ExpenseWithdrawSettings = ({investments, expAccounts, setExpAccounts}) => 
     <>
       <h3>Expense Withdrawal Strategy</h3>
       <div>
-          <p>
-            If a cash account does not have enough assets for your expenses,
-            withdrawals will be made from other investment accounts to cover
-            the difference. The investments will be emptied in this order.<br></br>
-            Drag the investments into your preferred order below:
-          </p>
-          {/* Drag and drop mechanism? */}
-          <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext key={expAccounts.map(a => a.id).join(",")} items={expAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
-              <ul>
-                {expAccounts.map((account) => (
-                  <SortableInvestment key={account.id} id={account.id} account={account} />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
-        </div>
+        <p>
+          If a cash account does not have enough assets for your expenses,
+          withdrawals will be made from other investment accounts to cover the
+          difference. The investments will be emptied in this order.<br></br>
+          Drag the investments into your preferred order below:
+        </p>
+        {/* Drag and drop mechanism? */}
+        <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext
+            key={expAccounts.map((a) => a.id).join(",")}
+            items={expAccounts.map((account) => account.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul>
+              {expAccounts.map((account) => (
+                <SortableInvestment
+                  key={account.id}
+                  id={account.id}
+                  account={account}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      </div>
     </>
-  )
-}
+  );
+};
 
-
-const RMDSettings = ({rmdAccounts, setRmdAccounts, investments, rothAccounts, rothData }) => {
-
+const RMDSettings = ({
+  rmdAccounts,
+  setRmdAccounts,
+  investments,
+  rothAccounts,
+  rothData,
+}) => {
   useEffect(() => {
     const fetchPreTaxInvestments = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/investments-pretax`);
+        const response = await fetch(
+          `http://localhost:3000/api/investments-pretax`
+        );
         const data = await response.json();
         setRmdAccounts(data);
       } catch (error) {
-        console.error('Error fetching pre-tax investments:', error);
+        console.error("Error fetching pre-tax investments:", error);
       }
     };
     fetchPreTaxInvestments();
@@ -184,9 +225,9 @@ const RMDSettings = ({rmdAccounts, setRmdAccounts, investments, rothAccounts, ro
   // Drag and drop functionality
   const onDragEnd = (event) => {
     const { active, over } = event;
-  
+
     if (!active || !over) return;
-  
+
     setRmdAccounts((prevRmdAccounts) => {
       const newRmdAccounts = switchOrder(prevRmdAccounts, active.id, over.id);
       return [...newRmdAccounts]; // Ensure new array reference
@@ -195,7 +236,7 @@ const RMDSettings = ({rmdAccounts, setRmdAccounts, investments, rothAccounts, ro
 
   const copyOrder = () => {
     setRmdAccounts(rothAccounts);
-  }
+  };
 
   return (
     <>
@@ -203,9 +244,11 @@ const RMDSettings = ({rmdAccounts, setRmdAccounts, investments, rothAccounts, ro
 
       {rmdAccounts && (
         <div>
-          <p>To meet required minimum distributions, assets will be transferred out of 
-          your pre-tax retirement accounts into after-tax accounts in the following 
-          order. <br></br> Drag the investments into your preferred order below:
+          <p>
+            To meet required minimum distributions, assets will be transferred
+            out of your pre-tax retirement accounts into after-tax accounts in
+            the following order. <br></br> Drag the investments into your
+            preferred order below:
             <span
               data-tooltip-id="tooltip"
               data-tooltip-html={tooltipContent.rmdStrategy}
@@ -213,34 +256,48 @@ const RMDSettings = ({rmdAccounts, setRmdAccounts, investments, rothAccounts, ro
             >
               ℹ️
             </span>
-            <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />  
+            <ReactTooltip
+              id="tooltip"
+              place="right"
+              type="info"
+              effect="solid"
+            />
           </p>
           {/* Drag and drop mechanism */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext key={rmdAccounts.map(a => a.id).join(",")} items={rmdAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
-
+            <SortableContext
+              key={rmdAccounts.map((a) => a.id).join(",")}
+              items={rmdAccounts.map((account) => account.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <ul>
                 {rmdAccounts.map((account) => (
-                  <SortableInvestment key={account.id} id={account.id} account={account} />
+                  <SortableInvestment
+                    key={account.id}
+                    id={account.id}
+                    account={account}
+                  />
                 ))}
               </ul>
             </SortableContext>
           </DndContext>
-          
         </div>
-        
       )}
       {rmdAccounts && rothData.optimizer && (
-          <button onClick={copyOrder}>Copy order from Roth conversion</button>
+        <button onClick={copyOrder}>Copy order from Roth conversion</button>
       )}
-
     </>
-  )
-}      
+  );
+};
 
 // both roth and rmd are ordering on pre tax retirement rothAccounts - share drag and drop component
-const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAccounts, investments }) => {
-
+const RothConversionSettings = ({
+  rothData,
+  setRothData,
+  rothAccounts,
+  setRothAccounts,
+  investments,
+}) => {
   const handleOptimizerToggle = () => {
     setRothData((prevData) => ({
       ...prevData,
@@ -276,7 +333,7 @@ const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAc
     const { active, over } = event;
 
     if (!active || !over) return;
-  
+
     setRothAccounts((prevrothAccounts) => {
       const newrothAccounts = switchOrder(prevrothAccounts, active.id, over.id);
       return [...newrothAccounts]; // Ensure new array reference
@@ -288,41 +345,44 @@ const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAc
       {/* Optimizer Settings */}
       <div>
         <div>
-            <h3> Roth Conversion Optimizer</h3>
-            <p>Roth conversion is a strategic movement of assets from pre-tax to after-tax
-              investment accounts that may help to minimize your cumulative income tax. 
-              <br></br>Enable the Roth Conversion Optimizer to see if this strategy may benefit you.
-            </p>
-            <button type="button" onClick={handleOptimizerToggle}>
-              {rothData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
-            </button>
-          </div>
-          {rothData.optimizer && (
+          <h3> Roth Conversion Optimizer</h3>
+          <p>
+            Roth conversion is a strategic movement of assets from pre-tax to
+            after-tax investment accounts that may help to minimize your
+            cumulative income tax.
+            <br></br>Enable the Roth Conversion Optimizer to see if this
+            strategy may benefit you.
+          </p>
+          <button type="button" onClick={handleOptimizerToggle}>
+            {rothData.optimizer ? "Disable Optimizer" : "Enable Optimizer"}
+          </button>
+        </div>
+        {rothData.optimizer && (
+          <div>
             <div>
-              <div>
-                <label>Start year:</label>
-                <input
-                  type="number"
-                  name="rothStartYear"
-                  placeholder="Enter year"
-                  value={rothData.rothStartYear || ""}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div>
-                <label>End year:</label>
-                <input
-                  type="number"
-                  name="rothEndYear"
-                  placeholder="Enter year"
-                  value={rothData.rothEndYear || ""}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+              <label>Start year:</label>
+              <input
+                type="number"
+                name="RothStartYear"
+                placeholder="Enter year"
+                value={rothData.RothStartYear || ""}
+                onChange={handleChange}
+                required
+              />
             </div>
-          )}
+            <div>
+              <label>End year:</label>
+              <input
+                type="number"
+                name="RothEndYear"
+                placeholder="Enter year"
+                value={rothData.RothEndYear || ""}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Ordering Strategy */}
@@ -335,12 +395,18 @@ const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAc
           </p>
           {/* Drag and drop mechanism? */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext key={rothAccounts.map(a => a.id).join(",")} items={rothAccounts.map((account) => account.id)} strategy={verticalListSortingStrategy}>
-
-            
+            <SortableContext
+              key={rothAccounts.map((a) => a.id).join(",")}
+              items={rothAccounts.map((account) => account.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <ul>
                 {rothAccounts.map((account) => (
-                  <SortableInvestment key={account.id} id={account.id} account={account} />
+                  <SortableInvestment
+                    key={account.id}
+                    id={account.id}
+                    account={account}
+                  />
                 ))}
               </ul>
             </SortableContext>
@@ -352,16 +418,17 @@ const RothConversionSettings = ({ rothData, setRothData, rothAccounts, setRothAc
 };
 
 // ordering on discretionary expenses
-const SpendingSettings = ({expenses, setExpenses, showEventsForm }) => {
-
+const SpendingSettings = ({ expenses, setExpenses, showEventsForm }) => {
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/discretionary-expenses');
+        const response = await fetch(
+          "http://localhost:3000/api/discretionary-expenses"
+        );
         const data = await response.json();
         setExpenses(data);
       } catch (error) {
-        console.error('Error fetching discretionary expenses:', error);
+        console.error("Error fetching discretionary expenses:", error);
       }
     };
 
@@ -369,15 +436,15 @@ const SpendingSettings = ({expenses, setExpenses, showEventsForm }) => {
   }, [showEventsForm]);
 
   useEffect(() => {
-    console.log("expenses state updated", expenses)
-    }, [expenses]);
+    console.log("expenses state updated", expenses);
+  }, [expenses]);
 
   // Drag and drop functionality
   const onDragEnd = (event) => {
     const { active, over } = event;
-  
+
     if (!active || !over) return;
-  
+
     setExpenses((prevExpenses) => {
       const newExpenses = switchOrder(prevExpenses, active.id, over.id);
       return [...newExpenses]; // Ensure new array reference
@@ -387,20 +454,29 @@ const SpendingSettings = ({expenses, setExpenses, showEventsForm }) => {
   return (
     <div>
       <h3>Spending Strategy</h3>
-      <p>Discretionary expenses will be paid one at a time, in the following order.
+      <p>
+        Discretionary expenses will be paid one at a time, in the following
+        order.
         <br></br>Drag the expenses into your preferred order below:
       </p>
       {/* Drag and drop mechanism */}
       <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext key={expenses.map(a => a.id).join(",")} items={expenses.map((expense) => expense.id)} strategy={verticalListSortingStrategy}>
-
-              <ul>
-                {expenses.map((expense) => (
-                  <SortableExpense key={expense.id} id={expense.id} expense={expense} />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
+        <SortableContext
+          key={expenses.map((a) => a.id).join(",")}
+          items={expenses.map((expense) => expense.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <ul>
+            {expenses.map((expense) => (
+              <SortableExpense
+                key={expense.id}
+                id={expense.id}
+                expense={expense}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };
@@ -423,7 +499,7 @@ const SortableInvestment = ({ id, account }) => {
       {...attributes}
       {...listeners}
     >
-      {account.investment_type}: ${account.dollar_value}, ({account.tax_status})
+      {account.investment_type}: ${account.value}, ({account.tax_status})
     </div>
   );
 };
@@ -461,5 +537,3 @@ const switchOrder = (items, activeId, overId) => {
 };
 
 export default Strategy;
-
-
