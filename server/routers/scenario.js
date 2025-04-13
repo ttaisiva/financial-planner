@@ -462,7 +462,7 @@ router.get("/export-scenario", async (req, res) => {
     }
     
     // Retrieve scenario object
-    const scenario = getScenario(connection, req.query.id, req.session.user['id']);
+    const scenario = await getScenario(connection, req.query.id, req.session.user['id']);
     if (!scenario) {
       res.status(500).send("Not Authorized");
     }
@@ -470,16 +470,16 @@ router.get("/export-scenario", async (req, res) => {
     // Past this point is a valid export
     
     // Retrieve investmentTypes
-    const investmentTypes = getInvestmentTypes(connection, scenario.id);
+    const investmentTypes = await getInvestmentTypes(connection, scenario.id);
 
     // Retrieve investments
-    const investments = getInvestments(connection, scenario.id);
+    const investments = await getInvestments(connection, scenario.id);
 
     // Retrieve eventSeries
-    const eventSeries = getEventSeries(connection, scenario.id);
+    const eventSeries = await getEventSeries(connection, scenario.id);
 
     // Retrieve and parse strategies
-    const strategies = getStrategies(connection, scenario.id);
+    const strategies = await getStrategies(connection, scenario.id);
 
     // Create object to export
     const exportData = {
@@ -491,18 +491,17 @@ router.get("/export-scenario", async (req, res) => {
       investments: investments,
       eventSeries: eventSeries,
       inflationAssumption: scenario.inflation_assumption,
-      /*
-        spendingStrategy: 
-        expenseWithdrawalStrategy:
-        RMDStrategy:
-        RothConversionOpt:
-        RothConversionStart:
-        RothConversionEnd:
-        RothConversionStrategy:
-      */
+      spendingStrategy: strategies.spendingStrategy,
+      expenseWithdrawalStrategy: strategies.expenseWithdrawalStrategy,
+      RMDStrategy: strategies.RMDStrategy,
+      RothConversionOpt: strategies.RothConversionOpt,
+      RothConversionStart: strategies.RothConversionStart,
+      RothConversionEnd: strategies.RothConversionEnd,
+      RothConversionStrategy: strategies.RothConversionStrategy,
      financialGoal: scenario.financial_goal,
      residenceState: scenario.residence_state,
     }
+    console.log("eXPORT DATA", exportData);
   }
   catch (err) {
     console.error("Failed to export scenario", err);
@@ -608,7 +607,7 @@ async function getEventSeries(connection, scenario_id) {
       assetAllocation2: e.asset_allocation2 && JSON.parse(e.asset_allocation2),
       maxCash: e.maxCash,
     }
-    events.append(event);
+    events.append(removeNullAndUndefined(event));
   })
 }
 
@@ -619,7 +618,59 @@ async function getEventSeries(connection, scenario_id) {
  * @returns List of strategy data for export
  */
 async function getStrategies(connection, scenario_id) {
+  const query = `
+    SELECT * FROM strategy 
+    WHERE scenario_id = ? AND strategy_type = ? 
+    ORDER BY strategy_order ASC
+  `
+  // Uses expense_id
+  const [spending] = await connection.execute(query, [scenario_id, "spending"]);
+  const spendingStrategy = []
+
+  const expenseQuery = `
+  SELECT * FROM events
+  WHERE scenario_id = ? AND type = 'expense' AND id = ?
+  `
+
+  for (const elem of spending) {
+    const [expense] = await connection.execute(expenseQuery, [scenario_id, elem.expense_id]);
+    spendingStrtegy.append(expense[0].name);
+  };
   
+  // Uses investment_id
+  const [expenseWithdrawal] = await connection.execute(query, [scenario_id, "expense_withdrawal"]);
+  const expenseWithdrawalStrategy = []
+  expenseWithdrawal.forEach(elem => {
+    expenseWithdrawalStrategy.append(elem.investment_id);
+  })
+
+  // Uses investment_id
+  const [rmd] = await connection.execute(query, [scenario_id, "rmd"])
+  const RMDStrategy = [];
+  rmd.forEach(elem => {
+    RMDStrategy.append(elem.investment_id)
+  })
+
+  // Uses investment_id
+  const [roth] = await connection.execute(query, [scenario_id, "roth"])
+  const RothConversionOpt = roth.length !== 0;
+  const RothConversionStart = roth[0].start_year;
+  const RothConversionEnd = roth[0].end_year;
+  const RothConversionStrategy = [];
+  roth.forEach(elem => {
+    RothConversionStrategy.append(elem.investment_id);
+  })
+
+  const completeData = {
+    spendingStrategy: spendingStrategy,
+    expenseWithdrawalStrategy: expenseWithdrawalStrategy,
+    RMDStrategy: RMDStrategy,
+    RothConversionOpt: RothConversionOpt,
+    RothConversionStart: RothConversionStart,
+    RothConversionEnd: RothConversionEnd,
+    RothConversionStrategy: RothConversionStrategy
+  };
+  return completeData;
 }
 
 /**
