@@ -151,7 +151,7 @@ router.post("/create-scenario", async (req, res) => {
         strategy: req.body.RothConversionStrategy,
       }
     }
-    await insertStrategies(connection, scenario_id, strategyLocalStorage);
+    await insertStrategies(connection, scenario_id, strategies);
 
     //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
     console.log("All temporary storage cleared");
