@@ -2,13 +2,46 @@ import { connection } from "../server.js";
 import { ensureConnection } from "../server.js";
 import { getFilingStatus } from "./monte_carlo_sim.js"
 
-export async function runRothOptimizer(scenarioId, rothStrategy, incomeEvents) {
+export async function runRothOptimizer(scenarioId, rothStrategy, incomeEvents, investments) {
 
     console.log(`Running Roth optimizer for scenario ID: ${scenarioId}`);
     // step 1: determine user tax bracket and conversion amount:
-    const conversionAmt = await getMaxConversionAmt(scenarioId, incomeEvents)
-    if(conversionAmt == 0) return;
+    let conversionAmt = await getMaxConversionAmt(scenarioId, incomeEvents)
 
+    // transfer pre-tax to after-tax until amount is reached
+    for(let i=0; i<rothStrategy.length; i++) {
+        if(conversionAmt === 0) break;
+
+        // Copilot prompt: find the object in array "investments" whose id matches rothStrategy[i].id
+        let pretax = investments.find(investment => investment.id === rothStrategy[i].investment_id);
+
+        if(pretax.dollarValue <= conversionAmt) {
+            // transfer entire thing to equivalent account by just changing it to an after-tax account
+            conversionAmt -= pretax.dollarValue;
+            pretax.taxStatus = "After-Tax";
+            // TODO: remove from strategy bc its not pre tax anymore
+            rothStrategy = rothStrategy.filter(strategy => strategy.investment_id !== pretax.id);
+        } else {
+            // check if after tax equivalent exists
+            // Copilot prompt: use investments.find to look for an element with .type that is the same as pretax.type
+            let aftertax = investments.find(investment => investment.type === pretax.type && investment.taxStatus === "After-Tax");
+            if(aftertax) {
+                aftertax.dollarValue += conversionAmt;
+                pretax.dollarValue -= conversionAmt;
+            } else {
+                // create new after tax investment to transfer to
+                const newInvestment = {
+                    id: investments.length + 1, // really not sure about this
+                    type: pretax.type,
+                    taxStatus: "After-Tax",
+                    dollarValue: conversionAmt
+                };
+                investments.push(newInvestment);
+            }
+            conversionAmt = 0;
+        }
+    }
+    return {investments, rothStrategy}
 }
 
 async function getMaxConversionAmt(scenarioId, incomeEvents) {
