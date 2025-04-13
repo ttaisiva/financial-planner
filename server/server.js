@@ -83,7 +83,7 @@ app.listen(PORT, () => {
 import authRouter from "./routers/authentication.js";
 app.use("/auth", authRouter);
 
-import scenarioRouter from "./routers/scenario_endpoints.js";
+import scenarioRouter from "./routers/scenario.js";
 app.use("/api", scenarioRouter);
 
 import userRouter from "./routers/user.js";

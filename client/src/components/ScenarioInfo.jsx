@@ -232,7 +232,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
     // Insert User Scenario Info into database
     try {
       const response = await fetch(
-        "http://localhost:3000/api/user-scenario-info",
+        "http://localhost:3000/api/create-scenario",
         {
           method: "POST",
           credentials: "include",

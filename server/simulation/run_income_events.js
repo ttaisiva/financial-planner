@@ -8,8 +8,7 @@
 // e. Update running total curYearIncome,
 // f. Update running total curYearSS of social security benefits, if income type = social security.
 
-import { ensureConnection } from "../server.js";
-import { pool } from "../utils.js";
+import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js";
 
 /**
@@ -133,8 +132,7 @@ export async function process_income_event(
  */
 export async function getIncomeEvents(scenarioId, previousYearAmounts) {
   console.log(`Fetching income events for scenario ID: ${scenarioId}`);
-  //   await ensureConnection();
-  const connection = pool.getConnection();
+  await ensureConnection();
 
   const [rows] = await connection.execute(
     `SELECT 
@@ -163,8 +161,6 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
   console.log(
     `Fetched ${rows.length} income events for scenario ID ${scenarioId}.`
   );
-
-  connection.release();
 
   return rows.map((event) => {
     const prevAmount = previousYearAmounts[event.id] || 0;
