@@ -57,41 +57,20 @@ export async function createTablesIfNotExist(connection) {
   `;
 
   // User scenario info table has user_id which is foreign key to reference the user that owns the scenario
-  const createUserScenarioInfoTable = `
-  CREATE TABLE IF NOT EXISTS user_scenario_info (
+  const createScenariosTable = `
+  CREATE TABLE IF NOT EXISTS scenarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
-    scenario_name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    marital_status ENUM('individual', 'couple') NOT NULL,
+    birth_years JSON,
+    life_expectancy JSON,
+    inflation_assumption JSON,
     financial_goal DECIMAL(10, 2) NOT NULL,
-    filing_status VARCHAR(255) NOT NULL,
-    state_of_residence VARCHAR(255),
-    user_life_expectancy_type VARCHAR(255),
-    user_life_expectancy_value DECIMAL(10, 2),
-    user_life_expectancy_mean DECIMAL(10, 2),
-    user_life_expectancy_std_dev DECIMAL(10, 2),
-    user_retirement_age_type VARCHAR(255),
-    user_retirement_age_value DECIMAL(10, 2),
-    user_retirement_age_mean DECIMAL(10, 2),
-    user_retirement_age_std_dev DECIMAL(10, 2),
-    user_birth_year INT,
-    spouse_life_expectancy_type VARCHAR(255),
-    spouse_life_expectancy_value DECIMAL(10, 2),
-    spouse_life_expectancy_mean DECIMAL(10, 2),
-    spouse_life_expectancy_std_dev DECIMAL(10, 2),
-    spouse_retirement_age_type VARCHAR(255),
-    spouse_retirement_age_value DECIMAL(10, 2),
-    spouse_retirement_age_mean DECIMAL(10, 2),
-    spouse_retirement_age_std_dev DECIMAL(10, 2),
-    spouse_birth_year INT,
-    inflation_assumption_type VARCHAR(255),
-    inflation_assumption_value DECIMAL(10, 2),
-    inflation_assumption_mean DECIMAL(10, 2),
-    inflation_assumption_stdev DECIMAL(10, 2),
-    inflation_assumption_lower DECIMAL(10, 2),
-    inflation_assumption_upper DECIMAL(10, 2),
+    residence_state CHAR(2),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
-`;
+  `;
 
   // Create investment type table has scenario ID which references the scenario that the investment type is attached to
   const createInvestmentTypesTable = `
@@ -100,72 +79,50 @@ export async function createTablesIfNotExist(connection) {
     scenario_id INT,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    expAnnReturnType VARCHAR(255),
-    expAnnReturnValue DECIMAL(10, 2),
-    expAnnReturnMean DECIMAL(10, 2),
-    expAnnReturnStdDev DECIMAL(10, 2),
-    expAnnReturnTypeAmtOrPct ENUM('amount', 'percent'),
-    expenseRatio DECIMAL(5, 2),
-    expAnnIncomeType VARCHAR(255),
-    expAnnIncomeValue DECIMAL(10, 2),
-    expAnnIncomeMean DECIMAL(10, 2),
-    expAnnIncomeStdDev DECIMAL(10, 2),
-    expAnnIncomeTypeAmtOrPct ENUM('amount', 'percent'),
-    taxability VARCHAR(255),
+    return_distribution JSON,
+    return_amt_or_pct ENUM('amount', 'percent'),
+    expense_ratio DECIMAL(5, 2),
+    income_distribution JSON,
+    income_amt_or_pct ENUM('amount', 'percent'),
+    taxability BOOL,
     FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
   );
-`;
+  `;
 
   const createInvestmentsTable = `
     CREATE TABLE IF NOT EXISTS investments (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id VARCHAR(255),
       scenario_id INT,
       investment_type VARCHAR(255) NOT NULL,
-      dollar_value DECIMAL(10, 2) NOT NULL,
+      value DECIMAL(10, 2) NOT NULL,
       tax_status VARCHAR(255) NOT NULL,
       FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
     );
   `;
 
   const createEventsTable = `
-    CREATE TABLE IF NOT EXISTS events (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      scenario_id INT,
-      name VARCHAR(255),
-      description TEXT,
-      event_type VARCHAR(255),
-      start_type VARCHAR(255),
-      start_value DECIMAL(10, 2),
-      start_mean DECIMAL(10, 2),
-      start_std_dev DECIMAL(10, 2),
-      start_lower DECIMAL(10, 2),
-      start_upper DECIMAL(10, 2),
-      start_series_start BOOLEAN,
-      start_series_end BOOLEAN,
-      duration_type VARCHAR(255),
-      duration_value DECIMAL(10, 2),
-      duration_mean DECIMAL(10, 2),
-      duration_std_dev DECIMAL(10, 2),
-      duration_lower DECIMAL(10, 2),
-      duration_upper DECIMAL(10, 2),
-      annual_change_type VARCHAR(255),
-      annual_change_value DECIMAL(10, 2),
-      annual_change_type_amt_or_pct ENUM('amount', 'percent'),
-      annual_change_mean DECIMAL(10, 2),
-      annual_change_std_dev DECIMAL(10, 2),
-      annual_change_lower DECIMAL(10, 2),
-      annual_change_upper DECIMAL(10, 2),      
-      initial_amount DECIMAL(10, 2),
-      inflation_adjusted BOOLEAN,
-      user_percentage DECIMAL(5, 2),
-      spouse_percentage DECIMAL(5, 2),
-      is_social_security BOOLEAN,
-      asset_allocation VARCHAR(255),
-      discretionary BOOLEAN,
-      max_cash DECIMAL(10, 2), 
-      FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
-    );
-  `;
+  CREATE TABLE IF NOT EXISTS events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    scenario_id INT,
+    name VARCHAR(255),
+    description TEXT,
+    type VARCHAR(255),
+    start JSON,
+    duration JSON,
+    change_distribution JSON,   
+    initial_amount DECIMAL(10, 2),
+    change_amt_or_pct VARCHAR(255),
+    inflation_adjusted BOOLEAN,
+    user_fraction DECIMAL(5, 2),
+    social_security BOOLEAN,
+    asset_allocation JSON,
+    glide_path BOOLEAN,
+    asset_allocation2 JSON,
+    discretionary BOOLEAN,
+    max_cash DECIMAL(10, 2), 
+    FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id) ON DELETE CASCADE
+  );
+`;
 
   //allocation_type VARCHAR(255) CHECK (allocation_type IN ('fixed', 'glide_path')), <- take a look
 
@@ -180,11 +137,10 @@ export async function createTablesIfNotExist(connection) {
       strategy_type VARCHAR(255) NOT NULL,
       start_year INT DEFAULT NULL,
       end_year INT DEFAULT NULL,
-      investment_id INT DEFAULT NULL, -- applies to investment-based strategies
+      investment_id VARCHAR(255) DEFAULT NULL, -- applies to investment-based strategies
       expense_id INT DEFAULT NULL,    -- applies to spending strategie
       strategy_order INT NOT NULL,    -- indicates the order
       FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id),
-      FOREIGN KEY (investment_id) REFERENCES investments(id),
       FOREIGN KEY (expense_id) REFERENCES events(id)
     );
   `;
@@ -195,7 +151,7 @@ export async function createTablesIfNotExist(connection) {
   await connection.execute(createCapitalGainsTaxTable);
   await connection.execute(createRMDsTable);
   await connection.execute(createUsersTable);
-  await connection.execute(createUserScenarioInfoTable);
+  await connection.execute(createScenariosTable);
   await connection.execute(createInvestmentsTable);
   await connection.execute(createInvestmentTypesTable);
   await connection.execute(createEventsTable);
