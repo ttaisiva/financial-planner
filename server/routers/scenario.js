@@ -417,9 +417,9 @@ router.post("/import-scenario", async (req, res) => {
     userId ?? null,
     scenario.name ?? null,
     scenario.maritalStatus ?? null,
-    JSON.stringify(scenario.birthYears) ?? null,
-    JSON.stringify(scenario.lifeExpectancy) ?? null,
-    JSON.stringify(scenario.inflationAssumption) ?? null,
+    scenario.birthYears ?? null,
+    scenario.lifeExpectancy ?? null,
+    scenario.inflationAssumption ?? null,
     scenario.financialGoal ?? null,
     scenario.residenceState ?? null,
   ];
@@ -459,8 +459,257 @@ router.post("/import-scenario", async (req, res) => {
   }
 });
 
-export default router;
+/**
+ * Exports a given scenario into a readable .YAML file and sends it to the client for download
+ * To download, scenario's user id must match requesters user id
+ * @param req.query Holds the scenario ID for the given exported scenario
+ */
+router.get("/export-scenario", async (req, res) => {
+  try {
+    await ensureConnection();
 
+    // Authorize export by comparing User ID with Scenario
+    if (!req.session.user || !req.query) {
+      res.status(500).send("Not Authorized")
+    }
+    
+    // Retrieve scenario object
+    const scenario = await getScenario(connection, req.query.id, req.session.user['id']);
+    if (!scenario) {
+      res.status(500).send("Not Authorized");
+    }
+
+    // Past this point is a valid export
+    
+    // Retrieve investmentTypes
+    const investmentTypes = await getInvestmentTypes(connection, scenario.id);
+
+    // Retrieve investments
+    const investments = await getInvestments(connection, scenario.id);
+
+    // Retrieve eventSeries
+    const eventSeries = await getEventSeries(connection, scenario.id);
+
+    // Retrieve and parse strategies
+    const strategies = await getStrategies(connection, scenario.id);
+
+    // Create object to export
+    const exportData = {
+      name: scenario.name,
+      maritalStatus: scenario.marital_status,
+      birthYears: scenario.birth_years,
+      lifeExpectancy: scenario.life_expectancy,
+      investmentTypes: investmentTypes,
+      investments: investments,
+      eventSeries: eventSeries,
+      inflationAssumption: scenario.inflation_assumption,
+      spendingStrategy: strategies.spendingStrategy,
+      expenseWithdrawalStrategy: strategies.expenseWithdrawalStrategy,
+      RMDStrategy: strategies.RMDStrategy,
+      RothConversionOpt: strategies.RothConversionOpt,
+      RothConversionStart: strategies.RothConversionStart,
+      RothConversionEnd: strategies.RothConversionEnd,
+      RothConversionStrategy: strategies.RothConversionStrategy,
+     financialGoal: scenario.financial_goal,
+     residenceState: scenario.residence_state,
+    }
+    console.log("EXPORT DATA", exportData);
+    res.json(exportData);
+  }
+  catch (err) {
+    console.error("Failed to export scenario", err);
+  }
+})
+
+/**
+ * Returns the scenario from the database based on ID and user_id
+ * @param connection mySQL Connection
+ * @param id Scenario ID
+ * @param user_id User ID
+ * @returns Scenario Object
+ */
+async function getScenario(connection, id, user_id) {
+  const query = `
+    SELECT * FROM scenarios WHERE id = ? AND user_id = ?
+  `;
+  const values = [id, user_id]
+  const [rows] = await connection.execute(query, values);
+  return rows[0]; // Will return either scenario or undefined
+}
+
+/**
+ * Returns a list of export-ready investmentTypes for a given scenario
+ * @param connection mySQL Connection
+ * @param scenario_id scenario ID
+ * @returns List of export-ready investmentTypes
+ */
+async function getInvestmentTypes(connection, scenario_id) {
+  const query = `
+    SELECT * FROM investment_types WHERE scenario_id = ?
+  `
+  const [rows] = await connection.execute(query, [scenario_id]);
+  const investmentTypes = [];
+  rows.forEach(type => {
+    console.log("investment type check", type);
+    const investmentType = {
+      name: type.name,
+      description: type.description,
+      returnAmtOrPct: type.return_amt_or_pct,
+      returnDistribution: type.return_distribution,
+      expenseRatio: type.expense_ratio,
+      incomeAmtOrPct: type.income_amt_or_pct,
+      incomeDistribution: type.income_distribution,
+      taxability: type.taxability
+    }
+    console.log("afer investment type transfer", investmentType);
+    investmentTypes.push(investmentType);
+  });
+  return investmentTypes;
+}
+
+/**
+ * Returns a list of export-ready investments for a given scenario
+ * @param connection mySQL Connection
+ * @param scenario_id scenario ID
+ * @returns List of export-ready investments
+ */
+async function getInvestments(connection, scenario_id) {
+  const query = `
+    SELECT * FROM investments WHERE scenario_id = ?
+  `
+  const [rows] = await connection.execute(query, [scenario_id]);
+  const investments = [];
+  rows.forEach(invest => {
+    const investment = {
+      investmentType: invest.investment_type,
+      value: invest.value,
+      taxStatus: invest.tax_status,
+      id: invest.id
+    }
+    investments.push(investment);
+  })
+  return investments;
+}
+
+/**
+ * Returns a list of export-ready eventSeries for a given scenario
+ * @param connection mySQL Connection
+ * @param scenario_id scenario ID
+ * @returns List of export-ready eventSeries
+ */
+async function getEventSeries(connection, scenario_id) {
+  const query = `
+    SELECT * FROM events WHERE scenario_id = ?
+  `
+  const [rows] = await connection.execute(query, [scenario_id]);
+  const events = [];
+  rows.forEach(e => {
+    const event = {
+      name: e.name,
+      description: e.description,
+      start: e.start,
+      duration: e.duration,
+      type: e.type,
+      initialAmount: e.initial_amount,
+      changeAmtOrPct: e.change_amt_or_pct,
+      changeDistribution: e.change_distribution,
+      inflationAdjusted: e.inflation_adjusted,
+      userFraction: e.user_fraction,
+      socialSecurity: e.social_security,
+      discretionary: e.discretionary,
+      assetAllocation: e.asset_allocation,
+      glidePath: e.glide_path,
+      assetAllocation2: e.asset_allocation2,
+      maxCash: e.maxCash,
+    }
+    events.push(removeNullAndUndefined(event));
+  })
+  return events;
+}
+
+/**
+ * Returns a list of strategy data for a given scenario
+ * @param connection mySQL Connection
+ * @param scenario_id scenario ID
+ * @returns List of strategy data for export
+ */
+async function getStrategies(connection, scenario_id) {
+  const query = `
+    SELECT * FROM strategy 
+    WHERE scenario_id = ? AND strategy_type = ? 
+    ORDER BY strategy_order ASC
+  `
+  // Uses expense_id
+  const [spending] = await connection.execute(query, [scenario_id, "spending"]);
+  const spendingStrategy = []
+
+  const expenseQuery = `
+  SELECT * FROM events
+  WHERE scenario_id = ? AND type = 'expense' AND id = ?
+  `
+
+  for (const elem of spending) {
+    const [expense] = await connection.execute(expenseQuery, [scenario_id, elem.expense_id]);
+    spendingStrategy.push(expense[0].name);
+  };
+  
+  // Uses investment_id
+  const [expenseWithdrawal] = await connection.execute(query, [scenario_id, "expense_withdrawal"]);
+  const expenseWithdrawalStrategy = []
+  expenseWithdrawal.forEach(elem => {
+    expenseWithdrawalStrategy.push(elem.investment_id);
+  })
+
+  // Uses investment_id
+  const [rmd] = await connection.execute(query, [scenario_id, "rmd"])
+  const RMDStrategy = [];
+  rmd.forEach(elem => {
+    RMDStrategy.push(elem.investment_id)
+  })
+
+  // Uses investment_id
+  const [roth] = await connection.execute(query, [scenario_id, "roth"])
+  const RothConversionOpt = roth.length !== 0;
+  const RothConversionStart = roth[0].start_year;
+  const RothConversionEnd = roth[0].end_year;
+  const RothConversionStrategy = [];
+  roth.forEach(elem => {
+    RothConversionStrategy.push(elem.investment_id);
+  })
+
+  const completeData = {
+    spendingStrategy: spendingStrategy,
+    expenseWithdrawalStrategy: expenseWithdrawalStrategy,
+    RMDStrategy: RMDStrategy,
+    RothConversionOpt: RothConversionOpt,
+    RothConversionStart: RothConversionStart,
+    RothConversionEnd: RothConversionEnd,
+    RothConversionStrategy: RothConversionStrategy
+  };
+  return completeData;
+}
+
+/**
+ * CHATGPT GENERATED: how can i remove undefined fields in a js object
+ * @param obj JS Object for undefined field removal
+ * @returns object that has the undefined fields removed
+ */
+function removeNullAndUndefined(obj) {
+  if (Array.isArray(obj)) {
+    return obj
+      .map(removeNullAndUndefined)
+      .filter(item => item !== undefined && item !== null); // clean array too
+  } else if (obj && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => [k, removeNullAndUndefined(v)])
+    );
+  }
+  return obj;
+}
+
+export default router;
 /**
  * Finds the expense id for a given scenario
  * @param connection MySQL connection
@@ -597,9 +846,9 @@ async function insertEvents(connection, scenario_id, events) {
       event.name ?? null,
       event.description ?? "",
       event.type ?? null,
-      JSON.stringify(event.start) ?? null,
-      JSON.stringify(event.duration) ?? null,
-      JSON.stringify(event.changeDistribution) ?? null,
+      event.start ?? null,
+      event.duration ?? null,
+      event.changeDistribution ?? null,
       event.initialAmount ?? null,
       event.changeAmtOrPct ?? null,
       event.inflationAdjusted ?? null,
