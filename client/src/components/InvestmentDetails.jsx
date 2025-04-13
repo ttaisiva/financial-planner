@@ -8,7 +8,7 @@ export const Investment = ({
 }) => {
   const [formData, setFormData] = useState({
     investmentType: "",
-    dollarValue: "",
+    value: "",
     taxStatus: "",
   });
 
@@ -16,7 +16,7 @@ export const Investment = ({
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === "dollarValue" ? parseFloat(value) : value,
+      [name]: name === "value" ? parseFloat(value) : value,
     });
   };
 
@@ -80,10 +80,10 @@ export const Investment = ({
           <label>Dollar Amount: $</label>
           <input
             type="number"
-            name="dollarValue"
+            name="value"
             min="0"
             placeholder="0.00"
-            value={formData.dollarValue}
+            value={formData.value}
             onChange={handleChange}
             required
           />
@@ -387,7 +387,7 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
         <ul>
           {investments.map((item, idx) => (
             <li key={idx} className="item">
-              <strong>{item.investmentType}</strong>: ${item.dollarValue} (
+              <strong>{item.investmentType}</strong>: ${item.value} (
               {item.taxStatus})
             </li>
           ))}
