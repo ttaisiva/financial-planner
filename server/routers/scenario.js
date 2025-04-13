@@ -540,34 +540,34 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
   }
 }
 
+/**
+ * Inserts each investment type for the scenario currently being uploaded
+ * 
+ * @param connection MySQL Connection
+ * @param scenario_id ID for Current Scenario
+ * @param investmentTypes List of investment types to be inserted into DB
+ */
 async function insertInvestmentTypes(
   connection,
   scenario_id,
-  investmentTypesLocal
+  investmentTypes
 ) {
-  for (const investmentType of investmentTypesLocalStorage) {
+  for (const investmentType of investmentTypes) {
     const investmentTypeQuery = `
-      INSERT INTO investment_types (scenario_id, name, description, expAnnReturnType, expAnnReturnValue, expAnnReturnMean, expAnnReturnStdDev, expAnnReturnTypeAmtOrPct, expenseRatio, expAnnIncomeType, expAnnIncomeValue, expAnnIncomeMean, expAnnIncomeStdDev, expAnnIncomeTypeAmtOrPct, taxability) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO investment_types (scenario_id, name, description, return_distribution, 
+      return_amt_or_pct, expense_ratio, income_distribution, income_amt_or_pct, taxability) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const investmentTypeValues = [
-      scenario_id || null,
-      investmentType.name || null,
-      investmentType.description || null,
-      investmentType.expAnnReturn.type || null,
-      investmentType.expAnnReturn.value || null,
-
-      investmentType.expAnnReturn.mean || null,
-      investmentType.expAnnReturn.stdDev || null,
-      investmentType.expAnnReturn.amtOrPct || null,
-      investmentType.expenseRatio || null,
-      investmentType.expAnnIncome.type || null,
-
-      investmentType.expAnnIncome.value || null,
-      investmentType.expAnnIncome.mean || null,
-      investmentType.expAnnIncome.stdDev || null,
-      investmentType.expAnnIncome.amtOrPct || null,
-      investmentType.taxability || null,
+      scenario_id,
+      investmentType.name,
+      investmentType.description,
+      investmentType.returnDistribution,
+      investmentType.returnAmtOrPct,
+      investmentType.expenseRatio,
+      investmentType.incomeDistribution,
+      investmentType.incomeAmtOrPct,
+      investmentType.taxability,
     ];
     await connection.execute(investmentTypeQuery, investmentTypeValues);
     console.log(
@@ -576,21 +576,28 @@ async function insertInvestmentTypes(
   }
 }
 
+/**
+ * Inserts each investment for the scenario currently being uploaded
+ * 
+ * @param connection MySQL Connection
+ * @param scenario_id ID for Current Scenario
+ * @param investments List of investments to be inserted into DB
+ */
 async function insertInvestment(
   connection,
   scenario_id,
-  investmentsLocalStorage
+  investments
 ) {
-  for (const investment of investmentsLocalStorage) {
+  for (const investment of investments) {
     const investmentQuery = `
-      INSERT INTO investments (scenario_id, investment_type, dollar_value, tax_status) 
+      INSERT INTO investments (scenario_id, investment_type, value, tax_status) 
       VALUES (?, ?, ?, ?)
     `;
     const investmentValues = [
-      scenario_id || null,
-      investment.investment_type || null,
-      investment.dollar_value || null,
-      investment.tax_status || null,
+      scenario_id,
+      investment.investmentType,
+      investment.value,
+      investment.taxStatus
     ];
     await connection.execute(investmentQuery, investmentValues);
     console.log(
