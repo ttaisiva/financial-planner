@@ -137,11 +137,10 @@ export async function createTablesIfNotExist(connection) {
       strategy_type VARCHAR(255) NOT NULL,
       start_year INT DEFAULT NULL,
       end_year INT DEFAULT NULL,
-      investment_id INT DEFAULT NULL, -- applies to investment-based strategies
+      investment_id VARCHAR(255) DEFAULT NULL, -- applies to investment-based strategies
       expense_id INT DEFAULT NULL,    -- applies to spending strategie
       strategy_order INT NOT NULL,    -- indicates the order
       FOREIGN KEY (scenario_id) REFERENCES user_scenario_info(id),
-      FOREIGN KEY (investment_id) REFERENCES investments(id),
       FOREIGN KEY (expense_id) REFERENCES events(id)
     );
   `;
