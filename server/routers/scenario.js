@@ -421,17 +421,6 @@ router.post("/import-scenario", async (req, res) => {
     const strategies = req.body.strategies;
     await insertStrategies(connection, scenario_id, strategies);
 
-    //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
-    console.log("All temporary storage cleared");
-    investmentsLocalStorage = [];
-    investmentTypesLocalStorage = [];
-    eventsLocalStorage = [];
-    rothLocalStorage = [];
-    rmdLocalStorage = [];
-    spendingLocalStorage = [];
-    expenseWithdrawalLocalStorage = [];
-    strategyLocalStorage = [];
-
     console.log("User scenario info and related data saved successfully.");
     res
       .status(200)
@@ -448,19 +437,9 @@ router.post("/import-scenario", async (req, res) => {
 
 export default router;
 
-async function findInvestmentId(connection, scenario_id, investment) {
-  const query = `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ?`;
-  const values = [
-    scenario_id,
-    investment.investment_type,
-    investment.tax_status,
-  ];
-  const [rows] = await connection.execute(query, values);
-  return rows.length > 0 ? rows[0].id : null;
-}
 async function findExpenseId(connection, scenario_id, expense) {
   const query = `SELECT id FROM events WHERE scenario_id = ? AND name = ?`;
-  const values = [scenario_id, expense.name];
+  const values = [scenario_id, expense];
   const [rows] = await connection.execute(query, values);
   return rows.length > 0 ? rows[0].id : null;
 }
@@ -473,6 +452,7 @@ async function findExpenseId(connection, scenario_id, expense) {
  * @param strategies List of strategies to be inserted into DB
  */
 async function insertStrategies(connection, scenario_id, strategies) {
+  console.log("strategies json", strategies);
   // Roth
   const roth = strategies.roth;
   console.log("Roth info before inserting to db:", roth);
@@ -482,13 +462,12 @@ async function insertStrategies(connection, scenario_id, strategies) {
   const investments = roth.strategy;
   for(let i = 0; i < investments.length; i++) { // doesn't run for empty array (if optimizer disabled)
     // make id the investment id from DB
-    const id = await findInvestmentId(connection, scenario_id, investments[i]);
     const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
     expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const values = [
       scenario_id ?? null,
       "roth",
-      id ?? null,
+      investments[i] ?? null,
       null,
       i ?? null,
       roth.start ?? null,
@@ -499,13 +478,12 @@ async function insertStrategies(connection, scenario_id, strategies) {
 
   // RMD
   for(let i = 0; i < strategies.rmd.length; i++) { // each element is investment
-    const id = await findInvestmentId(connection, scenario_id, strategies.rmd[i]);
     const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
     expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const values = [
-      scenario_id,
+      scenario_id ?? null,
       "rmd",
-      id,
+      strategies.rmd[i] ?? null,
       null,
       i,
       null,
@@ -516,13 +494,12 @@ async function insertStrategies(connection, scenario_id, strategies) {
 
   // Expense Withdrawal
   for(let i = 0; i < strategies.expense.length; i++) { // each element is investment
-    const id = await findInvestmentId(connection, scenario_id, strategies.expense[i]);
     const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
     expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const values = [
       scenario_id,
       "expense_withdrawal",
-      id,
+      strategies.expense[i],
       null,
       i,
       null,
@@ -538,22 +515,15 @@ async function insertStrategies(connection, scenario_id, strategies) {
     expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const values = [
       scenario_id,
-      strategy_type,
-      investment_id,
-      expense_id,
-      strategy_order,
-    ];
+      "spending",
+      null,
+      id,
+      i,
+      null,
+      null,
 
-    await connection.execute(
-      `INSERT INTO strategy (scenario_id, strategy_type, investment_id, expense_id, strategy_order) VALUES (?, ?, ?, ?, ?)`,
-      [
-        scenario_id,
-        String(strategy_type),
-        investment_id,
-        expense_id,
-        strategy_order,
-      ]
-    );
+    ];
+    await connection.execute(query, values)
   }
 }
 
@@ -659,10 +629,12 @@ async function insertInvestment(
 ) {
   for (const investment of investments) {
     const investmentQuery = `
-      INSERT INTO investments (scenario_id, investment_type, value, tax_status) 
-      VALUES (?, ?, ?, ?)
+      INSERT INTO investments (id, scenario_id, investment_type, value, tax_status) 
+      VALUES (?, ?, ?, ?, ?)
     `;
+    const investID = investment.investmentType + " " + investment.taxStatus;
     const investmentValues = [
+      investID ?? null,
       scenario_id ?? null,
       investment.investmentType ?? null,
       investment.value ?? null,

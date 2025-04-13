@@ -187,7 +187,7 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
         }
 
         // UPLOAD SCENARIO
-        fetch("http://localhost:3000/api/create-scenario", {
+        fetch("http://localhost:3000/api/import-scenario", {
           method: "POST",
           credentials: "include",
           headers: {
