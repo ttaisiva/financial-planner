@@ -427,9 +427,9 @@ const RebalanceEvent = ({ formData, handleChange }) => {
             <option value="" disabled>
               Select Tax Status
             </option>
-            <option value="pre-tax">Pre Tax</option>
-            <option value="non-retirement">Non Retirement</option>
-            <option value="after-tax">After Tax</option>
+            <option value="Pre-Tax">Pre Tax</option>
+            <option value="Non-Retirement">Non Retirement</option>
+            <option value="After-Tax">After Tax</option>
           </select>
         </div>
         <label>Choose method to allocate funds to investments:</label>
@@ -461,7 +461,7 @@ const RebalanceEvent = ({ formData, handleChange }) => {
           {accounts.map((account) => (
             <div key={account.id}>
               <label>
-                {account.investment_type} (${account.dollar_value}):
+                {account.investment_type} (${account.value}):
               </label>
               <input
                 type="number"
@@ -486,7 +486,7 @@ const RebalanceEvent = ({ formData, handleChange }) => {
           {accounts.map((account) => (
             <div key={account.id}>
               <label>
-                {account.investment_type} (${account.dollar_value}):
+                {account.investmentType} (${account.value}):
               </label>
               <div>
                 <label>Start:</label>
@@ -531,7 +531,7 @@ const InvestEvent = ({ formData, handleChange }) => {
   useEffect(() => {
     const fetchInvestments = async () => {
       try {
-        const taxStatus = ["after-tax", "non-retirement"];
+        const taxStatus = ["After-Tax", "Non-Retirement"];
         const queryString = taxStatus
           .map((status) => `taxStatus=${status}`)
           .join("&");
@@ -657,7 +657,7 @@ const InvestEvent = ({ formData, handleChange }) => {
           {accounts.map((account) => (
             <div key={account.id}>
               <label>
-                {account.investment_type} (${account.dollar_value}):
+                {account.investmentType} (${account.value}):
               </label>
               <input
                 type="number"
@@ -682,7 +682,7 @@ const InvestEvent = ({ formData, handleChange }) => {
           {accounts.map((account) => (
             <div key={account.id}>
               <label>
-                {account.investment_type} (${account.dollar_value}):
+                {account.investmentType} (${account.value}):
               </label>
               <div>
                 <label>Start:</label>
