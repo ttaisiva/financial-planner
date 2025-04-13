@@ -121,7 +121,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       lifeExpectancy: {
         type: "", 
         value: "", 
-        meanean: "",  
+        mean: "",  
         stdDev: "", 
       
       },

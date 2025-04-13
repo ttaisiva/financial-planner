@@ -4,6 +4,7 @@ import "../styles/Dashboard.css";
 import { Link } from "react-router-dom";
 import { loadAnimation } from "../utils";
 import { handleScenarioUpload } from "../utils";
+import yaml from "js-yaml";
 
 export const Dashboard = () => {
   const [username, setUsername] = useState("undefined");
@@ -133,12 +134,138 @@ const Popup = ({ togglePopup, isActive, toggleUpload }) => {
 };
 
 const UploadScenario = ({ toggleUpload, isActive }) => {
+  // HELPERS
+  /*
+    Creates a user object for the scenario importing
+  */
+  const parseUser = (yamlScn) => {
+    let lifeExpectancy;
+    if (yamlScn.lifeExpectancy[0].type == "fixed") {
+      lifeExpectancy = {
+        type: "fixed", 
+        value: yamlScn.lifeExpectancy[0].value, 
+        mean: null,
+        stdDev: null, 
+      }
+    }
+    else {
+      lifeExpectancy = {
+        type: "normal", 
+        value: null, 
+        mean: yamlScn.lifeExpectancy[0].mean,  
+        stdDev: yamlScn.lifeExpectancy[0].stdDev, 
+      }
+    }
+    const user = {
+      lifeExpectancy: lifeExpectancy,
+      birthYear: yamlScn.birthYears[0]
+    }
+    return user;
+  }
+  
+  /*
+    Creates a spouse object for the scenario importing; returns null fields if no spouse
+  */
+  const parseSpouse = (yamlScn) => {
+    let lifeExpectancy;
+    if (yamlScn.birthYears.length != 2) {
+      const spouse = {
+        lifeExpectancy: {
+          type: null,
+          value: null,
+          mean: null,
+          stdDev: null,
+        },
+        birthYear: null,
+      }
+      return spouse;
+    }
+
+    if (yamlScn.lifeExpectancy[1].type == "fixed") {
+      lifeExpectancy = {
+        type: "fixed", 
+        value: yamlScn.lifeExpectancy[1].value, 
+        mean: null,
+        stdDev: null, 
+      }
+    }
+    else {
+      lifeExpectancy = {
+        type: "normal", 
+        value: null, 
+        mean: yamlScn.lifeExpectancy[1].mean,  
+        stdDev: yamlScn.lifeExpectancy[1].stdDev, 
+      }
+    }
+    const spouse = {
+      lifeExpectancy: lifeExpectancy,
+      birthYear: yamlScn.birthYears[1]
+    }
+    return spouse;
+  }
+
+  // Handler
+  const uploadFile = async (e) => {
+    const file = e.target.files[0];
+    if (file && (file.name.split('.').pop().toLowerCase() == "yml" || file.name.split('.').pop().toLowerCase() == "yaml")) { // Parse and validate data into scenario object and send to server
+      try {
+        // RETRIEVE ALL RELEVANT SCENARIO INFORMATION
+        const fileContent = await file.text();
+        const yamlScn = yaml.load(fileContent);
+        console.log(yamlScn);
+
+        // SCENARIO FOR UPLOAD
+        const scenario = {
+          scenarioName: yamlScn.name,
+          financialGoal: yamlScn.financialGoal,
+          filingStatus: yamlScn.maritalStatus,
+          stateOfResidence: ymclScn.residenceState,
+          user: parseUser(yamlScn),
+          spouse: parseSpouse(yamlScn),
+          inflation_assumption: {
+            type: yamlScn.inflationAssumption.type, 
+            value: yamlScn.inflationAssumption.value, 
+            mean: yamlScn.inflationAssumption.mean,  
+            stdDev: yamlScn.inflationAssumption.stdDev, 
+            lower: yamlScn.inflationAssumption.lower, 
+            upper: yamlScn.inflationAssumption.uppper, 
+          }
+        }
+
+        // INVESTMENTS FOR UPLOAD
+        const investments = [];
+        yamlScn.investments.forEach(elem => {
+          investments.push({
+            investmentType: elem.investmentType,
+            value: elem.value,
+            taxStatus: elem.taxStatus,
+          });
+        });
+
+        // JSON FOR SERVER UPLOAD
+        const completeScenario = {
+          scenario: scenario,
+          investmentTypes: yamlScn.investmentTypes,
+          investments: investments,
+          eventSeries: yamlScn.eventSeries,
+        }
+      }
+      catch {
+        console.log("Error parsing scenario object");
+      }
+      
+    }
+    else {
+
+    }
+  }
+
   return (
     <>
       <div className={`popup-upload ${isActive ? "active" : ""}`}>
         <div>
           <h3>Submit a YAML file.</h3>
-          <input type="file" accept=".yaml,.yml" />
+          <input onChange={uploadFile} type="file" accept=".yaml,.yml" />
         </div>
         <div>
           <button onClick={toggleUpload} className="btn-action-popup">
