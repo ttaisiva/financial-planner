@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { loadAnimation } from "../utils";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import yaml from "js-yaml";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -46,6 +47,33 @@ export const ViewScenarioPage = () => {
     }
   };
 
+  const exportScenario = async () => {
+    fetch(`http://localhost:3000/api/export-scenario?id=${scenarioId}`, {
+      method: "GET",
+      credentials: "include",
+    })
+    .then(res => res.json())
+    .then(data => {
+      /*
+        CHATGPT: send the javascript object to the client and have the client turn it into a yaml file for download
+      */
+      const yamlContent = yaml.dump(data);
+
+      // Create a Blob from the YAML content
+      const blob = new Blob([yamlContent], { type: 'text/yaml' });
+
+      // Create an anchor element to trigger the download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'scenario.yaml'; // Name of the downloaded file
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    })
+    .catch((error) => console.error("Error:", error));
+  }
+
   return (
     <div className="viewscenario-container">
       <Header />
@@ -74,6 +102,7 @@ export const ViewScenarioPage = () => {
       </div>
 
       <DisplaySimulationResults />
+      <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>
   );
