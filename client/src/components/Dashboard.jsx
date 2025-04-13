@@ -195,7 +195,13 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
           },
           body: JSON.stringify(completeScenario)
         })
+        .then(res => res.json())
+        .then(data => {
+          window.location.href = `/scenario/${data.scenario_id}`;
+        })
         .catch((error) => console.error("Error:", error));
+
+
       }
       catch {
         console.log("Error parsing scenario object");

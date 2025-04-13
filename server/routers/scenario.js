@@ -406,9 +406,9 @@ router.post("/import-scenario", async (req, res) => {
     userId ?? null,
     scenario.name ?? null,
     scenario.maritalStatus ?? null,
-    JSON.stringify(scenario.birthYears) ?? null,
-    JSON.stringify(scenario.lifeExpectancy) ?? null,
-    JSON.stringify(scenario.inflationAssumption) ?? null,
+    scenario.birthYears ?? null,
+    scenario.lifeExpectancy ?? null,
+    scenario.inflationAssumption ?? null,
     scenario.financialGoal ?? null,
     scenario.residenceState ?? null,
   ];
@@ -501,7 +501,8 @@ router.get("/export-scenario", async (req, res) => {
      financialGoal: scenario.financial_goal,
      residenceState: scenario.residence_state,
     }
-    console.log("eXPORT DATA", exportData);
+    console.log("EXPORT DATA", exportData);
+    res.json(exportData);
   }
   catch (err) {
     console.error("Failed to export scenario", err);
@@ -534,19 +535,21 @@ async function getInvestmentTypes(connection, scenario_id) {
   const query = `
     SELECT * FROM investment_types WHERE scenario_id = ?
   `
-  const [rows] = await connection.execute(query, scenario_id);
+  const [rows] = await connection.execute(query, [scenario_id]);
   const investmentTypes = [];
   rows.forEach(type => {
+    console.log("investment type check", type);
     const investmentType = {
       name: type.name,
       description: type.description,
       returnAmtOrPct: type.return_amt_or_pct,
-      returnDistribution: type.return_distribution && JSON.parse(type.return_distribution),
+      returnDistribution: type.return_distribution,
       expenseRatio: type.expense_ratio,
       incomeAmtOrPct: type.income_amt_or_pct,
-      incomeDistribution: type.income_distribution && JSON.parse(type.income_distribution),
+      incomeDistribution: type.income_distribution,
       taxability: type.taxability
     }
+    console.log("afer investment type transfer", investmentType);
     investmentTypes.push(investmentType);
   });
   return investmentTypes;
@@ -562,14 +565,14 @@ async function getInvestments(connection, scenario_id) {
   const query = `
     SELECT * FROM investments WHERE scenario_id = ?
   `
-  const [rows] = await connection.execute(query, scenario_id);
+  const [rows] = await connection.execute(query, [scenario_id]);
   const investments = [];
   rows.forEach(invest => {
     const investment = {
-      investmentType: investment.investment_type,
-      value: investment.value,
-      taxStatus: investment.tax_status,
-      id: investment.id
+      investmentType: invest.investment_type,
+      value: invest.value,
+      taxStatus: invest.tax_status,
+      id: invest.id
     }
     investments.push(investment);
   })
@@ -586,29 +589,30 @@ async function getEventSeries(connection, scenario_id) {
   const query = `
     SELECT * FROM events WHERE scenario_id = ?
   `
-  const [rows] = await connection.execute(query, scenario_id);
+  const [rows] = await connection.execute(query, [scenario_id]);
   const events = [];
   rows.forEach(e => {
     const event = {
       name: e.name,
       description: e.description,
-      start: e.start && JSON.parse(e.start),
-      duration: e.duration && JSON.parse(e.duration),
+      start: e.start,
+      duration: e.duration,
       type: e.type,
       initialAmount: e.initial_amount,
       changeAmtOrPct: e.change_amt_or_pct,
-      changeDistribution: e.change_distribution && JSON.parse(e.change_distribution),
+      changeDistribution: e.change_distribution,
       inflationAdjusted: e.inflation_adjusted,
       userFraction: e.user_fraction,
       socialSecurity: e.social_security,
       discretionary: e.discretionary,
-      assetAllocation: e.asset_allocation && JSON.parse(e.asset_allocation),
+      assetAllocation: e.asset_allocation,
       glidePath: e.glide_path,
-      assetAllocation2: e.asset_allocation2 && JSON.parse(e.asset_allocation2),
+      assetAllocation2: e.asset_allocation2,
       maxCash: e.maxCash,
     }
-    events.append(removeNullAndUndefined(event));
+    events.push(removeNullAndUndefined(event));
   })
+  return events;
 }
 
 /**
@@ -634,21 +638,21 @@ async function getStrategies(connection, scenario_id) {
 
   for (const elem of spending) {
     const [expense] = await connection.execute(expenseQuery, [scenario_id, elem.expense_id]);
-    spendingStrtegy.append(expense[0].name);
+    spendingStrategy.push(expense[0].name);
   };
   
   // Uses investment_id
   const [expenseWithdrawal] = await connection.execute(query, [scenario_id, "expense_withdrawal"]);
   const expenseWithdrawalStrategy = []
   expenseWithdrawal.forEach(elem => {
-    expenseWithdrawalStrategy.append(elem.investment_id);
+    expenseWithdrawalStrategy.push(elem.investment_id);
   })
 
   // Uses investment_id
   const [rmd] = await connection.execute(query, [scenario_id, "rmd"])
   const RMDStrategy = [];
   rmd.forEach(elem => {
-    RMDStrategy.append(elem.investment_id)
+    RMDStrategy.push(elem.investment_id)
   })
 
   // Uses investment_id
@@ -658,7 +662,7 @@ async function getStrategies(connection, scenario_id) {
   const RothConversionEnd = roth[0].end_year;
   const RothConversionStrategy = [];
   roth.forEach(elem => {
-    RothConversionStrategy.append(elem.investment_id);
+    RothConversionStrategy.push(elem.investment_id);
   })
 
   const completeData = {
@@ -821,9 +825,9 @@ async function insertEvents(connection, scenario_id, events) {
       event.name ?? null,
       event.description ?? "",
       event.type ?? null,
-      JSON.stringify(event.start) ?? null,
-      JSON.stringify(event.duration) ?? null,
-      JSON.stringify(event.changeDistribution) ?? null,
+      event.start ?? null,
+      event.duration ?? null,
+      event.changeDistribution ?? null,
       event.initialAmount ?? null,
       event.changeAmtOrPct ?? null,
       event.inflationAdjusted ?? null,
