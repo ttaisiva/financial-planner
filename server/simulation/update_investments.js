@@ -41,21 +41,17 @@ export async function updateInvestments(scenarioId, curYearIncome) {
             continue; // Skip this investment if its type is not found
         }
 
-        const initialValue = investment.dollar_value;
+        const initialValue = Number(investment.dollar_value);
 
         // a. Calculate the generated income
         let generatedIncome = 0;
-        if (investmentType.expAnnIncomeType === 'fixed') {
-            generatedIncome = investmentType.expAnnIncomeValue || 0;
-            console.log(`Generated income (fixed): ${generatedIncome}`);
-        } else {
-            generatedIncome = sample({
-                mean: investmentType.expAnnIncomeMean,
-                std_dev: investmentType.expAnnIncomeStdDev,
-            });
-            console.log(`Generated income (sampled): ${generatedIncome}`);
-        }
-
+        generatedIncome = sample({
+            type: investmentType.expAnnIncomeType,
+            value: investmentType.expAnnIncomeValue,
+            mean: investmentType.expAnnIncomeMean,
+            std_dev: investmentType.expAnnIncomeStdDev,
+        });
+        console.log(`Generated income (sampled): ${generatedIncome}`);
         // Account for percentage case
         if (investmentType.expAnnIncomeTypeAmtOrPct === 'percent') {
             generatedIncome = (generatedIncome / 100) * initialValue;
@@ -64,7 +60,7 @@ export async function updateInvestments(scenarioId, curYearIncome) {
 
         // b. Add the income to curYearIncome if applicable
         if (
-            investment.tax_status === 'non-retirement' &&
+            investment.tax_status === 'Non-Retirement' &&
             investmentType.taxability === 'taxable'
         ) {
             curYearIncome += generatedIncome;
@@ -73,17 +69,13 @@ export async function updateInvestments(scenarioId, curYearIncome) {
 
         // d. Calculate the change in value
         let changeInValue = 0;
-        if (investmentType.expAnnReturnType === 'fixed') {
-            changeInValue = investmentType.expAnnReturnValue || 0;
-            console.log(`Change in value (fixed): ${changeInValue}`);
-        } else {
-            changeInValue = sample({
-                mean: investmentType.expAnnReturnMean,
-                std_dev: investmentType.expAnnReturnStdDev,
-            });
-            console.log(`Change in value (sampled): ${changeInValue}`);
-        }
-
+        changeInValue= sample({
+            type: investmentType.expAnnReturnType,
+            value: investmentType.expAnnReturnValue,
+            mean: investmentType.expAnnReturnMean,
+            std_dev: investmentType.expAnnReturnStdDev,
+        });
+        console.log(`Change in value (sampled): ${changeInValue}`);
         // Account for percentage case
         if (investmentType.expAnnReturnTypeAmtOrPct === 'percent') {
             changeInValue = (changeInValue / 100) * initialValue;

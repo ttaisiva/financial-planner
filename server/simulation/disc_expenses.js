@@ -1,4 +1,4 @@
-
+import { connection } from "../server.js";
 
 export async function payDiscExpenses(scenarioId) {
 
