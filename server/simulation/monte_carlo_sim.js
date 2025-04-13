@@ -16,7 +16,7 @@ import { ensureConnection, connection } from "../server.js";
  */
 export async function simulation(date , numSimulations, userId, scenarioId, connection) { 
     console.log("Running Monte Carlo simulation...");
-    const csvlog = await initLogs(userId); // open log file for writing
+    const logs = await initLogs(userId); // open log files for writing
     const totalYears = await getTotalYears(date, scenarioId, connection);
 
     const simulationResults = [];
@@ -42,7 +42,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
         for (let year = 0; year < totalYears; year++) { //years in which the simulation is  being run
             
             const currentSimulationYear = date + year; //actual year being simulated
-            if(sim===0) log(csvlog, investments, currentSimulationYear-1);
+            if(sim===0) log(logs.csvlog, investments, currentSimulationYear-1);
 
 
             //Step 0: run preliminaries -> need to further implement this
@@ -118,7 +118,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
                 investments: 0,
             });
             
-            if(sim==0) log(csvlog, investments, currentSimulationYear);
+            if(sim==0) log(logs.csvlog, investments, currentSimulationYear);
         }
 
         simulationResults.push(yearlyResults);
