@@ -1,9 +1,11 @@
 import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { loadAnimation } from "../utils";
 import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import yaml from "js-yaml";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -13,13 +15,16 @@ export const ViewScenarioPage = () => {
   const [userId, setUserId] = useState(null); // State to store user ID
   const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
 
-  
+  const { id: scenarioIdFromUrl } = useParams(); // gets scenario id from url that took you to this page
+  useEffect(() => {
+    if (scenarioIdFromUrl) {
+      setScenarioId(scenarioIdFromUrl);
+    }
+  }, [scenarioIdFromUrl]);
 
   const handleRunSimulation = async () => {
-    
     setIsRunning(true);
     try {
-    
       //const MYuserId = '107981191838034384868';
       const response = await fetch("http://localhost:3000/api/run-simulation", {
         method: "POST",
@@ -42,17 +47,44 @@ export const ViewScenarioPage = () => {
     }
   };
 
+  const exportScenario = async () => {
+    fetch(`http://localhost:3000/api/export-scenario?id=${scenarioId}`, {
+      method: "GET",
+      credentials: "include",
+    })
+    .then(res => res.json())
+    .then(data => {
+      /*
+        CHATGPT: send the javascript object to the client and have the client turn it into a yaml file for download
+      */
+      const yamlContent = yaml.dump(data);
+
+      // Create a Blob from the YAML content
+      const blob = new Blob([yamlContent], { type: 'text/yaml' });
+
+      // Create an anchor element to trigger the download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'scenario.yaml'; // Name of the downloaded file
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    })
+    .catch((error) => console.error("Error:", error));
+  }
+
   return (
     <div className="viewscenario-container">
       <Header />
       <h1> Your Scenario </h1>
-            <ViewSingleScenario
+      <ViewSingleScenario
         scenarioId={scenarioId}
         setScenarioId={setScenarioId}
         userId={userId}
         setUserId={setUserId}
       />
-  
+
       <div className="simulation-controls">
         <h3>Simulation</h3>
         <label>Number of Simulations:</label>
@@ -69,8 +101,8 @@ export const ViewScenarioPage = () => {
         </button>
       </div>
 
-      
       <DisplaySimulationResults />
+      <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>
   );
@@ -78,22 +110,30 @@ export const ViewScenarioPage = () => {
 
 export default ViewScenarioPage;
 
-export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId}) => {
+export const ViewSingleScenario = ({
+  scenarioId,
+  setScenarioId,
+  userId,
+  setUserId,
+}) => {
   //placeholder need to implmement this
   const [scenario, setScenario] = useState([]);
   const location = useLocation();
   const tempScenarioId = location.state?.scenario_id; // Access the scenario_id from the state
-  setScenarioId(tempScenarioId);
- 
-  console.log("Temp Scenario ID:", scenarioId);
+  // setScenarioId(tempScenarioId);
+
+  // console.log("Temp Scenario ID:", scenarioId);
 
   const fetchScenario = async () => {
     try {
       setScenario([]);
-      const response = await fetch("http://localhost:3000/api/single-scenario", {
-        method: "GET",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/single-scenario?scenarioId=${scenarioId}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
       if (response.ok) {
         const data = await response.json();
         console.log("Scenario data:", data);
@@ -103,7 +143,6 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
           setUserId(data.user_id);
           console.log("User ID from scenario:", data.user_id);
         }
-
       } else {
         console.error("Failed to fetch scenario");
       }
@@ -111,8 +150,7 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
       console.error("Error:", error);
     }
   };
-  
-  
+
   useEffect(() => {
     if (scenarioId) {
       fetchScenario();
@@ -123,7 +161,6 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
     }
   }, [scenarioId]);
 
-
   // Utility to render list of key-value fields from an object
   const renderAttributes = (obj) => {
     return (
@@ -133,12 +170,15 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
           .map(([key, value]) => (
             <p key={key}>
               <strong>
-                {key
-                  .replace(/_/g, " ") // Replace underscores with spaces
-                  .replace(/user /i, "") // Remove "user" (case-insensitive)
-                  .replace(/spouse /i, "") // Remove "spouse" (case-insensitive)
-                }:
-                </strong> {value.toString()}
+                {
+                  key
+                    .replace(/_/g, " ") // Replace underscores with spaces
+                    .replace(/user /i, "") // Remove "user" (case-insensitive)
+                    .replace(/spouse /i, "") // Remove "spouse" (case-insensitive)
+                }
+                :
+              </strong>{" "}
+              {value.toString()}
             </p>
           ))}
       </div>
@@ -146,30 +186,29 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
   };
 
   return (
-
     <div className="content-dashboard fade-in">
-      
       <div>
-        
         <div className="row">
-          
           <div className="item">
-          <h3>Scenario Details</h3>
-            {scenario && renderAttributes({
-              scenario_name: scenario.scenario_name,
-              filing_status: scenario.filing_status,
-              state_of_residence: scenario.state_of_residence,
-            })}
+            <h3>Scenario Details</h3>
+            {scenario &&
+              renderAttributes({
+                scenario_name: scenario.name,
+                filing_status: scenario.filing_status,
+                state_of_residence: scenario.state_of_residence,
+              })}
           </div>
 
           <div className="item">
-            <h3>Financial Details</h3> 
-              {scenario && renderAttributes({
+            <h3>Financial Details</h3>
+            {scenario &&
+              renderAttributes({
                 financial_goal: scenario.financial_goal,
                 inflation_assumption_type: scenario.inflation_assumption_type,
                 inflation_assumption_value: scenario.inflation_assumption_value,
                 inflation_assumption_mean: scenario.inflation_assumption_mean,
-                inflation_assumption_std_dev: scenario.inflation_assumption_std_dev,
+                inflation_assumption_std_dev:
+                  scenario.inflation_assumption_std_dev,
                 inflation_assumption_lower: scenario.inflation_assumption_lower,
                 inflation_assumption_upper: scenario.inflation_assumption_upper,
               })}
@@ -177,57 +216,63 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
 
           <div className="item">
             <h3>Personal Details</h3>
-            {scenario && renderAttributes({
-              user_life_expectancy_type: scenario.user_life_expectancy_type,
-              user_life_expectancy_value: scenario.user_life_expectancy_value,
-              user_life_expectancy_mean: scenario.user_life_expectancy_mean,
-              user_life_expectancy_std_dev: scenario.user_life_expectancy_std_dev,
-              user_retirement_age_type: scenario.user_retirement_age_type,
-              user_retirement_age_value: scenario.user_retirement_age_value,
-              user_retirement_age_mean: scenario.user_retirement_age_mean,
-              user_retirement_age_std_dev: scenario.user_retirement_age_std_dev,
-              user_birth_year: scenario.user_birth_year,
-            })}
+            {scenario &&
+              renderAttributes({
+                user_life_expectancy_type: scenario.user_life_expectancy_type,
+                user_life_expectancy_value: scenario.user_life_expectancy_value,
+                user_life_expectancy_mean: scenario.user_life_expectancy_mean,
+                user_life_expectancy_std_dev:
+                  scenario.user_life_expectancy_std_dev,
+                user_retirement_age_type: scenario.user_retirement_age_type,
+                user_retirement_age_value: scenario.user_retirement_age_value,
+                user_retirement_age_mean: scenario.user_retirement_age_mean,
+                user_retirement_age_std_dev:
+                  scenario.user_retirement_age_std_dev,
+                user_birth_year: scenario.user_birth_year,
+              })}
           </div>
 
-          {
-            (scenario.spouse_life_expectancy_type ) && (
-              <div className="item">
+          {scenario.spouse_life_expectancy_type && (
+            <div className="item">
               <h3>Spouse Details</h3>
-              {scenario && renderAttributes({
-                spouse_life_expectancy_type: scenario.spouse_life_expectancy_type,
-                spouse_life_expectancy_value: scenario.spouse_life_expectancy_value,
-                spouse_life_expectancy_mean: scenario.spouse_life_expectancy_mean,
-                spouse_life_expectancy_std_dev: scenario.spouse_life_expectancy_std_dev,
-                spouse_retirement_age_type: scenario.spouse_retirement_age_type,
-                spouse_retirement_age_value: scenario.spouse_retirement_age_value,
-                spouse_retirement_age_mean: scenario.spouse_retirement_age_mean,
-                spouse_retirement_age_std_dev: scenario.spouse_retirement_age_std_dev,
-                spouse_birth_year: scenario.spouse_birth_year,
-              })}
+              {scenario &&
+                renderAttributes({
+                  spouse_life_expectancy_type:
+                    scenario.spouse_life_expectancy_type,
+                  spouse_life_expectancy_value:
+                    scenario.spouse_life_expectancy_value,
+                  spouse_life_expectancy_mean:
+                    scenario.spouse_life_expectancy_mean,
+                  spouse_life_expectancy_std_dev:
+                    scenario.spouse_life_expectancy_std_dev,
+                  spouse_retirement_age_type:
+                    scenario.spouse_retirement_age_type,
+                  spouse_retirement_age_value:
+                    scenario.spouse_retirement_age_value,
+                  spouse_retirement_age_mean:
+                    scenario.spouse_retirement_age_mean,
+                  spouse_retirement_age_std_dev:
+                    scenario.spouse_retirement_age_std_dev,
+                  spouse_birth_year: scenario.spouse_birth_year,
+                })}
             </div>
-            )
-          }
-
+          )}
         </div>
       </div>
 
-      <div>
-      </div>
+      <div></div>
 
-      
       {/* Render related data if available */}
-      <div >
-        
+      <div>
         {scenario.investments?.length > 0 && (
           <>
             <h3 style={{ textAlign: "center" }}>Investments</h3>
             <div className="grid">
-            {scenario.investments.map((investment, index) => (
-              <div key={index} className="item">
-                {renderAttributes(investment)}
-              </div>
-            ))}
+              {scenario.investments.map((investment, index) => (
+                <div key={index} className="item">
+                  {renderAttributes(investment)}
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -236,13 +281,13 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
       <div>
         {scenario.investment_types?.length > 0 && (
           <>
-            <h3  >Investment Types</h3>
+            <h3>Investment Types</h3>
             <div className="grid">
-            {scenario.investment_types.map((type, index) => (
-              <div key={index} className="item">
-                {renderAttributes(type)}
-              </div>
-            ))}
+              {scenario.investment_types.map((type, index) => (
+                <div key={index} className="item">
+                  {renderAttributes(type)}
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -253,36 +298,33 @@ export const ViewSingleScenario = ({scenarioId, setScenarioId, userId, setUserId
           <>
             <h3 style={{ textAlign: "center" }}>Events</h3>
             <div className="grid">
-            {scenario.events.map((event, index) => (
-              <div key={index} className="item">
-                {renderAttributes(event)}
-              </div>
-            ))}
+              {scenario.events.map((event, index) => (
+                <div key={index} className="item">
+                  {renderAttributes(event)}
+                </div>
+              ))}
             </div>
           </>
         )}
       </div>
 
       <div>
-        
         {scenario.strategy?.length > 0 && (
           <>
             <h3 style={{ textAlign: "center" }}>Strategies</h3>
             <div className="grid">
-            {scenario.strategy.map((strategy, index) => (
-              <div key={index} className="item">
-                {renderAttributes(strategy)}
-              </div>
-            ))}
+              {scenario.strategy.map((strategy, index) => (
+                <div key={index} className="item">
+                  {renderAttributes(strategy)}
+                </div>
+              ))}
             </div>
           </>
         )}
       </div>
-
-  </div>
-);
+    </div>
+  );
 };
-
 
 export const DisplaySimulationResults = () => {
   //placeholder need to implmement this

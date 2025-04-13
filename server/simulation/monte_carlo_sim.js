@@ -6,6 +6,8 @@ import { updateInvestments } from './update_investments.js';
 import { runRothOptimizer } from './roth_optimizer.js';
 import { payNondiscExpenses } from './nondisc_expenses.js';
 import { payDiscExpenses } from './disc_expenses.js';
+import { getRothYears } from './roth_optimizer.js';
+import { getRothStrategy } from './roth_optimizer.js';
 
 import { log } from '../logging.js';
 import { ensureConnection, connection } from "../server.js";
@@ -30,6 +32,12 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
         let curYearIncome = 0;
         let curYearSS = 0;
         const incomeEvents = await getIncomeEvents(scenarioId, []); // Fetch income events to determine the number of events
+        const rothYears = await getRothYears(scenarioId);
+        let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
+
+        console.log("Initializing simulation investments.");
+        let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+
         
         console.log("Total years for simulation: ", totalYears);
         for (let year = 0; year < totalYears; year++) { //years in which the simulation is  being run
@@ -77,11 +85,17 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
           
 
             // Step 3: Optimize Roth conversions
-            
-            //await runRothOptimizer(scenarioId);
+            if(rothYears && currentSimulationYear >= rothYears.start_year && currentSimulationYear <= rothYears.end_year) {
+                console.log(`Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`);
+                const rothResult = await runRothOptimizer(scenarioId, rothStrategy, incomeEvents, investments);
+                investments = rothResult.investments;
+                rothStrategy = rothResult.rothStrategy;
+            } else {
+                console.log(`Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`);
+            }
 
             // Step 4: Update investments
-            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
+            // ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
 
             // Pay non-discretionary expenses
@@ -146,6 +160,23 @@ export function calculateStats(simulationResults) {
         mean: 0, 
         otherInfo: {}, 
     };
+}
+
+async function initInvestments(scenarioId) {
+    console.log("Fetching user-defined investments for the scenario.");
+    await ensureConnection();
+    const [rows] = await connection.execute(
+        `SELECT 
+            id,
+            investment_type as type,
+            dollar_value as dollarValue,
+            tax_status as taxStatus
+         FROM investments
+         WHERE scenario_id = ?`,
+        [scenarioId]
+    );
+    console.log("Simulation investments initialized.");
+    return rows;
 }
 
 export async function getUserBirthYear(scenarioId) {
