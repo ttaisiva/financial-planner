@@ -25,17 +25,12 @@ export const handleScenarioUpload = (e) => {
   //TODO: send scenario to database
 };
 
-
-
 export const inputTypes = ({ type, formData, handleChange, prefix }) => {
-
   /**
-   * This function handles the display for user options for fixed, normal, and uniform distributions. 
+   * This function handles the display for user options for fixed, normal, and uniform distributions.
    */
 
-  
   const prefixParts = prefix.split(".");
-
 
   switch (type) {
     case "fixed":
@@ -65,7 +60,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
             value={
               prefixParts.length === 1
                 ? formData[prefixParts[0]]?.mean || "" // If only one part, access directly
-                : formData[prefixParts[0]]?.[prefixParts[1]]?.mean|| "" // If two parts, use nested access
+                : formData[prefixParts[0]]?.[prefixParts[1]]?.mean || "" // If two parts, use nested access
             }
             onChange={handleChange}
             required
@@ -125,7 +120,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 // export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
 
 //   /**
-//    * This function handles the reset for user options for fixed, normal, and uniform distributions. 
+//    * This function handles the reset for user options for fixed, normal, and uniform distributions.
 //    */
 
 //   console.log("Type in reset: ", selectedType)
@@ -137,14 +132,14 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 //   // Reset only fields related to the selectedType
 //   if (selectedType === "fixed") {
 //     if (parts.length == 2){ //user object
-//       reset[formData[parts[0]]?.parts[1]?.Value] = ""; 
+//       reset[formData[parts[0]]?.parts[1]?.Value] = "";
 //     } else{
 //       console.log("this is being reset: ", formData[parts[0]]?.Value);
 //       reset[formData[parts[0]]?.Value] = ""; //this is 4 but instead it should be inflation_assumption.Value not the actual value that inflation_assumptino holds
 //     }
 //     // Reset Value //need to access formData[prefix[0]]?.prefix[1]?.
 //   } else if (selectedType === "normal_distribution") {
-//     if (parts.length == 2){ 
+//     if (parts.length == 2){
 //       reset[formData[parts[0]]?.parts[1]?.Mean] = "";  // Reset Mean
 //       reset[formData[parts[0]]?.parts[1]?.StdDev] = ""; // Reset StdDev
 //     }
@@ -158,7 +153,6 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 
 //   return reset;
 // };
-
 
 // export const resetTypes = (selectedType, prefix) => {
 //   const reset = {};
@@ -192,10 +186,6 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
 
 //   return reset;
 // };
-
-
-
-
 
 export const states = [
   { code: "AL", name: "Alabama" },
@@ -296,12 +286,10 @@ export const loadAnimation = () => {
   });
 };
 
-
 export const updateNestedState = (prefix, key, value, setFormData) => {
-    
   setFormData((prevData) => {
     // If the prefix is user.lifeExpectancy, break it into its parts
-    const prefixParts = prefix.split('.');
+    const prefixParts = prefix.split(".");
 
     // Create a copy of prevData to ensure we don't mutate the state directly
     const updated = { ...prevData };
@@ -321,8 +309,6 @@ export const updateNestedState = (prefix, key, value, setFormData) => {
       ...currentLevel[prefixParts[prefixParts.length - 1]], // Spread to avoid direct mutation
       [key]: value,
     };
-
-
 
     return updated;
   });

@@ -2,6 +2,8 @@ import express from "express";
 import { ensureConnection, connection } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
 import { simulation } from "../simulation/monte_carlo_sim.js";
+import { keysToSnakeCase } from "../utils.js";
+import { pool } from "../utils.js";
 // const { simulation } = require("./monte_carlo_sim");
 
 const router = express.Router();
@@ -83,7 +85,7 @@ router.get("/investments-pretax", (req, res) => {
     "Received request for locally stored investments of type pre-tax."
   );
   const filtered = investmentsLocalStorage.filter(
-    (investment) => investment.tax_status === "Pre-Tax"
+    (investment) => investment.tax_status === "pre-tax"
   );
   res.status(200).json(filtered);
 });
@@ -96,118 +98,87 @@ router.get("/investment-types", (req, res) => {
 router.post("/user-scenario-info", async (req, res) => {
   console.log("Server received user info request from client..");
 
-  let userId;
-  if (req.session.user) {
-    userId = req.session.user.id;
-    console.log("Authenticated user ID:", userId);
-  }
+  // for (const investment of investments) {
+  //   await connection.query("INSERT INTO investments SET ?", {
+  //     ...investment,
+  //     scenario_id: scenarioId,
+  //   });
+  // }
 
-  console.log("authenticated", req.session.user);
-  const {
-    scenarioName,
-    financialGoal,
-    filingStatus,
-    stateOfResidence,
-    user,
-    spouse,
-    inflation_assumption,
-  } = req.body;
+  const { scenario, cashData } = req.body;
 
-  const query = `
-    INSERT INTO user_scenario_info (
-      user_id, scenario_name, financial_goal, filing_status, state_of_residence,
-      user_life_expectancy_type, user_life_expectancy_value, user_life_expectancy_mean, user_life_expectancy_std_dev,
-      user_retirement_age_type, user_retirement_age_value, user_retirement_age_mean, user_retirement_age_std_dev, user_birth_year,
-      spouse_life_expectancy_type, spouse_life_expectancy_value, spouse_life_expectancy_mean, spouse_life_expectancy_std_dev,
-      spouse_retirement_age_type, spouse_retirement_age_value, spouse_retirement_age_mean, spouse_retirement_age_std_dev, spouse_birth_year,
-      inflation_assumption_type, inflation_assumption_value, inflation_assumption_mean, inflation_assumption_stdev,
-      inflation_assumption_lower, inflation_assumption_upper
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ? ,?, ?, ?)
-  `;
-
-  const values = [
-    userId || null,
-    scenarioName || null,
-    financialGoal || null,
-    filingStatus || null,
-    stateOfResidence || null,
-    user.lifeExpectancy.type || null,
-    user.lifeExpectancy.value || null,
-    user.lifeExpectancy.mean || null,
-    user.lifeExpectancy.stdDev || null,
-    user.retirementAge.type || null,
-    user.retirementAge.value || null,
-    user.retirementAge.mean || null,
-    user.retirementAge.stdDev || null,
-    user.birthYear || null,
-    spouse.lifeExpectancy.type || null,
-    spouse.lifeExpectancy.value || null,
-    spouse.lifeExpectancy.mean || null,
-    spouse.lifeExpectancy.stdDev || null,
-    spouse.retirementAge.type || null,
-    spouse.retirementAge.value || null,
-    spouse.retirementAge.mean || null,
-    spouse.retirementAge.stdDev || null,
-    spouse.birthYear || null,
-    inflation_assumption.type || null,
-    inflation_assumption.value || null,
-    inflation_assumption.mean || null,
-    inflation_assumption.stdDev || null,
-    inflation_assumption.upper || null,
-    inflation_assumption.lower || null,
-  ];
+  const scenarioSnakeCase = keysToSnakeCase(scenario);
 
   //Insert all Scenario data into DB
   try {
     await ensureConnection();
     await createTablesIfNotExist(connection);
+    console.log("Connecting to DB at:", process.env.DB_HOST);
+    // const connection = await pool.getConnection();
+    console.log("connection", connection);
+
+    let userId;
+    if (req.session.user) {
+      userId = req.session.user.id;
+      console.log("Authenticated user ID:", userId);
+    }
+
+    console.log("authenticated", req.session.user);
+
+    const [scenarioResult] = await connection.query(
+      "INSERT INTO user_scenario_info SET ?",
+      scenarioSnakeCase
+    );
+
+    // const [cashResult] = await connection.query(
+    //   "INSERT INTO investments SET ?",
+    //   cashData
+    // );
 
     // Insert into user_scenario_info and get the inserted scenario_id
     console.log("insert user scenario info to database..");
-    const [results] = await connection.execute(query, values);
-    const scenario_id = results.insertId; //the id of the scenario is the ID it was insert with
+    const scenario_id = scenarioResult.insertId; //the id of the scenario is the ID it was insert with
     req.session.user["scenario_id"] = scenario_id; // Store the scenario ID in the session
     console.log("Scenario ID:", scenario_id);
 
     // insert all data into db
-    await insertInvestmentTypes(
-      connection,
-      scenario_id,
-      investmentTypesLocalStorage
-    );
-    await insertInvestment(connection, scenario_id, investmentsLocalStorage);
-    await insertEvents(connection, scenario_id, eventsLocalStorage);
-    let strategyLocalStorage = [
-      rothLocalStorage,
-      rmdLocalStorage,
-      spendingLocalStorage,
-      expenseWithdrawalLocalStorage,
-    ];
-    await insertStrategies(connection, scenario_id, strategyLocalStorage);
+    // await insertInvestmentTypes(
+    //   connection,
+    //   scenario_id,
+    //   investmentTypesLocalStorage
+    // );
+    // await insertInvestment(connection, scenario_id, investmentsLocalStorage);
+    // await insertEvents(connection, scenario_id, eventsLocalStorage);
+    // let strategyLocalStorage = [
+    //   rothLocalStorage,
+    //   rmdLocalStorage,
+    //   spendingLocalStorage,
+    //   expenseWithdrawalLocalStorage,
+    // ];
+    // await insertStrategies(connection, scenario_id, strategyLocalStorage);
 
-    //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
-    console.log("All temporary storage cleared");
-    investmentsLocalStorage = [];
-    investmentTypesLocalStorage = [];
-    eventsLocalStorage = [];
-    rothLocalStorage = [];
-    rmdLocalStorage = [];
-    spendingLocalStorage = [];
-    expenseWithdrawalLocalStorage = [];
-    strategyLocalStorage = [];
+    // //  Clear temporary data after insertion NO NEED THIS FOR GUEST RESET AFTER SIM. IS COMPLELTED
+    // console.log("All temporary storage cleared");
+    // investmentsLocalStorage = [];
+    // investmentTypesLocalStorage = [];
+    // eventsLocalStorage = [];
+    // rothLocalStorage = [];
+    // rmdLocalStorage = [];
+    // spendingLocalStorage = [];
+    // expenseWithdrawalLocalStorage = [];
+    // strategyLocalStorage = [];
 
     console.log("User scenario info and related data saved successfully.");
-    res
-      .status(200)
-      .json({
-        message: "User scenario and related data saved successfully.",
-        scenario_id,
-      });
+    res.status(200).json({
+      message: "User scenario and related data saved successfully.",
+      scenario_id,
+    });
+
+    connection.release();
   } catch (err) {
     console.error("Failed to insert user scenario info:", err);
     res.status(500).send("Failed to save user scenario info and related data.");
   }
-
 });
 
 router.get("/pre-tax-investments", async (req, res) => {
@@ -229,7 +200,7 @@ router.get("/pre-tax-investments", async (req, res) => {
 // edit this endpoint to run-simulation-auth and run-simulation-guest for guest send all localStorageData
 router.post("/run-simulation", async (req, res) => {
   try {
-    const { userId, scenarioId, numSimulations} = req.body;
+    const { userId, scenarioId, numSimulations } = req.body;
 
     // userId = req.session.user['id'];
     // scenarioId = req.session.user['scenario_id'];
@@ -237,7 +208,9 @@ router.post("/run-simulation", async (req, res) => {
     // console.log("scenario id", req.session.user['scenario_id']);
 
     const currentYear = new Date().getFullYear();
-    console.log(`User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`);
+    console.log(
+      `User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`
+    );
 
     // Call the Monte Carlo simulation function
     const results = simulation(
@@ -423,8 +396,6 @@ router.get("/get-investments", (req, res) => {
 
 export default router;
 
-
-
 async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
   const strategyTypes = {
     0: "rothConversionStrat",
@@ -444,7 +415,9 @@ async function insertStrategies(connection, scenario_id, strategyLocalStorage) {
     console.log(`Processing type: ${strategyTypes[i]}, Items:`, items);
 
     if (!Array.isArray(items)) {
-      console.log(`No valid items found for strategy type: ${strategyTypes[i]}`);
+      console.log(
+        `No valid items found for strategy type: ${strategyTypes[i]}`
+      );
       continue;
     }
 
@@ -553,17 +526,16 @@ async function insertEvents(connection, scenario_id, eventsLocal) {
       e.expected_annual_change?.stdDev || null,
       e.expected_annual_change?.upper || null,
       e.expected_annual_change?.lower || null,
-      
-      e.initialAmount || 0,  // Default to 0 if missing
-      e.inflationAdjusted || false,  // Default to false if missing
-      e.userPercentage || 0,  // Default to 0 if missing
-      e.spousePercentage || 0,  // Default to 0 if missing
-      
-      e.isSocialSecurity || false,  // Default to false if missing
-      e.allocationMethod || null,  // Default to null if missing
-      e.discretionary || false,  // Default to false if missing
-      e.max_cash || 0,  // Default to 0 if missing
-      
+
+      e.initialAmount || 0, // Default to 0 if missing
+      e.inflationAdjusted || false, // Default to false if missing
+      e.userPercentage || 0, // Default to 0 if missing
+      e.spousePercentage || 0, // Default to 0 if missing
+
+      e.isSocialSecurity || false, // Default to false if missing
+      e.allocationMethod || null, // Default to null if missing
+      e.discretionary || false, // Default to false if missing
+      e.max_cash || 0, // Default to 0 if missing
     ];
 
     console.log("Inserting values:", eventsValues);
