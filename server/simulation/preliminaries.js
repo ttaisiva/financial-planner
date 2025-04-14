@@ -1,4 +1,4 @@
-
+import { ensureConnection, connection } from "../server.js";
 /**
  * Fetches necessary preliminary data from the database.
  * @param {number} scenarioId - The ID of the scenario.
@@ -8,15 +8,11 @@ export async function get_preliminaries_data(scenarioId, connection) {
     // Query the database to fetch inflation assumptions and other necessary data
     // this would be different from guest 
 
+    ensureConnection(connection); // Ensure the connection is established
     const [rows] = await connection.execute(
         `SELECT 
-            inflation_assumption_type AS type,
-            inflation_assumption_value AS value,
-            inflation_assumption_mean AS mean,
-            inflation_assumption_stdev AS std_dev,
-            inflation_assumption_lower AS lower,
-            inflation_assumption_upper AS upper
-         FROM user_scenario_info
+            inflation_assumption
+         FROM scenarios
          WHERE id = ?`,
         [scenarioId]
     );
@@ -48,10 +44,10 @@ export async function get_preliminaries_data(scenarioId, connection) {
 
 export async function run_preliminaries(current_simulation_year, scenarioId, connection) {
     console.log("Running preliminaries for year:", current_simulation_year);
-    const inflation_assumption = await get_preliminaries_data(scenarioId, connection);
-    console.log("Inflation assumption data:", inflation_assumption);
+    const result = await get_preliminaries_data(scenarioId, connection);
+    console.log("Inflation assumption data:", result);
 
-    const inflation_rate = sample(inflation_assumption);
+    const inflation_rate = sample(result.inflation_assumption);
 
     console.log("Sampled inflation rate for the current year:", inflation_rate);
 
@@ -79,7 +75,7 @@ export function sample(item) {
             result = Number(item.value);
             break;
 
-        case "normal_distribution":
+        case "normal":
             // Sample from a normal distribution
             result = sample_normal_distribution(
                 Number(item.mean),
@@ -87,7 +83,7 @@ export function sample(item) {
             );
             break;
 
-        case "uniform_distribution":
+        case "uniform":
             // Sample from a uniform distribution
             result = sample_uniform_distribution(
                 Number(item.upper),
@@ -122,7 +118,7 @@ export function sample_normal_distribution(mean, std_dev) {
 /**
  * Samples a value from a uniform distribution.
  */
-export function sample_uniform_distribution(min, max) {
+export function sample_uniform_distribution(max, min) {
     console.log("Sampling uniform distribution with min:", min, "and max:", max);
     if (min >= max) {
         throw new Error("Minimum value must be less than the maximum value.");

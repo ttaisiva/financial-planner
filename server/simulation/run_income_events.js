@@ -137,30 +137,25 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
   const [rows] = await connection.execute(
     `SELECT 
             id,
-            annual_change_type, 
-            annual_change_value, 
-            annual_change_mean, 
-            annual_change_std_dev, 
-            annual_change_upper, 
-            annual_change_lower, 
-            annual_change_type_amt_or_pct,
+            change_distribution,
+            change_amt_or_pct,
             inflation_adjusted, 
-            user_percentage, 
-            spouse_percentage, 
-            is_social_security
+            user_fraction, 
+            social_security
          FROM events 
-         WHERE scenario_id = ? AND event_type = 'income'`,
+         WHERE scenario_id = ? AND type = 'income'`,
     [scenarioId]
   );
+
+  console.log("rows", rows)
+  
 
   if (rows.length === 0) {
     console.warn(`No income events found for scenario ID ${scenarioId}.`);
     return []; // Return an empty array
   }
 
-  console.log(
-    `Fetched ${rows.length} income events for scenario ID ${scenarioId}.`
-  );
+  
 
   return rows.map((event) => {
     const prevAmount = previousYearAmounts[event.id] || 0;
@@ -168,14 +163,7 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
       `Calculating current amount for event ID: ${event.id}, previousYearAmount: ${prevAmount}`
     );
 
-    const sampledChange = sample({
-      type: event.annual_change_type,
-      value: event.annual_change_value,
-      mean: event.annual_change_mean,
-      std_dev: event.annual_change_std_dev,
-      upper: event.annual_change_upper,
-      lower: event.annual_change_lower,
-    });
+    const sampledChange = sample(event.change_distribution);
 
     console.log(`Sampled change for event ID: ${event.id}: ${sampledChange}`);
 
