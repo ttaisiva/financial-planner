@@ -4,16 +4,33 @@ import { ensureConnection, connection } from "../server.js";
 // - state and federal tax
 // - non-discretionary expenses (events)
 
-// - Get income + marriage status; Pull year-1 tax bracket. {rate} * income is how much is owed.
+// - Get income + marriage status; Pull year-1 tax bracket.
 // - If cash is not enough, find the difference and sell based on expense withdrawal strategy.
 
-
-export async function payTaxes(scenarioID) {
+/**
+ * TODO:
+ * - Implement year checking so we can actually make it prev year
+ * - Deductions
+ * - Selling expenses
+ * - Capital Gain Tax
+ * - Early Withdrawal Tax
+ */
+export async function payTaxes(scenarioID, incomeEvents) {
     await ensureConnection();
     const scenario = await getScenario(scenarioID);
-    const incomeEvents = await getIncomeEvents(scenarioID); // List of income events
+    // const incomeEvents = await getIncomeEvents(scenarioID); // List of income events
 
-    const amtOwed = computeFederal(incomeEvents, scenario.marital_status) + computeState(incomeEvents, scenario.marital_status, scenario.residence_state);
+    // Find the amount owed by taxing all sources of income federally and by state
+    const amtOwed = (await computeFederal(incomeEvents, scenario.marital_status) + await computeState(incomeEvents, scenario.marital_status, scenario.residence_state)) - await getDeduction(scenario.marital_status);
+    const cash = await getCashInvestment(scenarioID);
+    if (cash.value > amtOwed) {
+        // No need to sell expenses; Pay from cash
+
+        // return here
+    }
+    // Cash is not enough and value now is 0
+    const expenseWithdrawalStrategy = await getExpenseWithdrawalStrategy(scenarioID);
+    // Sell based off expense strategy
 }
 
 /**
@@ -45,7 +62,55 @@ const getIncomeEvents = async (scenarioID) => {
         scenarioID,
         "income"
     ]
+
     return await connection.execute(query, values);
+}
+
+/**
+ * Returns the cash investment for a given scenario
+ * @param scenarioID ID of scenario of the cash investment
+ * @returns the cash investment
+ */
+const getCashInvestment = async (scenarioID) => {
+    const query = `
+        SELECT * FROM EVENTS
+        WHERE scenario_id = ? AND investment_type = ?
+        LIMIT 1
+    `
+    const values = [
+        scenarioID,
+        "cash"
+    ]
+
+    const [cash] = await connection.execute(query, values);
+    return cash[0];
+}
+
+/**
+ * Returns a list of the investments of the Expense Withdrawal Strategy for a given scenario
+ * @param scenarioID ID of scenario
+ * @returns list of investments in order of the expense withdrawal strategy
+ */
+const getExpenseWithdrawalStrategy = async (scenarioID) => {
+    const strategyQuery = `
+        SELECT * FROM strategy
+        WHERE scenario_id = ${scenarioID} AND strategy_type = "expense_withdrawal"
+        ORDER BY strategy_order ASC
+    `
+    const [strategy] = await connection.execute(strategyQuery);
+
+    // Now compile list of actual investment objects
+    const investments = [];
+    for (const elem of strategy) { // elem is the strategy object; retrieve investment from investment_id
+        const query = `
+            SELECT * FROM investments
+            WHERE scenario_id = ${scenarioID} AND id = ${elem.investment_id}
+            LIMIT 1
+        `
+        const [investment] = await connection.execute(query);
+        investments.push(investment[0]);
+    }
+    return investments;
 }
 
 /**

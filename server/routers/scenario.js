@@ -1036,7 +1036,15 @@ async function insertInvestment(connection, scenario_id, investments) {
       INSERT INTO investments (id, scenario_id, investment_type, value, tax_status) 
       VALUES (?, ?, ?, ?, ?)
     `;
-    const investID = investment.investmentType + " " + investment.taxStatus;
+
+    let investID;
+    if (investment.investmentType == "cash") {
+      investID = "cash"
+    }
+    else {
+      investID = investment.investmentType + " " + investment.taxStatus;
+    }
+    
     const investmentValues = [
       investID ?? null,
       scenario_id ?? null,
