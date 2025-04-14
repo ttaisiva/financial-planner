@@ -5,7 +5,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    eventType: "",
+    type: "",
     start: {
       type: "",
       value: "",
@@ -13,13 +13,14 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       stdDev: "",
       upper: "",
       lower: "",
+      eventSeries: "",
       series_start: false,
       series_end: false,
     },
-    expected_annual_change: {
+    changeAmtOrPct: "",
+    changeDistribution: {
       type: "",
       value: "",
-      amtOrPct: "",
       mean: "",
       stdDev: "",
       upper: "",
@@ -33,15 +34,25 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       upper: "",
       lower: "",
     },
-    initialAmount: "",
+    initialAmount: null,
     maxCash: "",
     inflationAdjusted: false,
-    userPercentage: "",
-    spousePercentage: "",
-    isSocialSecurity: false,
+    userFraction: null,
+    socialSecurity: false,
+    glidePath: false,
+    assetAllocation: "",
     allocationMethod: "",
     discretionary: false,
   });
+
+  const [allocationPercentages, setAllocationPercentages] = useState({});
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      assetAllocation: allocationPercentages,
+    }));
+  }, [allocationPercentages]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -70,15 +81,30 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("event submitted");
+    console.log("first form data", formData);
+
+    const { allocationMethod, ...rest } = formData;
+    let glidePath = false;
+
+    if (allocationMethod === "glide_path") glidePath = true;
+    else glidePath = false;
+
+    const eventData = {
+      ...rest,
+      assetAllocation: JSON.stringify(allocationPercentages),
+      glidePath: glidePath,
+    };
+
+    console.log("final form data: ", eventData);
 
     try {
-      console.log("Event Type: ", formData.eventType);
+      console.log("Event Type: ", eventData.type);
       const response = await fetch("http://localhost:3000/api/events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(eventData),
       });
 
       if (response.ok) {
@@ -175,8 +201,8 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
         <div>
           <label>Event Type </label>
           <select
-            name="eventType"
-            value={formData.eventType}
+            name="type"
+            value={formData.type}
             onChange={handleChange}
             required
           >
@@ -189,24 +215,34 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
             <option value="expense">Expense</option>
           </select>
         </div>
-        {formData.eventType === "income" && (
+        {formData.type === "income" && (
           <>
             <IncomeEvent formData={formData} handleChange={handleChange} />{" "}
             {/* pass as props */}
           </>
         )}
-        {formData.eventType === "expense" && (
+        {formData.type === "expense" && (
           <ExpenseEvent formData={formData} handleChange={handleChange} />
         )}
-        {formData.eventType === "invest" && (
+        {formData.type === "invest" && (
           <>
-            <InvestEvent formData={formData} handleChange={handleChange} />{" "}
+            <InvestEvent
+              formData={formData}
+              handleChange={handleChange}
+              allocationPercentages={allocationPercentages}
+              setAllocationPercentages={setAllocationPercentages}
+            />{" "}
             {/* pass as props */}
           </>
         )}
-        {formData.eventType === "rebalance" && (
+        {formData.type === "rebalance" && (
           <>
-            <RebalanceEvent formData={formData} handleChange={handleChange} />{" "}
+            <RebalanceEvent
+              formData={formData}
+              handleChange={handleChange}
+              allocationPercentages={allocationPercentages}
+              setAllocationPercentages={setAllocationPercentages}
+            />{" "}
             {/* pass as props */}
           </>
         )}
@@ -240,8 +276,8 @@ const IncomeEvent = ({ formData, handleChange }) => {
       <div>
         <label>Expected Annual Change: </label>
         <select
-          name="expected_annual_change.type"
-          value={formData.expected_annual_change.type}
+          name="changeDistribution.type"
+          value={formData.changeDistribution.type}
           onChange={handleChange}
         >
           <option value="" disabled>
@@ -252,20 +288,20 @@ const IncomeEvent = ({ formData, handleChange }) => {
           <option value="uniform_distribution">Uniform Distribution</option>
         </select>
         <select
-          name="expected_annual_change.amtOrPct"
-          value={formData.expected_annual_change.amtOrPct}
+          name="changeAmtOrPct"
+          value={formData.changeAmtOrPct}
           onChange={handleChange}
           required
         >
-          <option value="amt">Amount</option>
-          <option value="pct">Percentage</option>
+          <option value="amount">Amount</option>
+          <option value="percent">Percentage</option>
         </select>
 
         {inputTypes({
-          type: formData.expected_annual_change.type,
+          type: formData.changeDistribution.type,
           formData,
           handleChange,
-          prefix: "expected_annual_change",
+          prefix: "changeDistribution",
         })}
       </div>
 
@@ -285,20 +321,8 @@ const IncomeEvent = ({ formData, handleChange }) => {
         <label>User Percentage:</label>
         <input
           type="text"
-          name="userPercentage"
-          value={formData.userPercentage}
-          onChange={handleChange}
-          required
-        />
-      </div>
-
-      {/* TODO: only show this if the user is status married */}
-      <div>
-        <label>Spouse Percentage:</label>
-        <input
-          type="text"
-          name="spousePercentage"
-          value={formData.spousePercentage}
+          name="userFraction"
+          value={formData.userFraction}
           onChange={handleChange}
           required
         />
@@ -308,8 +332,8 @@ const IncomeEvent = ({ formData, handleChange }) => {
         <label>
           <input
             type="checkbox"
-            name="isSocialSecurity"
-            checked={formData.isSocialSecurity}
+            name="socialSecurity"
+            checked={formData.socialSecurity}
             onChange={handleChange}
           />
           Social Security
@@ -319,9 +343,13 @@ const IncomeEvent = ({ formData, handleChange }) => {
   );
 };
 
-const RebalanceEvent = ({ formData, handleChange }) => {
+const RebalanceEvent = ({
+  formData,
+  handleChange,
+  allocationPercentages,
+  setAllocationPercentages,
+}) => {
   const [accounts, setAccounts] = useState([]);
-  const [allocationPercentages, setAllocationPercentages] = useState({});
   const [sumWarning, setSumWarning] = useState("");
   const [taxStatus, setTaxStatus] = useState("");
 
@@ -346,13 +374,10 @@ const RebalanceEvent = ({ formData, handleChange }) => {
       }
     };
 
-    if (
-      formData.allocationMethod === "fixed_percentage" ||
-      formData.allocationMethod === "glide_path"
-    ) {
+    if (!formData.changeDistribution) {
       fetchInvestments();
     }
-  }, [taxStatus, formData.allocationMethod]);
+  }, [taxStatus, formData.changeDistribution]);
 
   const handleTaxStatusChange = (e) => {
     setTaxStatus(e.target.value);
@@ -362,11 +387,13 @@ const RebalanceEvent = ({ formData, handleChange }) => {
   const validateAllocationSums = () => {
     let sum = 0;
     if (formData.allocationMethod === "fixed_percentage") {
+      // if fixed
       sum = Object.values(allocationPercentages).reduce(
         (acc, val) => acc + parseFloat(val?.start || 0),
         0
       );
     } else if (formData.allocationMethod === "glide_path") {
+      // if glide path
       const startSum = Object.values(allocationPercentages).reduce(
         (acc, val) => acc + parseFloat(val?.start || 0),
         0
@@ -399,7 +426,7 @@ const RebalanceEvent = ({ formData, handleChange }) => {
   const handleFixedPercentageChange = (investmentId, percentage) => {
     setAllocationPercentages((prev) => ({
       ...prev,
-      [investmentId]: { start: parseFloat(percentage) || 0 },
+      [investmentId]: { start: parseFloat(percentage) } || 0,
     }));
   };
 
@@ -522,16 +549,21 @@ const RebalanceEvent = ({ formData, handleChange }) => {
   );
 };
 
-const InvestEvent = ({ formData, handleChange }) => {
+const InvestEvent = ({
+  formData,
+  handleChange,
+  allocationPercentages,
+  setAllocationPercentages,
+}) => {
   const [accounts, setAccounts] = useState([]);
-  const [allocationPercentages, setAllocationPercentages] = useState({});
   const [sumWarning, setSumWarning] = useState("");
+  console.log("in invest event");
 
   // Fetch investments not in pre-tax accounts
   useEffect(() => {
     const fetchInvestments = async () => {
       try {
-        const taxStatus = ["After-Tax", "Non-Retirement"];
+        const taxStatus = ["after-tax", "non-retirement"];
         const queryString = taxStatus
           .map((status) => `taxStatus=${status}`)
           .join("&");
@@ -737,8 +769,8 @@ const ExpenseEvent = ({ formData, handleChange }) => {
       <div>
         <label>Expected Annual Change: </label>
         <select
-          name="expected_annual_change.type"
-          value={formData.expected_annual_change.type}
+          name="changeDistribution.type"
+          value={formData.changeDistribution.type}
           onChange={handleChange}
         >
           <option value="" disabled>
@@ -749,20 +781,20 @@ const ExpenseEvent = ({ formData, handleChange }) => {
           <option value="uniform_distribution">Uniform Distribution</option>
         </select>
         <select
-          name="expected_annual_change.amtOrPct"
-          value={formData.expected_annual_change.amtOrPct}
+          name="changeAmtOrPct"
+          value={formData.changeDistribution.amtOrPct}
           onChange={handleChange}
           required
         >
-          <option value="amt">Amount</option>
-          <option value="pct">Percentage</option>
+          <option value="amount">Amount</option>
+          <option value="percent">Percentage</option>
         </select>
 
         {inputTypes({
-          type: formData.expected_annual_change.type,
+          type: formData.changeDistribution.type,
           formData,
           handleChange,
-          prefix: "expected_annual_change",
+          prefix: "changeDistribution",
         })}
       </div>
 
@@ -782,20 +814,8 @@ const ExpenseEvent = ({ formData, handleChange }) => {
         <label>User Percentage:</label>
         <input
           type="text"
-          name="userPercentage"
-          value={formData.userPercentage}
-          onChange={handleChange}
-          required
-        />
-      </div>
-
-      {/* TODO: only show this if the user is status married */}
-      <div>
-        <label>Spouse Percentage:</label>
-        <input
-          type="text"
-          name="spousePercentage"
-          value={formData.spousePercentage}
+          name="userFraction"
+          value={formData.userFraction}
           onChange={handleChange}
           required
         />
@@ -827,7 +847,7 @@ export const ViewEventsDetails = ({ events }) => {
           {events.map((item, idx) => (
             <li key={idx} className="item">
               <strong>{item.name}</strong>: {item.description}, Type:{" "}
-              {item.eventType}
+              {item.type}
               {/* need to edit this */}
               {/* {item.start?.value && (
                 <span>, Start: {item.start.type} ({item.start.value})</span>
@@ -835,40 +855,32 @@ export const ViewEventsDetails = ({ events }) => {
               {item.duration?.value && (
                 <span>, Duration: {item.duration.type} ({item.duration.value})</span>
               )} */}
-              {item.eventType === "income" && (
+              {item.type === "income" && (
                 <>
                   <br />
                   Initial Amount: ${item.initialAmount}
                   <br />
-                  Expected Annual Change: {
-                    item.expected_annual_change?.type
-                  }{" "}
-                  {item.expected_annual_change?.amtOrPct &&
-                    `(${item.expected_annual_change.amtOrPct})`}
+                  Expected Annual Change: {item.changeDistribution?.type}{" "}
+                  {item.changeAmtOrPct && `(${item.changeAmtOrPct})`}
                   <br />
-                  User %: {item.userPercentage}
+                  User %: {item.userFraction}
                   <br />
-                  Spouse %: {item.spousePercentage}
-                  <br />
-                  {item.isSocialSecurity && <span>Social Security: ✅</span>}
+                  {item.socialSecurity && <span>Social Security: ✅</span>}
                   <br />
                   {item.inflationAdjusted && (
                     <span>Inflation Adjusted: ✅</span>
                   )}
                 </>
               )}
-              {item.eventType === "expense" && (
+              {item.type === "expense" && (
                 <>
                   <br />
                   Initial Amount: ${item.initialAmount}
                   <br />
-                  Expected Annual Change: {
-                    item.expected_annual_change?.type
-                  }{" "}
-                  {item.expected_annual_change?.amtOrPct &&
-                    `(${item.expected_annual_change.amtOrPct})`}
+                  Expected Annual Change: {item.changeDistribution?.type}{" "}
+                  {item.changeAmtOrPct && `(${item.changeAmtOrPct})`}
                   <br />
-                  User %: {item.userPercentage}
+                  User %: {item.userFraction}
                   <br />
                   Spouse %: {item.spousePercentage}
                   <br />
@@ -879,7 +891,7 @@ export const ViewEventsDetails = ({ events }) => {
                   )}
                 </>
               )}
-              {item.eventType === "invest" && (
+              {item.type === "invest" && (
                 <>
                   <br />
                   Allocation method: {item.allocationMethod}
@@ -887,7 +899,7 @@ export const ViewEventsDetails = ({ events }) => {
                   Max Cash: ${item.maxCash}
                 </>
               )}
-              {item.eventType === "rebalance" && (
+              {item.type === "rebalance" && (
                 <>
                   <br />
                   Allocation method: ${item.allocationMethod}

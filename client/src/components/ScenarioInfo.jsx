@@ -152,6 +152,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
   // Cash Investment Form. handleSubmitUserInfo() handles inserting cash investment data into database
   const [cashData, setCashData] = useState({
+    id: "cash",
     investmentType: "cash",
     value: 0,
     taxStatus: "non-retirement",
