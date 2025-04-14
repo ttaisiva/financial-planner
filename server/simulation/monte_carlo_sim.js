@@ -103,6 +103,9 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             // Pay non-discretionary expenses
             //payNondiscExpenses(scenarioId);
 
+            // Pay taxes
+            //payTaxes(scenarioID);
+
             // Pay discretionary expenses
             //payDiscExpenses(scenarioId);
 

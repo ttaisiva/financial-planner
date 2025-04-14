@@ -1,5 +1,7 @@
 import mysql from "mysql2/promise";
 import * as cheerio from "cheerio";
+import yaml from "js-yaml";
+import fs from "fs";
 import { connectToDatabase } from "./server.js";
 
 async function scrapeData() {
@@ -7,6 +9,7 @@ async function scrapeData() {
   scrapeStandardDeductions();
   scrapeCapitalGainsTax();
   scrapeRMD();
+  insertStateTaxBrackets();
 }
 
 /**
@@ -537,6 +540,35 @@ async function insertRMDs(RMDs) {
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
+  }
+}
+
+/**
+ * Inserts State Tax Brackets from the statetax.yaml file in the data folder if it is not already in DB
+ */
+async function insertStateTaxBrackets() {
+  const connection = await connectToDatabase();
+  const [isAdded] = await connection.execute(`SELECT * FROM state_tax_brackets WHERE user_id IS NULL`); // Indicates that the pre-written state tax brackets were added; All other tax brackets are uploaded by users
+  if (isAdded.length == 0) {
+    const states = yaml.load(fs.readFileSync('data/statetax.yaml', 'utf8'));
+    const query = `
+    INSERT INTO state_tax_brackets (state, user_id, year, filing_status, tax_rate, income_min, income_max)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    `
+    for (const state of states) {
+      for (const bracket of state[Object.keys(state)[0]]) {
+        const values = [
+          Object.keys(state)[0],
+          null,
+          bracket.year,
+          bracket.filing_status,
+          bracket.rate,
+          bracket.income_min,
+          bracket.income_max
+        ];
+        await connection.execute(query, values);
+      }
+    }
   }
 }
 
