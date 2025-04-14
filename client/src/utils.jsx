@@ -46,7 +46,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           required
         />
       );
-    case "normal_distribution":
+    case "normal":
       return (
         <>
           <input
@@ -60,16 +60,17 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           />
           <input
             type="number"
-            min="0.000001"
-            name={`${prefix}.stdDev`}
+            min="0"
+            step="any"
+            name={`${prefix}.stdev`}
             placeholder="Enter standard deviation"
-            value={data.stdDev || ""}
+            value={data.stdev || ""}
             onChange={handleChange}
             required
           />
         </>
       );
-    case "uniform_distribution":
+    case "uniform":
       return (
         <>
           <input
@@ -329,7 +330,7 @@ export const cleanScenario = (obj) => {
       const numericKeys = [
         "value",
         "mean",
-        "stdDev",
+        "stdev",
         "upper",
         "lower",
         "userLifeExpectancy",

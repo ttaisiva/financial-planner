@@ -8,10 +8,10 @@ import { payNondiscExpenses } from "./nondisc_expenses.js";
 import { payDiscExpenses } from "./disc_expenses.js";
 import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
+import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
 
 import { log } from "../logging.js";
 import { ensureConnection, connection } from "../server.js";
-import { runInvestEvent } from "./run_invest_event.js";
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
@@ -41,6 +41,7 @@ export async function simulation(
     const incomeEvents = await getIncomeEvents(scenarioId, []); // Fetch income events to determine the number of events
     const rothYears = await getRothYears(scenarioId);
     let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
+    const investEventYears = await getInvestEvents(scenarioId); // Step 9: Invest Events
 
     console.log("Initializing simulation investments.");
     let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
@@ -52,47 +53,47 @@ export async function simulation(
       const currentSimulationYear = date + year; //actual year being simulated
 
       //Step 0: run preliminaries -> need to further implement this
-      ensureConnection();
-      const inflationRate = await run_preliminaries(
-        currentSimulationYear,
-        scenarioId,
-        connection
-      );
-      console.log(
-        "Inflation rate for year ",
-        currentSimulationYear,
-        " is: ",
-        inflationRate
-      );
+      //   ensureConnection();
+      //   const inflationRate = await run_preliminaries(
+      //     currentSimulationYear,
+      //     scenarioId,
+      //     connection
+      //   );
+      //   console.log(
+      //     "Inflation rate for year ",
+      //     currentSimulationYear,
+      //     " is: ",
+      //     inflationRate
+      //   );
 
-      if (year === 0) {
-        // Populate the object with initial amounts based on event IDs
-        if (incomeEvents.length === 0) {
-          console.log("No income events found for this scenario.");
-        } else {
-          incomeEvents.forEach((event) => {
-            previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
-            console.log(
-              "Previous year amounts for income events: ",
-              previousYearAmounts
-            );
-          });
-        }
-      }
+      //   if (year === 0) {
+      //     // Populate the object with initial amounts based on event IDs
+      //     if (incomeEvents.length === 0) {
+      //       console.log("No income events found for this scenario.");
+      //     } else {
+      //       incomeEvents.forEach((event) => {
+      //         previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
+      //         console.log(
+      //           "Previous year amounts for income events: ",
+      //           previousYearAmounts
+      //         );
+      //       });
+      //     }
+      //   }
 
       // Step 1: Run income events
-      let updatedAmounts;
-      ({ updatedAmounts, cashInvestment, curYearIncome, curYearSS } =
-        await process_income_event(
-          scenarioId,
-          previousYearAmounts,
-          inflationRate,
-          isUserAlive,
-          isSpouseAlive,
-          cashInvestment,
-          curYearIncome,
-          curYearSS
-        ));
+      //   let updatedAmounts;
+      //   ({ updatedAmounts, cashInvestment, curYearIncome, curYearSS } =
+      //     await process_income_event(
+      //       scenarioId,
+      //       previousYearAmounts,
+      //       inflationRate,
+      //       isUserAlive,
+      //       isSpouseAlive,
+      //       cashInvestment,
+      //       curYearIncome,
+      //       curYearSS
+      //     ));
 
       // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
       // console.log("Perform RMDs for year: ", currentSimulationYear);
@@ -118,9 +119,9 @@ export async function simulation(
       //payDiscExpenses(scenarioId);
 
       // Step 9: Invest Events
-      runInvestEvent(currentSimulationYear, scenarioId, connection);
+      runInvestEvent(currentSimulationYear, scenarioId);
 
-      // Rebalance investments
+      // Step 10: Rebalance investments
 
       // Collect yearly results -> need to impelemnt this
       yearlyResults.push({
@@ -148,9 +149,10 @@ export async function getTotalYears(date, scenarioId) {
   await ensureConnection();
   const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
   console.log("User birth year: ", userBirthYear);
-  const userLifeExpectancy = Number(
-    await getUserLifeExpectancy(scenarioId, connection)
-  );
+  //   const userLifeExpectancy = Number(
+  //     await getUserLifeExpectancy(scenarioId, connection)
+  //   );
+  const userLifeExpectancy = 70; // PLACEHOLDER, CHANGE TO ACTUAL LIFE EXPECTANCY LATER
   console.log("User life expectancy: ", userLifeExpectancy);
 
   const userLifespan = userBirthYear + userLifeExpectancy;
