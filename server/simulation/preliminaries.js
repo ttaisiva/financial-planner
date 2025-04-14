@@ -1,4 +1,5 @@
 import { ensureConnection, connection } from "../server.js";
+
 /**
  * Fetches necessary preliminary data from the database.
  * @param {number} scenarioId - The ID of the scenario.
@@ -127,3 +128,43 @@ export function sample_uniform_distribution(max, min) {
     return Math.random() * (max - min) + min;
 }
 
+
+export function transfer(investment1, investment2, amount) {
+    console.log(`Transferring ${amount} from ${investment1.id} to ${investment2.id}`);
+
+
+    // Ensure the source investment has enough value to transfer
+    if (investment1.dollarValue < amount) {
+        throw new Error(`Insufficient funds in investment ${investment1.id}. Available: ${investment1.dollarValue}, Requested: ${amount}`);
+    }
+
+    // Perform the transfer
+    investment1.dollarValue =  Number(investment1.dollarValue) - Number(amount); // Deduct the amount from the source investment
+    investment2.dollarValue =  Number(investment2.dollarValue) + Number(amount); // Add the amount to the target investment
+   
+    console.log(`Transfer complete. New values:`);
+    console.log(`Investment ${investment1.id}: ${investment1.dollarValue}`);
+    console.log(`Investment ${investment2.id}: ${investment2.dollarValue}`);
+}
+
+/**
+ * Fetches all pre-tax investments for a given scenario from the database.
+ * @param {number} scenarioId - The ID of the scenario.
+ * @param {Array} investments - The list of investments for the simulation.
+ * @returns {Array} A list of pre-tax investments.
+ */
+export async function getPreTaxInvestments( investments) {
+    console.log(`Fetching pre-tax investments`);
+   
+    
+    const results = [];
+    for (const investment of investments) {
+        
+        if (investment.taxStatus === "pre-tax") {
+            results.push(investment);
+        }
+    }
+
+    console.log("Pre-tax investments results: ", results);
+    return results; // Return the list of pre-tax investments
+}

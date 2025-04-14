@@ -82,7 +82,8 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             ));
 
             // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-            ({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
+            // console.log("Perform RMDs for year: ", currentSimulationYear);
+            ({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome, investments));
           
 
             // Step 3: Optimize Roth conversions
@@ -96,7 +97,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             // }
 
             // Step 4: Update investments
-            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
+            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome, investments));
           
 
             // Pay non-discretionary expenses
@@ -172,11 +173,12 @@ async function initInvestments(scenarioId) {
             investment_type as type,
             value as dollarValue,
             tax_status as taxStatus
+        
          FROM investments
          WHERE scenario_id = ?`,
         [scenarioId]
     );
-    console.log("Simulation investments initialized.");
+    console.log("Simulation investments initialized.", rows);
     return rows;
 }
 
