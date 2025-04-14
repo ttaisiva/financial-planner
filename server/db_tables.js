@@ -152,8 +152,8 @@ export async function createTablesIfNotExist(connection) {
       investment_id VARCHAR(255) DEFAULT NULL, -- applies to investment-based strategies
       expense_id INT DEFAULT NULL,    -- applies to spending strategie
       strategy_order INT NOT NULL,    -- indicates the order
-      FOREIGN KEY (scenario_id) REFERENCES scenarios(id),
-      FOREIGN KEY (expense_id) REFERENCES events(id)
+      FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE,
+      FOREIGN KEY (expense_id) REFERENCES events(id) ON DELETE CASCADE
     );
   `;
 
