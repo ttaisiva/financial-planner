@@ -938,8 +938,11 @@ async function insertEvents(connection, scenario_id, events) {
     event.start = JSON.stringify(event.start) ?? null;
     event.duration = JSON.stringify(event.duration) ?? null;
     event.changeDistribution = JSON.stringify(event.changeDistribution);
+    event.assetAllocation = JSON.stringify(event.assetAllocation);
+    event.assetAllocation2 = JSON.stringify(event.assetAllocation2);
 
-    const eventSnakeCase = keysToSnakeCase(event);
+    const eventSnakeCase = keysToSnakeCase(event);  
+    console.log("event snake case", eventSnakeCase);
     const [eventResult] = await connection.query(
       "INSERT INTO events SET ?",
       eventSnakeCase
