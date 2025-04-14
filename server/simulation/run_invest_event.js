@@ -3,12 +3,61 @@
 // - if cash.value > event.max_cash, distribute among investments
 
 import { ensureConnection, connection } from "../server.js";
+import { generateNormalRandom, generateUniformRandom } from "../utils.js";
 
 export async function runInvestEvent(
   currentSimulationYear,
   scenarioId,
-  investEventYears
-) {}
+  investEventYears,
+  cashInvestment,
+  investments
+) {
+  const activeEventId = getActiveEventId(
+    currentSimulationYear,
+    investEventYears
+  );
+  console.log("active event:", activeEventId);
+
+  // If there is an invest event that is active on the currentSimulationYear
+  if (activeEventId) {
+    await ensureConnection();
+    const [rows] = await connection.execute(
+      "SELECT max_cash FROM events WHERE id = ?",
+      [activeEventId]
+    );
+
+    const maxCash = rows[0]?.max_cash; // safely access max_cash if row exists
+
+    console.log("Max cash for event:", maxCash);
+
+    if (cashInvestment > maxCash) {
+      const excessCash = cashInvestment - maxCash;
+      const allocations = await getAssetAllocations(activeEventId);
+      console.log("allocation:", allocations);
+
+      console.log("APPLYING ALLOCATIONS");
+
+      applyAssetAllocationWithGlide({
+        investments,
+        allocations: allocations,
+        amountToAllocate: excessCash,
+        eventId: activeEventId,
+        currentYear: currentSimulationYear,
+        investEventYears,
+      });
+    }
+  }
+}
+
+const getEventById = async (eventId) => {
+  await ensureConnection();
+  console.log("in geteventbyid eventid:", eventId);
+  const [rows] = await connection.execute("SELECT * FROM events WHERE id = ?", [
+    eventId,
+  ]);
+
+  return rows[0];
+};
 
 /**
  * Check if the given year falls within the range of any event's duration.
@@ -18,7 +67,7 @@ export async function runInvestEvent(
  * @param {Object} eventYears - The eventYears object containing events' start and end years.
  * @returns {string|null} - The ID of the first event where the year falls within the range of the event's duration, or null if no match.
  */
-const getFirstEventForYear = (year, eventYears) => {
+const getActiveEventId = (year, eventYears) => {
   // Iterate over each event's start and end year
   for (const eventId in eventYears) {
     const { startYear, endYear } = eventYears[eventId];
@@ -175,29 +224,120 @@ const getInvestEventYears = async (events) => {
 };
 
 /**
- * Randomly generate the start year between the lower and upper bounds
  *
- * @param {*} lower
- * @param {*} upper
+ *
+ * TP: ChatGPT, prompt - "asset_allocation field example:
+ * {"S&P 500 after-tax": 0.4, "S&P 500 non-retirement": 0.6}
+ * asset_allocation2 field example:
+ * {"S&P 500 after-tax": 0.2, "S&P 500 non-retirement": 0.8}
+ * get these field data from the events table given an id.
+ * if glide_path field is true (equals 1), then asset_allocation2 is not null, and you must get asset_allocation2 data.
+ * if glide_path field is null, then asset_allocatio2 is null - do not get asset_allocation2 data."
+ *
+ * @param {*} eventId
+ * @returns
  */
-function generateUniformRandom(lower, upper) {
-  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+export async function getAssetAllocations(eventId) {
+  await ensureConnection();
+
+  const [rows] = await connection.execute(
+    "SELECT asset_allocation, asset_allocation2, glide_path FROM events WHERE id = ?",
+    [eventId]
+  );
+
+  const event = rows[0];
+  if (!event) {
+    console.error("No event found with that ID.");
+    return null;
+  }
+
+  const allocation = {
+    asset_allocation:
+      typeof event.asset_allocation === "string"
+        ? JSON.parse(event.asset_allocation)
+        : event.asset_allocation,
+  };
+
+  if (event.glide_path === 1 && event.asset_allocation2) {
+    allocation.asset_allocation2 =
+      typeof event.asset_allocation2 === "string"
+        ? JSON.parse(event.asset_allocation2)
+        : event.asset_allocation2;
+  }
+
+  return allocation;
 }
 
 /**
- * Gets the start year for normal distribution events
  *
- * TP: ChatGpt, prompt - "there is also a "normal" type that represents normal distribution with this format:
- * {type: normal, mean: <number>, stdev: <number>} add a case where if type is "normal",
- * it will choose a random start year based on the mean and standard deviation. end year will be currentsimulationyear"
- *
- * @param {*} mean
- * @param {*} stdev
- * @returns
+ * @param {*} investments
+ * @param {*} allocation
+ * @param {*} amountToAllocate
  */
-function generateNormalRandom(mean, stdev) {
-  const u1 = Math.random();
-  const u2 = Math.random();
-  const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-  return z0 * stdev + mean;
+async function applyAssetAllocationWithGlide({
+  investments,
+  allocations,
+  amountToAllocate,
+  eventId,
+  currentYear,
+  investEventYears,
+}) {
+  console.log("eventid:", eventId);
+  const event = await getEventById(eventId);
+  if (!event) {
+    console.warn(`Event with id "${eventId}" not found.`);
+    return;
+  }
+
+  let computedAllocation = {};
+
+  if (event.glide_path === 1) {
+    const glideYears = investEventYears[eventId];
+    if (!glideYears) {
+      console.warn(`Glide years not found for event "${eventId}".`);
+      return;
+    }
+
+    const { startYear, endYear } = glideYears;
+    const totalYears = endYear - startYear;
+    const elapsedYears = Math.max(
+      0,
+      Math.min(currentYear - startYear, totalYears)
+    );
+    const t = totalYears === 0 ? 1 : elapsedYears / totalYears;
+
+    for (const key in allocations.asset_allocation) {
+      const startPercent = allocations.asset_allocation[key] || 0;
+      const endPercent = allocations.asset_allocation2?.[key] || 0;
+
+      // Linear interpolation
+      computedAllocation[key] = startPercent + t * (endPercent - startPercent);
+    }
+  } else {
+    computedAllocation = allocations.asset_allocation;
+  }
+
+  // Apply allocation
+  for (const [investmentId, percent] of Object.entries(computedAllocation)) {
+    const target = investments.find((inv) => inv.id === investmentId);
+    if (!target) {
+      console.warn(`Investment with id "${investmentId}" not found.`);
+      continue;
+    }
+
+    console.log("Allocating to:", investmentId);
+    console.log("Target:", target);
+    console.log("Target value (before):", target.value);
+    console.log("Percent:", percent);
+    console.log("excess cash:", amountToAllocate);
+
+    const currentValue = parseFloat(target.value);
+    const allocationAmount = amountToAllocate * percent;
+
+    console.log("CurrentValue:", currentValue);
+    console.log("AllocationAmount:", allocationAmount);
+    console.log("New Value:", currentValue + allocationAmount);
+
+    target.value = (currentValue + allocationAmount).toFixed(2);
+  }
 }
