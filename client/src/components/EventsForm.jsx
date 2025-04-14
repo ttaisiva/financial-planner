@@ -15,7 +15,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       upper: "",
       lower: "",
       eventSeries: "",
@@ -27,7 +27,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       upper: "",
       lower: "",
     },
@@ -35,7 +35,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       upper: "",
       lower: "",
     },
@@ -175,8 +175,8 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
               Select start year
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
-            <option value="uniform_distribution">Uniform Distribution</option>
+            <option value="normal">Normal Distribution</option>
+            <option value="uniform">Uniform Distribution</option>
             <option value="series_start">Same year as event series</option>
             <option value="series_end">Year after event series</option>
           </select>
@@ -199,8 +199,8 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
               Select Duration
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
-            <option value="uniform_distribution">Uniform Distribution</option>
+            <option value="normal">Normal Distribution</option>
+            <option value="uniform">Uniform Distribution</option>
           </select>
 
           {inputTypes({
@@ -296,8 +296,8 @@ const IncomeEvent = ({ formData, handleChange }) => {
             Select expected annual change
           </option>
           <option value="fixed">Fixed</option>
-          <option value="normal_distribution">Normal Distribution</option>
-          <option value="uniform_distribution">Uniform Distribution</option>
+          <option value="normal">Normal Distribution</option>
+          <option value="uniform">Uniform Distribution</option>
         </select>
         <select
           name="changeAmtOrPct"
@@ -789,8 +789,8 @@ const ExpenseEvent = ({ formData, handleChange }) => {
             Select expected annual change
           </option>
           <option value="fixed">Fixed</option>
-          <option value="normal_distribution">Normal Distribution</option>
-          <option value="uniform_distribution">Uniform Distribution</option>
+          <option value="normal">Normal Distribution</option>
+          <option value="uniform">Uniform Distribution</option>
         </select>
         <select
           name="changeAmtOrPct"
