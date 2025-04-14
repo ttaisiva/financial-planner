@@ -47,3 +47,27 @@ export function keysToSnakeCase(obj) {
     Object.entries(obj).map(([key, val]) => [camelToSnake(key), val ?? null])
   );
 }
+
+/**
+ * Use for inserting strategies
+ *
+ * @param {*} val
+ * @returns
+ */
+export const sanitizeToNull = (val) => {
+  if (val === undefined || val === null) return null;
+  if (Array.isArray(val) && val.length === 0) return null;
+  if (typeof val === "number" && isNaN(val)) return null;
+  if (typeof val === "string" && val.trim() === "") return null;
+  return val;
+};
+
+/**
+ * Use for eventsLocalStorage get rid of id before sending to database in create-scenario
+ */
+export function removeIdsFromEvents(events) {
+  events.forEach((event) => {
+    delete event.id; // Removes the 'id' property from each event
+  });
+  return events;
+}

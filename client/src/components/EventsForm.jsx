@@ -35,7 +35,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       lower: "",
     },
     initialAmount: null,
-    maxCash: "",
+    maxCash: null,
     inflationAdjusted: false,
     userFraction: null,
     socialSecurity: false,
@@ -321,6 +321,9 @@ const IncomeEvent = ({ formData, handleChange }) => {
         <label>User Percentage:</label>
         <input
           type="text"
+          step="0.01"
+          min="0"
+          max="999.99"
           name="userFraction"
           value={formData.userFraction}
           onChange={handleChange}
