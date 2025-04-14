@@ -40,11 +40,12 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
 
         
         console.log("Total years for simulation: ", totalYears);
-        for (let year = 0; year < totalYears; year++) { //years in which the simulation is  being run
+        for (let year = 0; year < 1; year++) { //years in which the simulation is  being run
             
             const currentSimulationYear = date + year; //actual year being simulated
 
             //Step 0: run preliminaries -> need to further implement this
+            ensureConnection();
             const inflationRate = await run_preliminaries(currentSimulationYear, scenarioId, connection);
             console.log("Inflation rate for year ", currentSimulationYear, " is: ", inflationRate);
             
@@ -63,39 +64,39 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
             }
 
             // Step 1: Run income events
-            // let updatedAmounts;
-            // ({
-            //     updatedAmounts,
-            //     cashInvestment,
-            //     curYearIncome,
-            //     curYearSS,
-            // } = await process_income_event(
-            //     scenarioId,
-            //     previousYearAmounts,
-            //     inflationRate,
-            //     isUserAlive,
-            //     isSpouseAlive,
-            //     cashInvestment,
-            //     curYearIncome,
-            //     curYearSS
-            // ));
+            let updatedAmounts;
+            ({
+                updatedAmounts,
+                cashInvestment,
+                curYearIncome,
+                curYearSS,
+            } = await process_income_event(
+                scenarioId,
+                previousYearAmounts,
+                inflationRate,
+                isUserAlive,
+                isSpouseAlive,
+                cashInvestment,
+                curYearIncome,
+                curYearSS
+            ));
 
             // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-            //({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
+            ({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome));
           
 
             // Step 3: Optimize Roth conversions
-            if(rothYears && currentSimulationYear >= rothYears.start_year && currentSimulationYear <= rothYears.end_year) {
-                console.log(`Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`);
-                const rothResult = await runRothOptimizer(scenarioId, rothStrategy, incomeEvents, investments);
-                investments = rothResult.investments;
-                rothStrategy = rothResult.rothStrategy;
-            } else {
-                console.log(`Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`);
-            }
+            // if(rothYears && currentSimulationYear >= rothYears.start_year && currentSimulationYear <= rothYears.end_year) {
+            //     console.log(`Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`);
+            //     const rothResult = await runRothOptimizer(scenarioId, rothStrategy, incomeEvents, investments);
+            //     investments = rothResult.investments;
+            //     rothStrategy = rothResult.rothStrategy;
+            // } else {
+            //     console.log(`Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`);
+            // }
 
             // Step 4: Update investments
-            // ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
+            ({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome ));
           
 
             // Pay non-discretionary expenses
