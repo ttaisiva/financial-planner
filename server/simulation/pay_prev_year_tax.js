@@ -94,13 +94,15 @@ const computeState = async (incomeEvents, filingStatus, state) => {
     let sum = 0;
     // Each event will be taxed individually and added to an overall sum
     for (const ev of incomeEvents) {
-        const brackets = await connection.execute(query, [ev.initial_amount]);
-        for (const bracket of brackets) {
-            if (ev.initial_amount > bracket.income_max) { // Checks if we are in a bracket that is completely full
-                sum += (bracket.income_max * bracket.tax_rate);
-            }
-            else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
-                sum += ((ev.initial_amount - bracket.income_min) * bracket.tax_rate);
+        if (ev.social_security == 0) {
+            const brackets = await connection.execute(query, [ev.initial_amount]);
+            for (const bracket of brackets) {
+                if (ev.initial_amount > bracket.income_max) { // Checks if we are in a bracket that is completely full
+                    sum += (bracket.income_max * bracket.tax_rate);
+                }
+                else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
+                    sum += ((ev.initial_amount - bracket.income_min) * bracket.tax_rate);
+                }
             }
         }
     }
