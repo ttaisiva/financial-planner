@@ -48,38 +48,42 @@ export async function simulation(
 
         
         console.log("Total years for simulation: ", totalYears);
-        for (let year = 0; year < 1; year++) { //years in which the simulation is  being run
+        if(totalYears < 1 ){ //in case the user is dead/died 
+            console.log("User is dead, simulation ends.");
+            continue;
+        }
+        for (let year = 0; year < 10; year++) { //years in which the simulation is  being run
             
             let currentSimulationYear = date + year; //actual year being simulated
 
-      //Step 0: run preliminaries -> need to further implement this
-      //   ensureConnection();
-      //   const inflationRate = await run_preliminaries(
-      //     currentSimulationYear,
-      //     scenarioId,
-      //     connection
-      //   );
-      //   console.log(
-      //     "Inflation rate for year ",
-      //     currentSimulationYear,
-      //     " is: ",
-      //     inflationRate
-      //   );
+            //Step 0: run preliminaries -> need to further implement this
+            ensureConnection();
+            const inflationRate = await run_preliminaries(
+            currentSimulationYear,
+            scenarioId,
+            connection
+            );
+            console.log(
+            "Inflation rate for year ",
+            currentSimulationYear,
+            " is: ",
+            inflationRate
+            );
 
-      //   if (year === 0) {
-      //     // Populate the object with initial amounts based on event IDs
-      //     if (incomeEvents.length === 0) {
-      //       console.log("No income events found for this scenario.");
-      //     } else {
-      //       incomeEvents.forEach((event) => {
-      //         previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
-      //         console.log(
-      //           "Previous year amounts for income events: ",
-      //           previousYearAmounts
-      //         );
-      //       });
-      //     }
-      //   }
+            if (year === 0) {
+            // Populate the object with initial amounts based on event IDs
+            if (incomeEvents.length === 0) {
+                console.log("No income events found for this scenario.");
+            } else {
+                incomeEvents.forEach((event) => {
+                previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
+                console.log(
+                    "Previous year amounts for income events: ",
+                    previousYearAmounts
+                );
+                });
+            }
+            }
 
             // Step 1: Run income events
             let updatedAmounts;
@@ -88,7 +92,7 @@ export async function simulation(
                 cashInvestment,
                 curYearIncome,
                 curYearSS,
-                currentSimulationYear,
+                currentSimulationYear
             } = await process_income_event(
                 scenarioId,
                 previousYearAmounts,
@@ -124,7 +128,7 @@ export async function simulation(
       //payDiscExpenses(scenarioId);
 
       // Step 9: Invest Events
-      runInvestEvent(currentSimulationYear, scenarioId);
+      //runInvestEvent(currentSimulationYear, scenarioId);
 
       // Step 10: Rebalance investments
 

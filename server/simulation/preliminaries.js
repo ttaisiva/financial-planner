@@ -1,4 +1,4 @@
-import { ensureConnection, connection } from "../server.js";
+import { ensureConnection } from "../server.js";
 
 /**
  * Fetches necessary preliminary data from the database.
@@ -10,6 +10,9 @@ export async function get_preliminaries_data(scenarioId, connection) {
   // this would be different from guest
 
   ensureConnection(connection); // Ensure the connection is established
+  console.log("perform query to get preliminaries data");
+  console.log("connection: ", connection);
+  console.log("Scenario ID: ", scenarioId);
   const [rows] = await connection.execute(
     `SELECT 
             inflation_assumption
@@ -21,6 +24,7 @@ export async function get_preliminaries_data(scenarioId, connection) {
   if (rows.length === 0) {
     throw new Error(`No data found for scenario ID: ${scenarioId}`);
   }
+  console.log("rows", rows[0])
 
   return rows[0]; // Return the first row containing the inflation assumption data
 }
@@ -47,6 +51,7 @@ export async function run_preliminaries(
   connection
 ) {
   console.log("Running preliminaries for year:", current_simulation_year);
+  ensureConnection();
   const result = await get_preliminaries_data(scenarioId, connection);
   console.log("Inflation assumption data:", result);
 

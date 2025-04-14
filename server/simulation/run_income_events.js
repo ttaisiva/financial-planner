@@ -35,7 +35,7 @@ export async function process_income_event(
   curYearSS,
   currentSimulationYear
 ) {
-  console.log(`Processing income events for scenario ID: ${scenarioId}`);
+  console.log(`Processing income events for scenario ID: ${scenarioId} with current simulation year: ${currentSimulationYear}`);
   console.log(
     `Initial cash investment: ${cashInvestment}, curYearIncome: ${curYearIncome}, curYearSS: ${curYearSS}`
   );
@@ -64,6 +64,7 @@ export async function process_income_event(
   for (const event of incomeEvents) {
     const startYear = getEventStartYear(event);
     console.log("Event start Year: ", startYear);
+    console.log("current simulation year: ", currentSimulationYear);
     if(startYear >= currentSimulationYear) {
         console.log(`Skipping event ID: ${event.id} as it starts in the future.`);
         continue;
