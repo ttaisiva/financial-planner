@@ -32,7 +32,7 @@ export async function updateInvestments(scenarioId, curYearIncome) {
     console.log(`Fetched ${Object.keys(investmentTypes).length} investment types for scenario ID: ${scenarioId}`);
 
     for (const investment of investments) {
-        console.log(`Processing investment ID: ${investment.id}, type: ${investment.investment_type}, value: ${investment.dollar_value}`);
+        console.log(`Processing investment ID: ${investment.id}, type: ${investment.investment_type}, value: ${investment.value}`);
 
         const investmentType = investmentTypes[investment.investment_type];
 
@@ -41,19 +41,14 @@ export async function updateInvestments(scenarioId, curYearIncome) {
             continue; // Skip this investment if its type is not found
         }
 
-        const initialValue = Number(investment.dollar_value);
+        const initialValue = Number(investment.value);
 
         // a. Calculate the generated income
         let generatedIncome = 0;
-        generatedIncome = sample({
-            type: investmentType.expAnnIncomeType,
-            value: investmentType.expAnnIncomeValue,
-            mean: investmentType.expAnnIncomeMean,
-            std_dev: investmentType.expAnnIncomeStdDev,
-        });
+        generatedIncome = sample(investmentType.income_distribution);
         console.log(`Generated income (sampled): ${generatedIncome}`);
         // Account for percentage case
-        if (investmentType.expAnnIncomeTypeAmtOrPct === 'percent') {
+        if (investmentType.income_amt_or_pct === 'percent') {
             generatedIncome = (generatedIncome / 100) * initialValue;
             console.log(`Generated income (percentage adjusted): ${generatedIncome}`);
         }
@@ -69,15 +64,10 @@ export async function updateInvestments(scenarioId, curYearIncome) {
 
         // d. Calculate the change in value
         let changeInValue = 0;
-        changeInValue= sample({
-            type: investmentType.expAnnReturnType,
-            value: investmentType.expAnnReturnValue,
-            mean: investmentType.expAnnReturnMean,
-            std_dev: investmentType.expAnnReturnStdDev,
-        });
+        changeInValue= sample(investmentType.return_distribution);
         console.log(`Change in value (sampled): ${changeInValue}`);
         // Account for percentage case
-        if (investmentType.expAnnReturnTypeAmtOrPct === 'percent') {
+        if (investmentType.return_amt_or_pct === 'percent') {
             changeInValue = (changeInValue / 100) * initialValue;
             console.log(`Change in value (percentage adjusted): ${changeInValue}`);
         }
@@ -102,7 +92,7 @@ export async function updateInvestments(scenarioId, curYearIncome) {
         try {
             await connection.execute(
                 `UPDATE investments 
-                 SET dollar_value = ? 
+                 SET value = ? 
                  WHERE id = ? AND scenario_id = ?`,
                 [updatedValue, investment.id, scenarioId]
             );
@@ -132,7 +122,7 @@ export async function getAllInvestments(scenarioId) {
             `SELECT 
                 id,
                 investment_type,
-                dollar_value,
+                value,
                 tax_status
              FROM investments
              WHERE scenario_id = ?`,
@@ -160,17 +150,11 @@ export async function getAllInvestmentTypes(scenarioId) {
             `SELECT 
                 name,
                 description,
-                expAnnReturnType,
-                expAnnReturnValue,
-                expAnnReturnMean,
-                expAnnReturnStdDev,
-                expAnnReturnTypeAmtOrPct,
-                expenseRatio,
-                expAnnIncomeType,
-                expAnnIncomeValue,
-                expAnnIncomeMean,
-                expAnnIncomeStdDev,
-                expAnnIncomeTypeAmtOrPct,
+                return_distribution,
+                return_amt_or_pct,
+                expense_ratio,
+                income_distribution,
+                income_amt_or_pct,
                 taxability
              FROM investment_types
              WHERE scenario_id = ?`,
@@ -178,7 +162,7 @@ export async function getAllInvestmentTypes(scenarioId) {
         );
 
         console.log(`Fetched ${rows.length} investment types from the database for scenario ID: ${scenarioId}`);
-
+        console.log("rows: ", rows)
         // Convert the rows into a map for easy lookup by investment type name
         const investmentTypes = {};
         rows.forEach(row => {

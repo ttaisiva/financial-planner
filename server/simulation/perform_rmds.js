@@ -71,7 +71,7 @@ export async function performRMDs(
 
   // Step d: Calculate the sum of pre-tax investment values (s)
   const totalPreTaxValue = preTaxInvestments.reduce(
-    (sum, inv) => sum + Number(inv.dollar_value),
+    (sum, inv) => sum + Number(inv.value),
     0
   );
   console.log(`Total pre-tax investment value: ${totalPreTaxValue}`);
@@ -95,7 +95,7 @@ export async function performRMDs(
     for (const inv of preTaxInvestments) {
       if (remainingRMD <= 0) break;
 
-      const transferAmount = Math.min(Number(inv.dollar_value), remainingRMD);
+      const transferAmount = Math.min(Number(inv.value), remainingRMD);
       remainingRMD -= transferAmount;
 
       console.log(
@@ -105,7 +105,7 @@ export async function performRMDs(
       await connection.beginTransaction();
       // Reduce the value of the source investment
       await connection.execute(
-        "UPDATE investments SET dollar_value = dollar_value - ? WHERE id = ?",
+        "UPDATE investments SET value = value - ? WHERE id = ?",
         [transferAmount, inv.id]
       );
 
@@ -126,7 +126,7 @@ export async function performRMDs(
           `Adding $${transferAmount} to existing non-retirement investment ID ${targetInvestment.id}.`
         );
         await connection.execute(
-          "UPDATE investments SET dollar_value = dollar_value + ? WHERE id = ?",
+          "UPDATE investments SET value = value + ? WHERE id = ?",
           [transferAmount, targetInvestment.id]
         );
       } else {
@@ -135,7 +135,7 @@ export async function performRMDs(
           `Creating new non-retirement investment for type ${inv.investment_type} with value $${transferAmount}.`
         );
         await connection.execute(
-          "INSERT INTO investments (investment_type, tax_status, dollar_value, scenario_id) VALUES (?, 'Non-Retirement', ?, ?)",
+          "INSERT INTO investments (investment_type, tax_status, value, scenario_id) VALUES (?, 'Non-Retirement', ?, ?)",
           [inv.investment_type, transferAmount, scenarioId]
         );
       }
@@ -196,10 +196,10 @@ export async function getPreTaxInvestments(scenarioId) {
       `SELECT 
                 id, 
                 investment_type, 
-                dollar_value, 
+                value, 
                 tax_status 
              FROM investments 
-             WHERE scenario_id = ? AND tax_status = 'pre-tax' AND dollar_value > 0`,
+             WHERE scenario_id = ? AND tax_status = 'pre-tax' AND value > 0`,
       [scenarioId]
     );
 

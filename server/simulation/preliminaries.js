@@ -79,7 +79,7 @@ export function sample(item) {
             // Sample from a normal distribution
             result = sample_normal_distribution(
                 Number(item.mean),
-                Number(item.std_dev)
+                Number(item.stdev)
             );
             break;
 
@@ -102,9 +102,9 @@ export function sample(item) {
 /**
  * Samples a value from a normal distribution using the Box-Muller transform.
  */
-export function sample_normal_distribution(mean, std_dev) {
-    console.log("Sampling normal distribution with mean:", mean, "and std_dev:", std_dev);
-    if (std_dev <= 0) {
+export function sample_normal_distribution(mean, stdev) {
+    console.log("Sampling normal distribution with mean:", mean, "and stdev:", stdev);
+    if (stdev <= 0) {
         throw new Error("Standard deviation must be greater than 0.");
     }
 
@@ -112,7 +112,7 @@ export function sample_normal_distribution(mean, std_dev) {
     const u2 = Math.random();
 
     const z = Math.sqrt(-2.0 * Math.log(u1 || 1e-10)) * Math.cos(2.0 * Math.PI * u2);
-    return mean + z * std_dev;
+    return mean + z * stdev;
 }
 
 /**
