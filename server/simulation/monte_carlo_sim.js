@@ -169,7 +169,7 @@ async function initInvestments(scenarioId) {
         `SELECT 
             id,
             investment_type as type,
-            dollar_value as dollarValue,
+            value as dollarValue,
             tax_status as taxStatus
          FROM investments
          WHERE scenario_id = ?`,
@@ -181,10 +181,11 @@ async function initInvestments(scenarioId) {
 
 export async function getUserBirthYear(scenarioId) {
     if (connection) {
-        const query = `SELECT user_birth_year FROM user_scenario_info WHERE id = ?`;
+        const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.user_birth_year || 0; // Return the birth year or 0 if not found
+            console.log("results", [results]);
+            return results[0]?.birth_years[0] || 0; // Return the birth year or 0 if not found
         } catch (error) {
             console.error("Error fetching user birth year:", error);
             throw error; // Re-throw the error for the caller to handle
@@ -197,16 +198,12 @@ export async function getUserBirthYear(scenarioId) {
 export async function getUserLifeExpectancy(scenarioId) {
     if (connection) {
         const query = `SELECT 
-            user_life_expectancy_type AS type,
-            user_life_expectancy_value AS value,
-            user_life_expectancy_mean AS mean,
-            user_life_expectancy_std_dev AS std_dev
-        
-        
-            FROM user_scenario_info WHERE id = ?`;
+            life_expectancy
+            FROM scenarios WHERE id = ?`;
         try {
             const [results] = await connection.execute(query, [scenarioId]);
-            return sample(results[0])
+            console.log("results: ", results)
+            return sample(results[0].life_expectancy[0])
             
         } catch (error) {
             console.error("Error fetching user life expectancy:", error);
@@ -216,50 +213,16 @@ export async function getUserLifeExpectancy(scenarioId) {
     return 0; // Return 0 if connection is not available
 }
 
-export async function getSpouseBirthYear(scenarioId) {
-    if (connection) {
-        const query = `SELECT spouse_birth_year FROM user_scenario_info WHERE id = ?`;
-        try {
-            const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.spouse_birth_year || 0; // Return the spouse's birth year or 0 if not found
-        } catch (error) {
-            console.error("Error fetching spouse birth year:", error);
-            throw error; // Re-throw the error for the caller to handle
-        }
-    }
-    return 0; // Return 0 if connection is not available
-}
-
-export async function getSpouseLifeExpectancy(scenarioId) {
-    if (connection) {
-        const query = `SELECT 
-        spouse_life_expectancy_type,
-        spouse_life_expectancy_value,
-        spouse_life_expectancy_mean,
-        spouse_life_expectancy_std_dev
-    
-        FROM user_scenario_info WHERE id = ?`;
-        try {
-            const [results] = await connection.execute(query, [scenarioId]);
-            return sample(results[0])
-        } catch (error) {
-            console.error("Error fetching spouse life expectancy:", error);
-            throw error; // Re-throw the error for the caller to handle
-        }
-    }
-    return 0; // Return 0 if connection is not available
-}
-
 export async function getFilingStatus(scenarioId) {
-    if (connection) {
-        const query = `SELECT filing_status FROM user_scenario_info WHERE id = ?`;
-        try {
-            const [results] = await connection.execute(query, [scenarioId]);
-            return results[0]?.filing_status || ""; // Return the filing status or an empty string if not found
-        } catch (error) {
-            console.error("Error fetching filing status:", error);
-            throw error; // Re-throw the error for the caller to handle
-        }
-    }
-    return ""; // Return an empty string if connection is not available
+    console.log("Fetching filing status from the database...");
+    await ensureConnection();
+    const [rows] = await connection.execute(
+        `SELECT 
+            martial_status
+         FROM scenarios
+         WHERE id = ?`,
+        [scenarioId]
+    );
+    return rows[0].martial_status;
 }
+
