@@ -294,3 +294,55 @@ export const updateNestedState = (prefix, key, value, setFormData) => {
     return updated;
   });
 };
+
+/**
+ * Used in ScenarioInfo to clean objects in the main form data.
+ * Gets rid of key value pairs where value = "", and converts numbers represented as string into int
+ * Returns the object but cleaned.
+ *
+ * Use like this:
+ *    const cleanFormData = cleanScenario(formData);
+ *
+ * @param {*} obj
+ * @returns
+ */
+export const cleanScenario = (obj) => {
+  const result = {};
+
+  if (!obj || typeof obj !== "object") return result;
+
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip empty strings, undefined, or null
+    if (value === "" || value === null || value === undefined) continue;
+
+    // If the value is an object, clean it recursively
+    if (typeof value === "object" && !Array.isArray(value)) {
+      const nested = cleanScenario(value);
+      if (Object.keys(nested).length > 0) {
+        result[key] = nested;
+      }
+    } else {
+      // Convert to int if key matches and value is string
+      const numericKeys = [
+        "value",
+        "mean",
+        "stdDev",
+        "upper",
+        "lower",
+        "userLifeExpectancy",
+        "spouseLifeExpectancy",
+        "userBirthYear",
+        "spouseBirthYear",
+      ];
+
+      if (numericKeys.includes(key) && typeof value === "string") {
+        const parsed = parseInt(value, 10);
+        if (!isNaN(parsed)) result[key] = parsed;
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result;
+};
