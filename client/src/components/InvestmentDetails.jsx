@@ -7,6 +7,7 @@ export const Investment = ({
   setShowInvestmentForm,
 }) => {
   const [formData, setFormData] = useState({
+    id: "",
     investmentType: "",
     value: "",
     taxStatus: "",
@@ -14,10 +15,25 @@ export const Investment = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
+    const updatedValue = name === "value" ? parseFloat(value) : value;
+
+    const updatedFormData = {
       ...formData,
-      [name]: name === "value" ? parseFloat(value) : value,
-    });
+      [name]: updatedValue,
+    };
+
+    // Set ID if both fields are available
+    if (name === "investmentType" || name === "taxStatus") {
+      const { investmentType, taxStatus } = {
+        ...formData,
+        [name]: updatedValue,
+      };
+      if (investmentType && taxStatus) {
+        updatedFormData.id = `${investmentType} ${taxStatus}`;
+      }
+    }
+
+    setFormData(updatedFormData);
   };
 
   const handleSubmit = async (e) => {
@@ -127,7 +143,7 @@ export const InvestmentType = ({
     expAnnReturn: {
       type: "",
       value: "",
-      stdDev: "",
+      stdev: "",
       mean: "",
       amtOrPct: "",
     },
@@ -135,7 +151,7 @@ export const InvestmentType = ({
     expAnnIncome: {
       type: "",
       value: "",
-      stdDev: "",
+      stdev: "",
       mean: "",
       amtOrPct: "",
     },
@@ -371,11 +387,11 @@ export const ViewInvestmentDetails = ({ investments, investmentTypes }) => {
               Return:{" "}
               {item.expAnnReturn.type === "fixed"
                 ? `$${item.expAnnReturn.value}`
-                : `Mean: ${item.expAnnReturn.mean}, Std Dev: ${item.expAnnReturn.stdDev}`}
+                : `Mean: ${item.expAnnReturn.mean}, Std Dev: ${item.expAnnReturn.stdev}`}
               , Expense Ratio: {item.expenseRatio}%, Expected Annual Income:{" "}
               {item.expAnnIncome.type === "fixed"
                 ? `$${item.expAnnIncome.value}`
-                : `Mean: ${item.expAnnIncome.mean}, Std Dev: ${item.expAnnIncome.stdDev}`}
+                : `Mean: ${item.expAnnIncome.mean}, Std Dev: ${item.expAnnIncome.stdev}`}
               , Taxability: {item.taxability}
             </li>
           ))}

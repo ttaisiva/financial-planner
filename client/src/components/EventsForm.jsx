@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { inputTypes, updateNestedState } from "../utils";
+import {
+  cleanEvent,
+  inputTypes,
+  updateNestedState,
+  processAssetAllocation,
+} from "../utils";
 
 export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
   const [formData, setFormData] = useState({
@@ -10,7 +15,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       upper: "",
       lower: "",
       eventSeries: "",
@@ -22,7 +27,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       upper: "",
       lower: "",
     },
@@ -30,7 +35,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       upper: "",
       lower: "",
     },
@@ -41,6 +46,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
     socialSecurity: false,
     glidePath: false,
     assetAllocation: "",
+    assetAllocation2: "",
     allocationMethod: "",
     discretionary: false,
   });
@@ -83,19 +89,25 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
     console.log("event submitted");
     console.log("first form data", formData);
 
+    // Separate allocationMethod from the data so we can remove (not included in yaml file)
     const { allocationMethod, ...rest } = formData;
     let glidePath = false;
 
     if (allocationMethod === "glide_path") glidePath = true;
     else glidePath = false;
 
+    // Format and split assetAllocation to the correct format (yaml file)
+    const allocationFormatted = processAssetAllocation(allocationPercentages);
+    console.log("allocation formatted:", allocationFormatted);
+
     const eventData = {
       ...rest,
-      assetAllocation: JSON.stringify(allocationPercentages),
+      ...allocationFormatted,
       glidePath: glidePath,
     };
 
-    console.log("final form data: ", eventData);
+    const cleanedEventData = cleanEvent(eventData);
+    console.log("final form data: ", cleanedEventData);
 
     try {
       console.log("Event Type: ", eventData.type);
@@ -104,7 +116,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(eventData),
+        body: JSON.stringify(cleanedEventData),
       });
 
       if (response.ok) {
@@ -163,8 +175,8 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
               Select start year
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
-            <option value="uniform_distribution">Uniform Distribution</option>
+            <option value="normal">Normal Distribution</option>
+            <option value="uniform">Uniform Distribution</option>
             <option value="series_start">Same year as event series</option>
             <option value="series_end">Year after event series</option>
           </select>
@@ -187,8 +199,8 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
               Select Duration
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
-            <option value="uniform_distribution">Uniform Distribution</option>
+            <option value="normal">Normal Distribution</option>
+            <option value="uniform">Uniform Distribution</option>
           </select>
 
           {inputTypes({
@@ -284,8 +296,8 @@ const IncomeEvent = ({ formData, handleChange }) => {
             Select expected annual change
           </option>
           <option value="fixed">Fixed</option>
-          <option value="normal_distribution">Normal Distribution</option>
-          <option value="uniform_distribution">Uniform Distribution</option>
+          <option value="normal">Normal Distribution</option>
+          <option value="uniform">Uniform Distribution</option>
         </select>
         <select
           name="changeAmtOrPct"
@@ -777,8 +789,8 @@ const ExpenseEvent = ({ formData, handleChange }) => {
             Select expected annual change
           </option>
           <option value="fixed">Fixed</option>
-          <option value="normal_distribution">Normal Distribution</option>
-          <option value="uniform_distribution">Uniform Distribution</option>
+          <option value="normal">Normal Distribution</option>
+          <option value="uniform">Uniform Distribution</option>
         </select>
         <select
           name="changeAmtOrPct"

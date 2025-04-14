@@ -46,7 +46,7 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           required
         />
       );
-    case "normal_distribution":
+    case "normal":
       return (
         <>
           <input
@@ -60,16 +60,17 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
           />
           <input
             type="number"
-            min="0.000001"
-            name={`${prefix}.stdDev`}
+            min="0"
+            step="any"
+            name={`${prefix}.stdev`}
             placeholder="Enter standard deviation"
-            value={data.stdDev || ""}
+            value={data.stdev || ""}
             onChange={handleChange}
             required
           />
         </>
       );
-    case "uniform_distribution":
+    case "uniform":
       return (
         <>
           <input
@@ -293,4 +294,130 @@ export const updateNestedState = (prefix, key, value, setFormData) => {
 
     return updated;
   });
+};
+
+/**
+ * Used in ScenarioInfo to clean form data.
+ * Gets rid of key value pairs where value = "", and converts numbers represented as string into int
+ * Returns the object but cleaned.
+ *
+ * Use like this:
+ *    const cleanFormData = cleanScenario(formData);
+ *
+ * TP: ChatGPT, prompt - i only need to make sure it is an int before sending it to the router.
+ * i also want to remove any key value pairs where the value is "".
+ *
+ * @param {*} obj
+ * @returns
+ */
+export const cleanScenario = (obj) => {
+  const result = {};
+
+  if (!obj || typeof obj !== "object") return result;
+
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip empty strings, undefined, or null
+    if (value === "" || value === null || value === undefined) continue;
+
+    // If the value is an object, clean it recursively
+    if (typeof value === "object" && !Array.isArray(value)) {
+      const nested = cleanScenario(value);
+      if (Object.keys(nested).length > 0) {
+        result[key] = nested;
+      }
+    } else {
+      // Convert to int if key matches and value is string
+      const numericKeys = [
+        "value",
+        "mean",
+        "stdev",
+        "upper",
+        "lower",
+        "userLifeExpectancy",
+        "spouseLifeExpectancy",
+        "userBirthYear",
+        "spouseBirthYear",
+      ];
+
+      if (numericKeys.includes(key) && typeof value === "string") {
+        const parsed = parseInt(value, 10);
+        if (!isNaN(parsed)) result[key] = parsed;
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Used in EventForm to clean form data.
+ * Gets rid of key value pairs where value = "" or false, and converts numbers represented as string into int
+ * Returns the object but cleaned.
+ *
+ * TP: ChatGPT, prompt - how would i send the cleaned data to the router if this is what i have right now: {EventForm code}
+ * @param {*} obj
+ * @returns
+ */
+export const cleanEvent = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj
+      .map(cleanEvent)
+      .filter((item) => item !== undefined && item !== null);
+  }
+
+  if (typeof obj === "object" && obj !== null) {
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+      const cleanedValue = cleanEvent(value);
+
+      if (
+        cleanedValue !== "" &&
+        cleanedValue !== false &&
+        cleanedValue !== null &&
+        (typeof cleanedValue !== "object" ||
+          Object.keys(cleanedValue).length > 0)
+      ) {
+        acc[key] = cleanedValue;
+      }
+
+      return acc;
+    }, {});
+  }
+
+  return obj;
+};
+
+/**
+ * Used in EventForm to change assetAllocation to correct format before sending to router
+ *
+ * TP: ChatGPT, prompt - "my assetAllocation value is currently formatted like this:
+ * {"two after-tax": {"end": 40, "start": 80}, "434 non-retirement": {"end": 60, "start": 20}}
+ * i want to change this format such that the "start" values would be with assetAllocation1 key like {"two after-tax": 80, "434 non-retirement": 20}
+ * and the "end" values would be with assetAllocation2 like {"two after-tax": 40, "434 non-retirement": 60}
+ * note that there may be more than 2 elements in the object as well. it depends on how many items the user inputs"
+ *
+ * @param {*} allocation
+ * @returns
+ */
+export const processAssetAllocation = (allocation) => {
+  const resultStart = {};
+  const resultEnd = {};
+  let hasEnd = false;
+
+  for (const [key, value] of Object.entries(allocation)) {
+    if (value && typeof value === "object") {
+      if ("start" in value) {
+        resultStart[key] = value.start / 100; // convert to decimal (yaml format)
+      }
+      if ("end" in value) {
+        resultEnd[key] = value.end / 100; // convert to decimal (yaml format)
+        hasEnd = true;
+      }
+    }
+  }
+
+  return hasEnd
+    ? { assetAllocation: resultStart, assetAllocation2: resultEnd }
+    : { assetAllocation: resultStart };
 };

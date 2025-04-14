@@ -2,7 +2,11 @@ import express from "express";
 import { ensureConnection, connection } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
 import { simulation } from "../simulation/monte_carlo_sim.js";
-import { keysToSnakeCase } from "../utils.js";
+import {
+  keysToSnakeCase,
+  removeIdsFromEvents,
+  sanitizeToNull,
+} from "../utils.js";
 import { pool } from "../utils.js";
 // const { simulation } = require("./monte_carlo_sim");
 
@@ -27,7 +31,6 @@ router.post("/investment-type", (req, res) => {
 
 router.post("/investments", (req, res) => {
   const investmentData = req.body;
-  investmentData.id = investmentsLocalStorage.length; // Assign a unique ID
   investmentsLocalStorage.push(investmentData);
   console.log("Investment stored temporarily:", investmentData);
   res.status(200).json(investmentData);
@@ -85,7 +88,7 @@ router.get("/investments-pretax", (req, res) => {
     "Received request for locally stored investments of type pre-tax."
   );
   const filtered = investmentsLocalStorage.filter(
-    (investment) => investment.tax_status === "pre-tax"
+    (investment) => investment.taxStatus === "pre-tax"
   );
   res.status(200).json(filtered);
 });
@@ -154,10 +157,19 @@ router.post("/create-scenario", async (req, res) => {
       investmentTypesLocalStorage
     );
     await insertInvestment(connection, scenario_id, investmentsLocalStorage);
-    await insertEvents(connection, scenario_id, eventsLocalStorage);
+
+    const cleanEventsLocalStorage = removeIdsFromEvents(eventsLocalStorage);
+    await insertEvents(connection, scenario_id, cleanEventsLocalStorage);
 
     const strategies = req.body.strategies;
-    await insertStrategies(connection, scenario_id, strategies);
+    await insertStrategiesNewScenario(
+      connection,
+      scenario_id,
+      rothLocalStorage,
+      rmdLocalStorage,
+      expenseWithdrawalLocalStorage,
+      spendingLocalStorage
+    );
 
     console.log("User scenario info and related data saved successfully.");
     res.status(200).json({
@@ -470,17 +482,21 @@ router.get("/export-scenario", async (req, res) => {
 
     // Authorize export by comparing User ID with Scenario
     if (!req.session.user || !req.query) {
-      res.status(500).send("Not Authorized")
+      res.status(500).send("Not Authorized");
     }
-    
+
     // Retrieve scenario object
-    const scenario = await getScenario(connection, req.query.id, req.session.user['id']);
+    const scenario = await getScenario(
+      connection,
+      req.query.id,
+      req.session.user["id"]
+    );
     if (!scenario) {
       res.status(500).send("Not Authorized");
     }
 
     // Past this point is a valid export
-    
+
     // Retrieve investmentTypes
     const investmentTypes = await getInvestmentTypes(connection, scenario.id);
 
@@ -510,16 +526,15 @@ router.get("/export-scenario", async (req, res) => {
       RothConversionStart: strategies.RothConversionStart,
       RothConversionEnd: strategies.RothConversionEnd,
       RothConversionStrategy: strategies.RothConversionStrategy,
-     financialGoal: scenario.financial_goal,
-     residenceState: scenario.residence_state,
-    }
+      financialGoal: scenario.financial_goal,
+      residenceState: scenario.residence_state,
+    };
     console.log("EXPORT DATA", exportData);
     res.json(exportData);
-  }
-  catch (err) {
+  } catch (err) {
     console.error("Failed to export scenario", err);
   }
-})
+});
 
 /**
  * Returns the scenario from the database based on ID and user_id
@@ -532,7 +547,7 @@ async function getScenario(connection, id, user_id) {
   const query = `
     SELECT * FROM scenarios WHERE id = ? AND user_id = ?
   `;
-  const values = [id, user_id]
+  const values = [id, user_id];
   const [rows] = await connection.execute(query, values);
   return rows[0]; // Will return either scenario or undefined
 }
@@ -546,10 +561,10 @@ async function getScenario(connection, id, user_id) {
 async function getInvestmentTypes(connection, scenario_id) {
   const query = `
     SELECT * FROM investment_types WHERE scenario_id = ?
-  `
+  `;
   const [rows] = await connection.execute(query, [scenario_id]);
   const investmentTypes = [];
-  rows.forEach(type => {
+  rows.forEach((type) => {
     console.log("investment type check", type);
     const investmentType = {
       name: type.name,
@@ -559,8 +574,8 @@ async function getInvestmentTypes(connection, scenario_id) {
       expenseRatio: type.expense_ratio,
       incomeAmtOrPct: type.income_amt_or_pct,
       incomeDistribution: type.income_distribution,
-      taxability: type.taxability
-    }
+      taxability: type.taxability,
+    };
     console.log("afer investment type transfer", investmentType);
     investmentTypes.push(investmentType);
   });
@@ -576,18 +591,18 @@ async function getInvestmentTypes(connection, scenario_id) {
 async function getInvestments(connection, scenario_id) {
   const query = `
     SELECT * FROM investments WHERE scenario_id = ?
-  `
+  `;
   const [rows] = await connection.execute(query, [scenario_id]);
   const investments = [];
-  rows.forEach(invest => {
+  rows.forEach((invest) => {
     const investment = {
       investmentType: invest.investment_type,
       value: invest.value,
       taxStatus: invest.tax_status,
-      id: invest.id
-    }
+      id: invest.id,
+    };
     investments.push(investment);
-  })
+  });
   return investments;
 }
 
@@ -600,10 +615,10 @@ async function getInvestments(connection, scenario_id) {
 async function getEventSeries(connection, scenario_id) {
   const query = `
     SELECT * FROM events WHERE scenario_id = ?
-  `
+  `;
   const [rows] = await connection.execute(query, [scenario_id]);
   const events = [];
-  rows.forEach(e => {
+  rows.forEach((e) => {
     const event = {
       name: e.name,
       description: e.description,
@@ -621,9 +636,9 @@ async function getEventSeries(connection, scenario_id) {
       glidePath: e.glide_path,
       assetAllocation2: e.asset_allocation2,
       maxCash: e.maxCash,
-    }
+    };
     events.push(removeNullAndUndefined(event));
-  })
+  });
   return events;
 }
 
@@ -638,44 +653,50 @@ async function getStrategies(connection, scenario_id) {
     SELECT * FROM strategy 
     WHERE scenario_id = ? AND strategy_type = ? 
     ORDER BY strategy_order ASC
-  `
+  `;
   // Uses expense_id
   const [spending] = await connection.execute(query, [scenario_id, "spending"]);
-  const spendingStrategy = []
+  const spendingStrategy = [];
 
   const expenseQuery = `
   SELECT * FROM events
   WHERE scenario_id = ? AND type = 'expense' AND id = ?
-  `
+  `;
 
   for (const elem of spending) {
-    const [expense] = await connection.execute(expenseQuery, [scenario_id, elem.expense_id]);
+    const [expense] = await connection.execute(expenseQuery, [
+      scenario_id,
+      elem.expense_id,
+    ]);
     spendingStrategy.push(expense[0].name);
-  };
-  
+  }
+
   // Uses investment_id
-  const [expenseWithdrawal] = await connection.execute(query, [scenario_id, "expense_withdrawal"]);
-  const expenseWithdrawalStrategy = []
-  expenseWithdrawal.forEach(elem => {
+  const [expenseWithdrawal] = await connection.execute(query, [
+    scenario_id,
+    "expense_withdrawal",
+  ]);
+  const expenseWithdrawalStrategy = [];
+  expenseWithdrawal.forEach((elem) => {
     expenseWithdrawalStrategy.push(elem.investment_id);
-  })
+  });
 
   // Uses investment_id
-  const [rmd] = await connection.execute(query, [scenario_id, "rmd"])
+  const [rmd] = await connection.execute(query, [scenario_id, "rmd"]);
   const RMDStrategy = [];
-  rmd.forEach(elem => {
-    RMDStrategy.push(elem.investment_id)
-  })
+  rmd.forEach((elem) => {
+    RMDStrategy.push(elem.investment_id);
+  });
 
   // Uses investment_id
-  const [roth] = await connection.execute(query, [scenario_id, "roth"])
+  const [roth] = await connection.execute(query, [scenario_id, "roth"]);
   const RothConversionOpt = roth.length !== 0;
   const RothConversionStart = roth[0].start_year;
   const RothConversionEnd = roth[0].end_year;
   const RothConversionStrategy = [];
-  roth.forEach(elem => {
+  roth.forEach((elem) => {
     RothConversionStrategy.push(elem.investment_id);
-  })
+  });
 
   const completeData = {
     spendingStrategy: spendingStrategy,
@@ -684,7 +705,7 @@ async function getStrategies(connection, scenario_id) {
     RothConversionOpt: RothConversionOpt,
     RothConversionStart: RothConversionStart,
     RothConversionEnd: RothConversionEnd,
-    RothConversionStrategy: RothConversionStrategy
+    RothConversionStrategy: RothConversionStrategy,
   };
   return completeData;
 }
@@ -698,8 +719,8 @@ function removeNullAndUndefined(obj) {
   if (Array.isArray(obj)) {
     return obj
       .map(removeNullAndUndefined)
-      .filter(item => item !== undefined && item !== null); // clean array too
-  } else if (obj && typeof obj === 'object') {
+      .filter((item) => item !== undefined && item !== null); // clean array too
+  } else if (obj && typeof obj === "object") {
     return Object.fromEntries(
       Object.entries(obj)
         .filter(([_, v]) => v !== undefined && v !== null)
@@ -710,6 +731,14 @@ function removeNullAndUndefined(obj) {
 }
 
 export default router;
+
+async function findInvestmentId(connection, scenario_id, investment) {
+  const query = `SELECT id FROM investments WHERE scenario_id = ? AND investment_type = ? AND tax_status = ?`;
+  const values = [scenario_id, investment.investmentType, investment.taxStatus];
+  const [rows] = await connection.execute(query, values);
+  return rows.length > 0 ? rows[0].id : null;
+}
+
 /**
  * Finds the expense id for a given scenario
  * @param connection MySQL connection
@@ -721,6 +750,96 @@ async function findExpenseId(connection, scenario_id, expense) {
   const values = [scenario_id, expense];
   const [rows] = await connection.execute(query, values);
   return rows.length > 0 ? rows[0].id : null;
+}
+
+async function insertStrategiesNewScenario(
+  connection,
+  scenario_id,
+  rothLocalStorage,
+  rmdLocalStorage,
+  expenseWithdrawalLocalStorage,
+  spendingLocalStorage
+) {
+  // Roth
+  console.log("Roth info before inserting to db:", rothLocalStorage);
+  rothLocalStorage.rothStartYear = sanitizeToNull(
+    parseInt(rothLocalStorage.rothStartYear, 10)
+  );
+  rothLocalStorage.rothEndYear = sanitizeToNull(
+    parseInt(rothLocalStorage.rothEndYear, 10)
+  );
+  console.log(
+    "Roth years (int converted):",
+    rothLocalStorage.rothStartYear,
+    rothLocalStorage.rothEndYear
+  );
+  const investments = rothLocalStorage.rothConversionStrat;
+  if (investments) {
+    for (let i = 0; i < investments.length; i++) {
+      // doesn't run for empty array (if optimizer disabled)
+      // make id the investment id from DB
+      const id = await findInvestmentId(
+        connection,
+        scenario_id,
+        investments[i]
+      );
+      const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+        expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      const values = [
+        scenario_id,
+        "roth",
+        id,
+        null,
+        i,
+        rothLocalStorage.rothStartYear,
+        rothLocalStorage.rothEndYear,
+      ];
+      await connection.execute(query, values);
+    }
+  }
+
+  // RMD
+  for (let i = 0; i < rmdLocalStorage.length; i++) {
+    // each element is investment
+    const id = await findInvestmentId(
+      connection,
+      scenario_id,
+      rmdLocalStorage[i]
+    );
+    const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const values = [scenario_id, "rmd", id, null, i, null, null];
+    await connection.execute(query, values);
+  }
+
+  // Expense Withdrawal
+  for (let i = 0; i < expenseWithdrawalLocalStorage.length; i++) {
+    // each element is investment
+    const id = await findInvestmentId(
+      connection,
+      scenario_id,
+      expenseWithdrawalLocalStorage[i]
+    );
+    const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const values = [scenario_id, "expense_withdrawal", id, null, i, null, null];
+    await connection.execute(query, values);
+  }
+
+  // Spending
+  for (let i = 0; i < spendingLocalStorage.length; i++) {
+    // each element is expense
+    const id = await findExpenseId(
+      connection,
+      scenario_id,
+      spendingLocalStorage[i]
+    );
+    const query = `INSERT INTO strategy (scenario_id, strategy_type, investment_id,
+      expense_id, strategy_order, start_year, end_year) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const values = [scenario_id, "spending", null, id, i, null, null];
+    await connection.execute(query, values);
+  }
+  console.log("All strategies for scenario #", scenario_id, "sent to DB.");
 }
 
 /**
@@ -813,12 +932,17 @@ async function insertStrategies(connection, scenario_id, strategies) {
  * @param events List of event series to be inserted into DB
  */
 async function insertEvents(connection, scenario_id, events) {
+  console.log("events:", events);
   for (const event of events) {
     event.start = JSON.stringify(event.start) ?? null;
     event.duration = JSON.stringify(event.duration) ?? null;
     event.changeDistribution = JSON.stringify(event.changeDistribution);
+    event.assetAllocation = JSON.stringify(event.assetAllocation);
+    event.assetAllocation2 = JSON.stringify(event.assetAllocation2);
+    event.scenarioId = scenario_id;
 
-    const eventSnakeCase = keysToSnakeCase(event);
+    const eventSnakeCase = keysToSnakeCase(event);  
+    console.log("event snake case", eventSnakeCase);
     const [eventResult] = await connection.query(
       "INSERT INTO events SET ?",
       eventSnakeCase
@@ -861,7 +985,7 @@ async function insertEvents(connection, scenario_id, events) {
       event.maxCash ?? null,
     ];
 
-    console.log("Inserting values:", eventsValues);
+    // console.log("Inserting values:", eventsValues);
     // await connection.execute(eventsQuery, eventsValues);
     console.log(`Event ${event.name} saved to the database.`);
   }

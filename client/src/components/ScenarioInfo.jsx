@@ -21,6 +21,7 @@ import {
 import Strategy from "./Strategy";
 import { inputTypes, updateNestedState } from "../utils";
 import { useNavigate } from "react-router-dom";
+import { cleanScenario } from "../utils";
 
 //maybe move these to utils
 const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
@@ -130,13 +131,13 @@ const ScenarioInfo = forwardRef((props, ref) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
     },
     spouseLifeExpectancy: {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
     },
     userBirthYear: "",
     spouseBirthYear: "",
@@ -144,7 +145,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       lower: "",
       upper: "",
     },
@@ -212,20 +213,22 @@ const ScenarioInfo = forwardRef((props, ref) => {
     };
 
     // Correctly format the scenario form data
+    const cleanedFormData = cleanScenario(formData);
+
     const scenarioData = {
-      name: formData.name,
-      financialGoal: formData.financialGoal,
-      maritalStatus: formData.maritalStatus,
-      residenceState: formData.residenceState,
-      lifeExpectancy: JSON.stringify({
-        user: JSON.stringify(formData.userLifeExpectancy),
-        spouse: JSON.stringify(formData.spouseLifeExpectancy),
-      }),
-      birthYears: JSON.stringify({
-        user: formData.userBirthYear,
-        spouse: formData.spouseBirthYear,
-      }),
-      inflationAssumption: JSON.stringify(formData.inflationAssumption),
+      name: cleanedFormData.name,
+      financialGoal: cleanedFormData.financialGoal,
+      maritalStatus: cleanedFormData.maritalStatus,
+      residenceState: cleanedFormData.residenceState,
+      lifeExpectancy: JSON.stringify([
+        cleanedFormData.userLifeExpectancy,
+        cleanedFormData.spouseLifeExpectancy,
+      ]),
+      birthYears: JSON.stringify([
+        cleanedFormData.userBirthYear,
+        cleanedFormData.spouseBirthYear,
+      ]),
+      inflationAssumption: JSON.stringify(cleanedFormData.inflationAssumption),
     };
 
     const fullData = { scenario: scenarioData, cashData: finalCashData };
