@@ -10,6 +10,7 @@
 
 import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js";
+import { getUserBirthYear, getUserLifeExpectancy } from "./monte_carlo_sim.js";
 
 /**
  * Processes an income event and updates financial data.
@@ -31,7 +32,8 @@ export async function process_income_event(
   isSpouseAlive,
   cashInvestment,
   curYearIncome,
-  curYearSS
+  curYearSS,
+  currentSimulationYear
 ) {
   console.log(`Processing income events for scenario ID: ${scenarioId}`);
   console.log(
@@ -60,6 +62,18 @@ export async function process_income_event(
   const updatedAmounts = {}; // To store currentAmount for each event
 
   for (const event of incomeEvents) {
+    const startYear = getEventStartYear(event);
+    console.log("Event start Year: ", startYear);
+    if(startYear >= currentSimulationYear) {
+        console.log(`Skipping event ID: ${event.id} as it starts in the future.`);
+        continue;
+    }
+    const duration = getEventDuration(event);
+    console.log("Event duration: ", duration);
+    if(startYear + duration > currentSimulationYear) {
+        console.log(`Skipping event ID: ${event.id} as its duration is over.`);
+        continue;
+    }
     console.log(
       `Processing income event ID: ${event.id}, current Amount: ${event.currentAmount}`
     );
@@ -138,6 +152,8 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
     `SELECT 
             id,
             scenario_id,
+            start,
+            duration,
             change_distribution,
             change_amt_or_pct,
             inflation_adjusted, 
@@ -182,6 +198,120 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
       userPercentage: event.user_percentage || 0,
       spousePercentage: event.spouse_percentage || 0,
       isSocialSecurity: event.is_social_security || false,
+      start: event.start,
+      duration: event.duration,
     };
   });
+}
+
+
+
+
+/**
+ * Extracts the start year of an event.
+ * @param {Object} event - The event object containing the start year definition.
+ * @returns {number} The calculated start year.
+ */
+export function getEventStartYear(event) {
+    console.log(event.start)
+    if (!event.start || !event.start.type) {
+        throw new Error(`Invalid event start definition: ${JSON.stringify(event.start)}`);
+    }
+
+    const start = event.start;
+
+    switch (start.type) {
+        case "fixed":
+            // Fixed start year
+            return Math.round(start.value);
+
+        case "normal":
+            // Start year sampled from a normal distribution
+            return Math.round(sample(start));
+
+        case "uniform":
+            // Start year sampled from a uniform distribution
+            return Math.round(sample(start));
+
+        case "startWith":
+            // Start year is the same as another event series
+            if (!start.eventSeries) {
+                throw new Error(`Missing eventSeries for startWith type: ${JSON.stringify(start)}`);
+            }
+            // Logic to fetch the start year of the referenced event series
+            return getEventStartYearFromSeries(start.eventSeries);
+
+        case "startAfter":
+            // Start year is after another event series ends
+            if (!start.eventSeries) {
+                throw new Error(`Missing eventSeries for startAfter type: ${JSON.stringify(start)}`);
+            }
+            const referencedEndYear = getEventEndYearFromSeries(start.eventSeries);
+            return referencedEndYear + 1;
+
+        default:
+            throw new Error(`Unsupported start type: ${start.type}`);
+    }
+}
+
+/**
+ * Placeholder function to fetch the start year of a referenced event series.
+ * Replace this with the actual implementation to fetch the event series data.
+ * @param {string} eventSeries - The name of the referenced event series.
+ * @returns {number} The start year of the referenced event series.
+ */
+function getEventStartYearFromSeries(eventSeries) {
+    console.warn(`Fetching start year for event series: ${eventSeries}`);
+    // Replace with actual logic to fetch the start year of the referenced event series
+    const currentYear = new Date().getFullYear();
+    return currentYear;
+}
+
+/**
+ * Placeholder function to fetch the end year of a referenced event series.
+ * Replace this with the actual implementation to fetch the event series data.
+ * @param {string} eventSeries - The name of the referenced event series.
+ * @returns {number} The end year of the referenced event series.
+ */
+export async function getEventEndYearFromSeries(eventSeries) {
+    console.warn(`Fetching end year for event series: ${eventSeries}`);
+    const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
+    console.log("User birth year: ", userBirthYear);
+    const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId, connection));
+    console.log("User life expectancy: ", userLifeExpectancy);
+    
+    const userLifespan = userBirthYear + userLifeExpectancy;
+
+    return userLifespan; // Example placeholder value
+}
+
+
+/**
+ * Extracts the duration of an event.
+ * @param {Object} event - The event object containing the duration definition.
+ * @returns {number} The calculated duration.
+ */
+export function getEventDuration(event) {
+    if (!event.duration || !event.duration.type) {
+        throw new Error(`Invalid event duration definition: ${JSON.stringify(event.duration)}`);
+    }
+
+    const duration = event.duration;
+
+    switch (duration.type) {
+        case "fixed":
+            // Fixed duration
+            return Math.round(duration.value);
+
+        case "normal":
+            // Duration sampled from a normal distribution
+            return Math.max(0, Math.round(sample(duration))); // Ensure non-negative duration
+
+        case "uniform":
+            // Duration sampled from a uniform distribution
+            return Math.max(0, Math.round(sample(duration))); // Ensure non-negative duration
+
+        default:
+            throw new Error(`Unsupported duration type: ${duration.type}`);
+    }
 }

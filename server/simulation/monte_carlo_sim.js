@@ -42,7 +42,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
         console.log("Total years for simulation: ", totalYears);
         for (let year = 0; year < 1; year++) { //years in which the simulation is  being run
             
-            const currentSimulationYear = date + year; //actual year being simulated
+            let currentSimulationYear = date + year; //actual year being simulated
 
             //Step 0: run preliminaries -> need to further implement this
             ensureConnection();
@@ -70,6 +70,7 @@ export async function simulation(date , numSimulations, userId, scenarioId, conn
                 cashInvestment,
                 curYearIncome,
                 curYearSS,
+                currentSimulationYear,
             } = await process_income_event(
                 scenarioId,
                 previousYearAmounts,
