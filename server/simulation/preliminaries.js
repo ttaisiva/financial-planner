@@ -1,3 +1,4 @@
+import { ensureConnection, connection } from "../server.js";
 
 /**
  * Fetches necessary preliminary data from the database.
@@ -8,15 +9,11 @@ export async function get_preliminaries_data(scenarioId, connection) {
     // Query the database to fetch inflation assumptions and other necessary data
     // this would be different from guest 
 
+    ensureConnection(connection); // Ensure the connection is established
     const [rows] = await connection.execute(
         `SELECT 
-            inflation_assumption_type AS type,
-            inflation_assumption_value AS value,
-            inflation_assumption_mean AS mean,
-            inflation_assumption_stdev AS std_dev,
-            inflation_assumption_lower AS lower,
-            inflation_assumption_upper AS upper
-         FROM user_scenario_info
+            inflation_assumption
+         FROM scenarios
          WHERE id = ?`,
         [scenarioId]
     );
@@ -48,10 +45,10 @@ export async function get_preliminaries_data(scenarioId, connection) {
 
 export async function run_preliminaries(current_simulation_year, scenarioId, connection) {
     console.log("Running preliminaries for year:", current_simulation_year);
-    const inflation_assumption = await get_preliminaries_data(scenarioId, connection);
-    console.log("Inflation assumption data:", inflation_assumption);
+    const result = await get_preliminaries_data(scenarioId, connection);
+    console.log("Inflation assumption data:", result);
 
-    const inflation_rate = sample(inflation_assumption);
+    const inflation_rate = sample(result.inflation_assumption);
 
     console.log("Sampled inflation rate for the current year:", inflation_rate);
 
@@ -79,15 +76,15 @@ export function sample(item) {
             result = Number(item.value);
             break;
 
-        case "normal_distribution":
+        case "normal":
             // Sample from a normal distribution
             result = sample_normal_distribution(
                 Number(item.mean),
-                Number(item.std_dev)
+                Number(item.stdev)
             );
             break;
 
-        case "uniform_distribution":
+        case "uniform":
             // Sample from a uniform distribution
             result = sample_uniform_distribution(
                 Number(item.upper),
@@ -106,9 +103,9 @@ export function sample(item) {
 /**
  * Samples a value from a normal distribution using the Box-Muller transform.
  */
-export function sample_normal_distribution(mean, std_dev) {
-    console.log("Sampling normal distribution with mean:", mean, "and std_dev:", std_dev);
-    if (std_dev <= 0) {
+export function sample_normal_distribution(mean, stdev) {
+    console.log("Sampling normal distribution with mean:", mean, "and stdev:", stdev);
+    if (stdev <= 0) {
         throw new Error("Standard deviation must be greater than 0.");
     }
 
@@ -116,13 +113,13 @@ export function sample_normal_distribution(mean, std_dev) {
     const u2 = Math.random();
 
     const z = Math.sqrt(-2.0 * Math.log(u1 || 1e-10)) * Math.cos(2.0 * Math.PI * u2);
-    return mean + z * std_dev;
+    return mean + z * stdev;
 }
 
 /**
  * Samples a value from a uniform distribution.
  */
-export function sample_uniform_distribution(min, max) {
+export function sample_uniform_distribution(max, min) {
     console.log("Sampling uniform distribution with min:", min, "and max:", max);
     if (min >= max) {
         throw new Error("Minimum value must be less than the maximum value.");
@@ -131,3 +128,43 @@ export function sample_uniform_distribution(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+
+export function transfer(investment1, investment2, amount) {
+    console.log(`Transferring ${amount} from ${investment1.id} to ${investment2.id}`);
+
+
+    // Ensure the source investment has enough value to transfer
+    if (investment1.dollarValue < amount) {
+        throw new Error(`Insufficient funds in investment ${investment1.id}. Available: ${investment1.dollarValue}, Requested: ${amount}`);
+    }
+
+    // Perform the transfer
+    investment1.dollarValue =  Number(investment1.dollarValue) - Number(amount); // Deduct the amount from the source investment
+    investment2.dollarValue =  Number(investment2.dollarValue) + Number(amount); // Add the amount to the target investment
+   
+    console.log(`Transfer complete. New values:`);
+    console.log(`Investment ${investment1.id}: ${investment1.dollarValue}`);
+    console.log(`Investment ${investment2.id}: ${investment2.dollarValue}`);
+}
+
+/**
+ * Fetches all pre-tax investments for a given scenario from the database.
+ * @param {number} scenarioId - The ID of the scenario.
+ * @param {Array} investments - The list of investments for the simulation.
+ * @returns {Array} A list of pre-tax investments.
+ */
+export async function getPreTaxInvestments( investments) {
+    console.log(`Fetching pre-tax investments`);
+   
+    
+    const results = [];
+    for (const investment of investments) {
+        
+        if (investment.taxStatus === "pre-tax") {
+            results.push(investment);
+        }
+    }
+
+    console.log("Pre-tax investments results: ", results);
+    return results; // Return the list of pre-tax investments
+}
