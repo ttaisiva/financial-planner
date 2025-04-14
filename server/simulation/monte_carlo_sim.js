@@ -8,7 +8,7 @@ import { payNondiscExpenses } from "./nondisc_expenses.js";
 import { payDiscExpenses } from "./disc_expenses.js";
 import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
-import { runInvestEvent } from "./run_invest_event.js";
+import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
 
 import { log } from "../logging.js";
 import { ensureConnection, connection } from "../server.js";
@@ -41,6 +41,7 @@ export async function simulation(
     const incomeEvents = await getIncomeEvents(scenarioId, []); // Fetch income events to determine the number of events
     const rothYears = await getRothYears(scenarioId);
     let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
+    const investEventYears = await getInvestEvents(scenarioId); // Step 9: Invest Events
 
     console.log("Initializing simulation investments.");
     let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
@@ -120,7 +121,7 @@ export async function simulation(
       // Step 9: Invest Events
       runInvestEvent(currentSimulationYear, scenarioId);
 
-      // Rebalance investments
+      // Step 10: Rebalance investments
 
       // Collect yearly results -> need to impelemnt this
       yearlyResults.push({
