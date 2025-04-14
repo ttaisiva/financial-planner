@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { inputTypes, updateNestedState } from "../utils";
+import {
+  cleanEvent,
+  inputTypes,
+  updateNestedState,
+  processAssetAllocation,
+} from "../utils";
 
 export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
   const [formData, setFormData] = useState({
@@ -35,12 +40,13 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       lower: "",
     },
     initialAmount: null,
-    maxCash: null,
+    maxCash: "",
     inflationAdjusted: false,
     userFraction: null,
     socialSecurity: false,
     glidePath: false,
     assetAllocation: "",
+    assetAllocation2: "",
     allocationMethod: "",
     discretionary: false,
   });
@@ -83,19 +89,25 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
     console.log("event submitted");
     console.log("first form data", formData);
 
+    // Separate allocationMethod from the data so we can remove (not included in yaml file)
     const { allocationMethod, ...rest } = formData;
     let glidePath = false;
 
     if (allocationMethod === "glide_path") glidePath = true;
     else glidePath = false;
 
+    // Format and split assetAllocation to the correct format (yaml file)
+    const allocationFormatted = processAssetAllocation(allocationPercentages);
+    console.log("allocation formatted:", allocationFormatted);
+
     const eventData = {
       ...rest,
-      assetAllocation: JSON.stringify(allocationPercentages),
+      ...allocationFormatted,
       glidePath: glidePath,
     };
 
-    console.log("final form data: ", eventData);
+    const cleanedEventData = cleanEvent(eventData);
+    console.log("final form data: ", cleanedEventData);
 
     try {
       console.log("Event Type: ", eventData.type);
@@ -104,7 +116,7 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(eventData),
+        body: JSON.stringify(cleanedEventData),
       });
 
       if (response.ok) {
@@ -321,9 +333,6 @@ const IncomeEvent = ({ formData, handleChange }) => {
         <label>User Percentage:</label>
         <input
           type="text"
-          step="0.01"
-          min="0"
-          max="999.99"
           name="userFraction"
           value={formData.userFraction}
           onChange={handleChange}

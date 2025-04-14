@@ -296,12 +296,15 @@ export const updateNestedState = (prefix, key, value, setFormData) => {
 };
 
 /**
- * Used in ScenarioInfo to clean objects in the main form data.
+ * Used in ScenarioInfo to clean form data.
  * Gets rid of key value pairs where value = "", and converts numbers represented as string into int
  * Returns the object but cleaned.
  *
  * Use like this:
  *    const cleanFormData = cleanScenario(formData);
+ *
+ * TP: ChatGPT, prompt - i only need to make sure it is an int before sending it to the router.
+ * i also want to remove any key value pairs where the value is "".
  *
  * @param {*} obj
  * @returns
@@ -345,4 +348,75 @@ export const cleanScenario = (obj) => {
   }
 
   return result;
+};
+
+/**
+ * Used in EventForm to clean form data.
+ * Gets rid of key value pairs where value = "" or false, and converts numbers represented as string into int
+ * Returns the object but cleaned.
+ *
+ * TP: ChatGPT, prompt - how would i send the cleaned data to the router if this is what i have right now: {EventForm code}
+ * @param {*} obj
+ * @returns
+ */
+export const cleanEvent = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj
+      .map(cleanEvent)
+      .filter((item) => item !== undefined && item !== null);
+  }
+
+  if (typeof obj === "object" && obj !== null) {
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+      const cleanedValue = cleanEvent(value);
+
+      if (
+        cleanedValue !== "" &&
+        cleanedValue !== false &&
+        cleanedValue !== null &&
+        (typeof cleanedValue !== "object" ||
+          Object.keys(cleanedValue).length > 0)
+      ) {
+        acc[key] = cleanedValue;
+      }
+
+      return acc;
+    }, {});
+  }
+
+  return obj;
+};
+
+/**
+ * Used in EventForm to change assetAllocation to correct format before sending to router
+ *
+ * TP: ChatGPT, prompt - "my assetAllocation value is currently formatted like this:
+ * {"two after-tax": {"end": 40, "start": 80}, "434 non-retirement": {"end": 60, "start": 20}}
+ * i want to change this format such that the "start" values would be with assetAllocation1 key like {"two after-tax": 80, "434 non-retirement": 20}
+ * and the "end" values would be with assetAllocation2 like {"two after-tax": 40, "434 non-retirement": 60}
+ * note that there may be more than 2 elements in the object as well. it depends on how many items the user inputs"
+ *
+ * @param {*} allocation
+ * @returns
+ */
+export const processAssetAllocation = (allocation) => {
+  const resultStart = {};
+  const resultEnd = {};
+  let hasEnd = false;
+
+  for (const [key, value] of Object.entries(allocation)) {
+    if (value && typeof value === "object") {
+      if ("start" in value) {
+        resultStart[key] = value.start / 100; // convert to decimal (yaml format)
+      }
+      if ("end" in value) {
+        resultEnd[key] = value.end / 100; // convert to decimal (yaml format)
+        hasEnd = true;
+      }
+    }
+  }
+
+  return hasEnd
+    ? { assetAllocation: resultStart, assetAllocation2: resultEnd }
+    : { assetAllocation: resultStart };
 };

@@ -31,7 +31,6 @@ router.post("/investment-type", (req, res) => {
 
 router.post("/investments", (req, res) => {
   const investmentData = req.body;
-  investmentData.id = investmentsLocalStorage.length; // Assign a unique ID
   investmentsLocalStorage.push(investmentData);
   console.log("Investment stored temporarily:", investmentData);
   res.status(200).json(investmentData);
@@ -940,6 +939,7 @@ async function insertEvents(connection, scenario_id, events) {
     event.changeDistribution = JSON.stringify(event.changeDistribution);
     event.assetAllocation = JSON.stringify(event.assetAllocation);
     event.assetAllocation2 = JSON.stringify(event.assetAllocation2);
+    event.scenarioId = scenario_id;
 
     const eventSnakeCase = keysToSnakeCase(event);  
     console.log("event snake case", eventSnakeCase);
