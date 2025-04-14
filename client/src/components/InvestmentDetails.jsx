@@ -7,6 +7,7 @@ export const Investment = ({
   setShowInvestmentForm,
 }) => {
   const [formData, setFormData] = useState({
+    id: "",
     investmentType: "",
     value: "",
     taxStatus: "",
@@ -14,10 +15,25 @@ export const Investment = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
+    const updatedValue = name === "value" ? parseFloat(value) : value;
+
+    const updatedFormData = {
       ...formData,
-      [name]: name === "value" ? parseFloat(value) : value,
-    });
+      [name]: updatedValue,
+    };
+
+    // Set ID if both fields are available
+    if (name === "investmentType" || name === "taxStatus") {
+      const { investmentType, taxStatus } = {
+        ...formData,
+        [name]: updatedValue,
+      };
+      if (investmentType && taxStatus) {
+        updatedFormData.id = `${investmentType} ${taxStatus}`;
+      }
+    }
+
+    setFormData(updatedFormData);
   };
 
   const handleSubmit = async (e) => {
