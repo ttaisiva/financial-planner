@@ -64,7 +64,7 @@ async function startServer() {
   try {
     await ensureConnection();
 
-    await createTablesIfNotExist(connection);
+    await createTablesIfNotExist();
     await scrapeData();
     console.log("Scraping completed.");
     console.log("All tables created or already exist.");

@@ -33,7 +33,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let isSpouseAlive = true;
 
     // let cashInvestment = await getCashInvest(scenarioId);
-    let cashInvestment = 2000;
+    let cashInvestment = 1100; // dani using to test
 
     let curYearIncome = 0;
     let curYearSS = 0;
@@ -49,11 +49,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
 
     //Step 0: run preliminaries -> need to further implement this
-    await ensureConnection();
-    const inflationRate = await run_preliminaries(
-      currentSimulationYear,
-      scenarioId
-    );
+    const inflationRate = await run_preliminaries(scenarioId);
 
     console.log("Total years for simulation: ", totalYears);
     for (let year = 0; year < totalYears; year++) {
@@ -140,17 +136,18 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //payDiscExpenses(scenarioId);
 
       // Step 9: Invest Events
-      //   await runInvestEvent(
-      //     currentSimulationYear,
-      //     scenarioId,
-      //     investEventYears,
-      //     cashInvestment,
-      //     investments,
-      //     inflationRate,
-      //     afterTaxContributionLimit
-      //   );
+      await runInvestEvent(
+        currentSimulationYear,
+        scenarioId,
+        investEventYears,
+        cashInvestment,
+        investments,
+        inflationRate,
+        afterTaxContributionLimit,
+        date
+      );
 
-      console.log("updated investments after invest event:", investments);
+      //   console.log("updated investments after invest event:", investments);
 
       // Step 10: Rebalance investments
 
@@ -276,4 +273,14 @@ async function getCashInvest(scenarioId) {
   return rows[0].value;
 }
 
-async function getAfterTaxLimit(scenarioId) {}
+async function getAfterTaxLimit(scenarioId) {
+  await ensureConnection();
+  const [rows] = await connection.execute(
+    "SELECT after_tax_contribution_limit FROM scenarios WHERE id = ?",
+    [scenarioId]
+  );
+
+  //   console.log("after tax cont limit:", rows[0].after_tax_contribution_limit);
+
+  return rows[0].value;
+}

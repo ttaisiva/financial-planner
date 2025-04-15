@@ -12,13 +12,14 @@ export async function runInvestEvent(
   cashInvestment,
   investments,
   inflationRate,
-  afterTaxContributionLimit
+  afterTaxContributionLimit,
+  date
 ) {
   const activeEventId = getActiveEventId(
     currentSimulationYear,
     investEventYears
   );
-  console.log("active event:", activeEventId);
+  // console.log("active event:", activeEventId);
 
   // If there is an invest event that is active on the currentSimulationYear
   if (activeEventId) {
@@ -35,20 +36,36 @@ export async function runInvestEvent(
     if (cashInvestment > maxCash) {
       const excessCash = cashInvestment - maxCash;
       const allocations = await getAssetAllocations(activeEventId);
-      console.log("allocation:", allocations);
+      // console.log("allocation:", allocations);
 
-      console.log("APPLYING ALLOCATIONS");
+      // console.log("APPLYING ALLOCATIONS");
+      const event = await getEventById(activeEventId);
 
-      applyAssetAllocationWithGlide({
-        investments,
-        allocations: allocations,
-        amountToAllocate: excessCash,
-        eventId: activeEventId,
-        currentYear: currentSimulationYear,
-        investEventYears,
-        inflationRate,
-        baseRetirementLimit: afterTaxContributionLimit,
-      });
+      if (event.glide_path === 1) {
+        applyGlideAssetAllocation({
+          investments,
+          allocations: allocations,
+          amountToAllocate: excessCash,
+          eventId: activeEventId,
+          currentYear: currentSimulationYear,
+          investEventYears,
+          inflationRate,
+          baseRetirementLimit: afterTaxContributionLimit,
+          simulationStartYear: date,
+        });
+      } else {
+        applyFixedAssetAllocation({
+          investments,
+          allocations: allocations,
+          amountToAllocate: excessCash,
+          eventId: activeEventId,
+          currentYear: currentSimulationYear,
+          investEventYears,
+          inflationRate,
+          baseRetirementLimit: afterTaxContributionLimit,
+          simulationStartYear: date,
+        });
+      }
     } else {
       console.log("No excess cash available to allocate to investments");
     }
@@ -57,7 +74,7 @@ export async function runInvestEvent(
 
 const getEventById = async (eventId) => {
   await ensureConnection();
-  console.log("in geteventbyid eventid:", eventId);
+  // console.log("in geteventbyid eventid:", eventId);
   const [rows] = await connection.execute("SELECT * FROM events WHERE id = ?", [
     eventId,
   ]);
@@ -104,7 +121,7 @@ export const getInvestEvents = async (scenarioId) => {
     [scenarioId]
   );
 
-  console.log("rows", rows);
+  // console.log("rows", rows);
 
   await connection.end();
 
@@ -135,6 +152,7 @@ const getInvestEventYears = async (events) => {
         : event.duration;
 
     let startYear, endYear;
+    console.log("Start Object: ", startObj);
 
     // Determine start year based on event type
     switch (startObj.type) {
@@ -142,8 +160,20 @@ const getInvestEventYears = async (events) => {
         startYear = Number(startObj.value);
         break;
 
+      case "normal":
+        // console.log(`Normal Event ${event.id} mean:`, startObj.mean);
+        // console.log(`Normal Event ${event.id} stdev:`, startObj.stdev);
+        startYear = Math.round(
+          generateNormalRandom(startObj.mean, startObj.stdev)
+        );
+        // console.log(`Normal Event ${event.id} start year:`, startYear);
+        break;
+
       case "uniform":
+        // console.log(`Uniform Event ${event.id} lower:`, startObj.lower);
+        // console.log(`Uniform Event ${event.id} upper:`, startObj.upper);
         startYear = generateUniformRandom(startObj.lower, startObj.upper);
+        // console.log(`Uniform Event ${event.id} start year:`, startYear);
         break;
 
       case "startWith":
@@ -158,8 +188,8 @@ const getInvestEventYears = async (events) => {
               : referencedEvent.start;
 
           if (referencedStartObj.type === "fixed") {
-            // Ensure the startYear for startWith event is after the referenced event's endYear
-            startYear = Number(referencedStartObj.value) + 1;
+            // the startYear for startWith event is the same as the referenced event's endYear
+            startYear = Number(referencedStartObj.value);
           } else {
             console.error(
               `Referenced event ${startObj.eventSeries} does not have a valid fixed start year.`
@@ -172,10 +202,27 @@ const getInvestEventYears = async (events) => {
         }
         break;
 
-      case "normal":
-        startYear = Math.round(
-          generateNormalRandom(startObj.mean, startObj.stdev)
+      case "startsAfter":
+        const referencedEventAfter = events.find(
+          (e) => e.name === startObj.eventSeries
         );
+
+        if (referencedEventAfter) {
+          const referencedEndYear = endYears[referencedEventAfter.id];
+
+          if (referencedEndYear) {
+            // Start the current event after the referenced event's end year
+            startYear = referencedEndYear + 1;
+          } else {
+            console.error(
+              `Referenced event ${startObj.eventSeries} does not have a valid end year.`
+            );
+            continue;
+          }
+        } else {
+          console.error(`Referenced event ${startObj.eventSeries} not found.`);
+          continue;
+        }
         break;
 
       default:
@@ -208,11 +255,19 @@ const getInvestEventYears = async (events) => {
         break;
 
       case "normal":
-        const duration = generateNormalRandom(
+        const normalDuration = generateNormalRandom(
           durationObj.mean,
           durationObj.stdev
         );
-        endYear = startYear + Math.round(duration); // Round to the nearest year
+        endYear = startYear + Math.round(normalDuration); // Round to the nearest year
+        break;
+
+      case "uniform":
+        const uniformDuration = generateUniformRandom(
+          durationObj.lower,
+          durationObj.upper
+        );
+        endYear = startYear + Math.round(uniformDuration); // Round to the nearest year
         break;
 
       default:
@@ -276,21 +331,29 @@ export async function getAssetAllocations(eventId) {
 
 /**
  *
+ * TP: ChatGPT, prompt:
+ *
+ *    "for each key in the asset allocations, i want to retrieve the investment with the matching id from a list of elements.
+ *    with that id, i want to add to the "value" key of that investment
+ *
+ *    now can you allocate a percentage of the amountToAllocate according to the values in the allocation?
+ *    for example, "S&P 500 after-tax" would get 40% of the amountToAllocate, and  "S&P 500 non-retirement" would get 60%"
+ *
  * @param {*} investments
  * @param {*} allocation
  * @param {*} amountToAllocate
  */
-async function applyAssetAllocationWithGlide({
+async function applyGlideAssetAllocation({
   investments,
   allocations,
   amountToAllocate,
   eventId,
   currentYear,
   investEventYears,
-  inflationRate = 0.02, // default 2%
-  baseRetirementLimit = 6500, // base annual retirement contribution limit
+  inflationRate = 0.03,
+  afterTaxContributionLimit = 6500,
+  simulationStartYear = 2023,
 }) {
-  console.log("eventid:", eventId);
   const event = await getEventById(eventId);
   if (!event) {
     console.warn(`Event with id "${eventId}" not found.`);
@@ -299,7 +362,7 @@ async function applyAssetAllocationWithGlide({
 
   let computedAllocation = {};
 
-  // 1. Compute glide path allocation if needed
+  // Step 1: Handle glide path logic
   if (event.glide_path === 1) {
     const glideYears = investEventYears[eventId];
     if (!glideYears) {
@@ -316,49 +379,153 @@ async function applyAssetAllocationWithGlide({
     const t = totalYears === 0 ? 1 : elapsedYears / totalYears;
 
     for (const key in allocations.asset_allocation) {
-      const startPercent = allocations.asset_allocation[key] || 0;
-      const endPercent = allocations.asset_allocation2?.[key] || 0;
-      computedAllocation[key] = startPercent + t * (endPercent - startPercent);
+      const start = allocations.asset_allocation[key] || 0;
+      const end = allocations.asset_allocation2?.[key] || 0;
+      computedAllocation[key] = start + t * (end - start);
     }
   } else {
     computedAllocation = allocations.asset_allocation;
   }
 
-  // 2. Track how much has been added to retirement (after-tax) investments
-  let retirementContributed = 0;
-  const adjustedRetirementLimit = baseRetirementLimit * (1 + inflationRate);
+  // Step 2: Calculate inflation-adjusted retirement limit
+  const yearDuration = currentYear - simulationStartYear;
+  const adjustedLimit =
+    afterTaxContributionLimit * Math.pow(1 + inflationRate, yearDuration);
+  console.log("AFTER TAX LIMIT: ", adjustedLimit);
 
-  // 3. Apply allocation (respecting inflation-adjusted retirement limits)
+  let remainingToAllocate = amountToAllocate;
+  const uncappedAllocations = {};
+
+  // Step 3: First pass — apply capped allocations
   for (const [investmentId, percent] of Object.entries(computedAllocation)) {
-    if (typeof percent !== "number" || isNaN(percent)) {
-      console.warn(`Invalid percent for ${investmentId}:`, percent);
-      continue;
-    }
-
     const target = investments.find((inv) => inv.id === investmentId);
     if (!target) {
       console.warn(`Investment with id "${investmentId}" not found.`);
       continue;
     }
 
-    const isRetirement = target.taxStatus === "after-tax";
-    const currentValue = parseFloat(target.value);
-    let allocationAmount = amountToAllocate * percent;
+    const proposedAmount = amountToAllocate * percent;
+    const currentValue = parseFloat(target.value) || 0;
 
-    // ⚠️ Adjust amount for inflation *before* contribution to retirement accounts
-    if (isRetirement) {
-      // Apply inflation to the dollar amount being contributed
-      allocationAmount *= 1 + inflationRate;
+    if (target.taxStatus === "after-tax") {
+      const availableRoom = Math.max(adjustedLimit, 0); // Expandable: subtract already contributed this year
+      const cappedAmount = Math.min(proposedAmount, availableRoom);
 
-      // Enforce annual limit
-      const availableSpace = adjustedRetirementLimit - retirementContributed;
-      if (allocationAmount > availableSpace) {
-        allocationAmount = availableSpace;
+      target.value = (currentValue + cappedAmount).toFixed(2);
+      remainingToAllocate -= cappedAmount;
+
+      if (proposedAmount > cappedAmount) {
+        uncappedAllocations[investmentId] = 0;
       }
+    } else {
+      uncappedAllocations[investmentId] = percent;
+    }
+  }
 
-      retirementContributed += allocationAmount;
+  // Step 4: Redistribute leftover amount proportionally
+  const totalUncappedWeight = Object.values(uncappedAllocations).reduce(
+    (sum, p) => sum + p,
+    0
+  );
+
+  for (const [investmentId, percent] of Object.entries(uncappedAllocations)) {
+    if (percent === 0) continue;
+
+    const target = investments.find((inv) => inv.id === investmentId);
+    if (!target) continue;
+
+    const currentValue = parseFloat(target.value) || 0;
+    const weight = percent / totalUncappedWeight;
+    const reallocAmount = remainingToAllocate * weight;
+
+    target.value = (currentValue + reallocAmount).toFixed(2);
+  }
+}
+
+/**
+ *
+ * TP: ChatGPT, prompt - "can you make a similar function but instead of glide path, it is a fixed percentage allocated to each investment.
+ * for example, the event would only have the field asset_allocation but not asset_allocation2.
+ * if asset_allocation is: {"S&P 500 after-tax": 0.4, "S&P 500 non-retirement": 0.6}
+ * then apply 40% of excess cash to "S&P 500 after-tax" and 60% to the other.
+ * inflation assumptions are kept"
+ *
+ * @param {*} param0
+ * @returns
+ */
+async function applyFixedAssetAllocation({
+  investments,
+  allocations,
+  amountToAllocate,
+  eventId,
+  currentYear,
+  inflationRate = 0.03,
+  afterTaxContributionLimit = 6500,
+  simulationStartYear = 2023,
+}) {
+  const event = await getEventById(eventId);
+  if (!event) {
+    console.warn(`Event with id "${eventId}" not found.`);
+    return;
+  }
+
+  const computedAllocation = allocations.asset_allocation;
+  if (!computedAllocation) {
+    console.warn(`No asset_allocation found for event "${eventId}".`);
+    return;
+  }
+
+  // Step 1: Calculate inflation-adjusted after-tax contribution limit
+  const yearDuration = currentYear - simulationStartYear;
+  const adjustedLimit =
+    afterTaxContributionLimit * Math.pow(1 + inflationRate, yearDuration);
+  console.log("Inflation-adjusted after-tax limit: ", adjustedLimit);
+
+  let remainingToAllocate = amountToAllocate;
+  const uncappedAllocations = {};
+
+  // Step 2: Apply allocations with after-tax cap enforcement
+  for (const [investmentId, percent] of Object.entries(computedAllocation)) {
+    const target = investments.find((inv) => inv.id === investmentId);
+    if (!target) {
+      console.warn(`Investment with id "${investmentId}" not found.`);
+      continue;
     }
 
-    target.value = (currentValue + allocationAmount).toFixed(2);
+    const proposedAmount = amountToAllocate * percent;
+    const currentValue = parseFloat(target.value) || 0;
+
+    if (target.taxStatus === "after-tax") {
+      const availableRoom = Math.max(adjustedLimit, 0);
+      const cappedAmount = Math.min(proposedAmount, availableRoom);
+
+      target.value = (currentValue + cappedAmount).toFixed(2);
+      remainingToAllocate -= cappedAmount;
+
+      if (proposedAmount > cappedAmount) {
+        uncappedAllocations[investmentId] = 0;
+      }
+    } else {
+      uncappedAllocations[investmentId] = percent;
+    }
+  }
+
+  // Step 3: Redistribute leftover to uncapped investments
+  const totalUncappedWeight = Object.values(uncappedAllocations).reduce(
+    (sum, p) => sum + p,
+    0
+  );
+
+  for (const [investmentId, percent] of Object.entries(uncappedAllocations)) {
+    if (percent === 0 || totalUncappedWeight === 0) continue;
+
+    const target = investments.find((inv) => inv.id === investmentId);
+    if (!target) continue;
+
+    const currentValue = parseFloat(target.value) || 0;
+    const weight = percent / totalUncappedWeight;
+    const reallocAmount = remainingToAllocate * weight;
+
+    target.value = (currentValue + reallocAmount).toFixed(2);
   }
 }
