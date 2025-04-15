@@ -82,7 +82,7 @@ async function scrapeTaxBrackets() {
             incomeMax: incomeMax, // Int or null
           });
         });
-      if (currFilingStatus == "married") currFilingStatus = ""; // Change to "" so that no tax rate information is scraped after "married jointly"
+      if (currFilingStatus == "couple") currFilingStatus = ""; // Change to "" so that no tax rate information is scraped after "married jointly"
     }
   });
   insertTaxBrackets(taxBrackets);
