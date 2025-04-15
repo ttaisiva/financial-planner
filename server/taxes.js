@@ -552,8 +552,8 @@ async function insertStateTaxBrackets() {
   if (isAdded.length == 0) {
     const states = yaml.load(fs.readFileSync('data/statetax.yaml', 'utf8'));
     const query = `
-    INSERT INTO state_tax_brackets (state, user_id, year, filing_status, tax_rate, income_min, income_max)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO state_tax_brackets (state, user_id, year, filing_status, tax_rate, base, income_min, income_max)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `
     for (const state of states) {
       for (const bracket of state[Object.keys(state)[0]]) {
@@ -563,6 +563,7 @@ async function insertStateTaxBrackets() {
           bracket.year,
           bracket.filing_status,
           bracket.rate,
+          bracket.base,
           bracket.income_min,
           bracket.income_max
         ];

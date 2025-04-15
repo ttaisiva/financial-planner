@@ -15,13 +15,19 @@ import { ensureConnection, connection } from "../server.js";
  * - Capital Gain Tax
  * - Early Withdrawal Tax
  */
-export async function payTaxes(scenarioID, incomeEvents) {
+
+/**
+ * @param scenarioID ID of given scenario
+ * @param incomeEvents income events for the given scenario
+ * @param year Simulation year minus one (to calculate prev year taxes)
+ */
+export async function payTaxes(scenarioID, incomeEvents, year) {
     await ensureConnection();
     const scenario = await getScenario(scenarioID);
     // const incomeEvents = await getIncomeEvents(scenarioID); // List of income events
 
     // Find the amount owed by taxing all sources of income federally and by state
-    const amtOwed = (await computeFederal(incomeEvents, scenario.marital_status) + await computeState(incomeEvents, scenario.marital_status, scenario.residence_state)) - await getDeduction(scenario.marital_status);
+    const amtOwed = (await computeFederal(incomeEvents, scenario.marital_status, year) + await computeState(incomeEvents, scenario.marital_status, scenario.residence_state, year)) - await getDeduction(scenario.marital_status, year);
     const cash = await getCashInvestment(scenarioID);
     if (cash.value > amtOwed) {
         // No need to sell expenses; Pay from cash
@@ -46,24 +52,6 @@ const getScenario = async (scenarioID) => {
     `
     [rows] = await connection.execute(query, [scenarioID]);
     return rows[0];
-}
-
-/**
- * Returns list of event series of only the income type for a given scenario
- * @param scenarioID scenario ID
- * @return list of income events
- */
-const getIncomeEvents = async (scenarioID) => {
-    const query = `
-        SELECT * FROM events
-        WHERE scenario_id=? AND type=?
-    `
-    const values = [
-        scenarioID,
-        "income"
-    ]
-
-    return await connection.execute(query, values);
 }
 
 /**
@@ -115,28 +103,48 @@ const getExpenseWithdrawalStrategy = async (scenarioID) => {
 
 /**
  * Computes how much federal income tax a scenario would ower for the previous year
- * @param incomeEvents list of income events that will be taxed
+ * @param income yearly income
+ * @param ssIncome social security income
  * @param filingStatus married or single
+ * @param year indicates which tax bracket to retrieve
  * @return amount of taxes owed
  */
-const computeFederal = async (incomeEvents, filingStatus) => {
+const computeFederal = async (income, ssIncome, filingStatus, year) => {
     // Prepare query for bracket calculations
     const query = `
         SELECT * FROM tax_brackets
-        WHERE income_min < ? AND filing_status = ${filingStatus}
+        WHERE income_min < ? AND filing_status = ${filingStatus} AND year = ${year}
+    `
+
+    const fallbackQuery = `
+        SELECT * FROM tax_brackets
+        WHERE income_min < ? AND filing_status = ${filingStatus} AND year > ?
     `
 
     let sum = 0;
     // Each event will be taxed individually and added to an overall sum
-    for (const ev of incomeEvents) {
-        const brackets = await connection.execute(query, [ev.initial_amount]);
-        for (const bracket of brackets) {
-            if (ev.initial_amount > bracket.income_max) { // Checks if we are in a bracket that is completely full
-                sum += (bracket.income_max * bracket.tax_rate);
-            }
-            else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
-                sum += ((ev.initial_amount - bracket.income_min) * bracket.tax_rate);
-            }
+    let [brackets] = await connection.execute(query, income);
+    if (brackets.length == 0) {
+        brackets = await connection.execute(fallbackQuery, [income, year])
+    }
+
+    for (const bracket of brackets) {
+        if (income > bracket.income_max) { // Checks if we are in a bracket that is completely full
+            sum += (bracket.income_max * bracket.tax_rate);
+        }
+        else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
+            sum += ((income - bracket.income_min) * bracket.tax_rate);
+        }
+    }
+
+    // Social Security Calculation
+    const ssIncomeReduced = ssIncome * .85;
+    for (const bracket of brackets) {
+        if (ssIncomeReduced > bracket.income_max) { // Checks if we are in a bracket that is completely full
+            sum += (bracket.income_max * bracket.tax_rate);
+        }
+        else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
+            sum += ((ssIncomeReduced - bracket.income_min) * bracket.tax_rate);
         }
     }
     return sum;
@@ -144,32 +152,62 @@ const computeFederal = async (incomeEvents, filingStatus) => {
 
 /**
  * Computes how much state income tax a scenario would owe for the previous year (Excludes social security)
- * @param incomeEvents list of income events that will be taxed
+ * @param income yearly income (does not include social security)
  * @param filingStatus married or single
  * @param state state of residence
+ * @param year indicates which tax bracket to retrieve
  * @return amount of taxes owed
  */
-const computeState = async (incomeEvents, filingStatus, state) => {
+const computeState = async (income, filingStatus, state, year) => {
     // Prepare query for bracket calculations
     const query = `
         SELECT * FROM state_tax_brackets
-        WHERE income_min < ? AND filing_status = ${filingStatus} AND state = ${state}
+        WHERE income_min < ? AND filing_status = ${filingStatus} AND state = ${state} AND year = ${year}
+    `
+
+    const fallbackQuery = `
+        SELECT * FROM state_tax_brackets
+        WHERE income_min < ? AND filing_status = ${filingStatus} AND state = ${state} AND year > ?
     `
 
     let sum = 0;
     // Each event will be taxed individually and added to an overall sum
-    for (const ev of incomeEvents) {
-        if (ev.social_security == 0) {
-            const brackets = await connection.execute(query, [ev.initial_amount]);
-            for (const bracket of brackets) {
-                if (ev.initial_amount > bracket.income_max) { // Checks if we are in a bracket that is completely full
-                    sum += (bracket.income_max * bracket.tax_rate);
-                }
-                else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
-                    sum += ((ev.initial_amount - bracket.income_min) * bracket.tax_rate);
-                }
-            }
+    let [brackets] = await connection.execute(query, [income]);
+    if (brackets.length == 0) { // No brackets for current year
+        brackets = await connection.execute(fallbackQuery, [income, year])
+    }
+
+    for (const bracket of brackets) {
+        if (income > bracket.income_max) { // Checks if we are in a bracket that is completely full
+            sum += ((bracket.income_max * bracket.tax_rate) + bracket.base);
+        }
+        else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
+            sum += (((income - bracket.income_min) * bracket.tax_rate) + bracket.base);
         }
     }
     return sum;
+}
+
+/**
+ * Retrieves the deduction for the marital_status in the scenario
+ * @param filingStatus individual or couple
+ * @param year indicates which tax bracket to retrieve
+ * @returns deduction value
+ */
+const getDeduction = async (filingStatus, year) => {
+    let filing;
+    if (filingStatus == "individual") {
+        filing = "single";
+    }
+    else {
+        filing = "married";
+    }
+
+    query = `
+        SELECT * FROM standard_deductions
+        WHERE filing_status = ${filing} AND year = ${year}
+        LIMIT 1
+    `
+    const [rows] = await connection.execute(query)
+    return rows[0].standard_deduction;
 }

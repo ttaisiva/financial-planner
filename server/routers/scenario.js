@@ -421,8 +421,8 @@ router.post("/import-scenario", async (req, res) => {
   const query = `
     INSERT INTO scenarios (
       user_id, name, marital_status, birth_years, life_expectancy, 
-      inflation_assumption, financial_goal, residence_state
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      inflation_assumption, after_tax_contribution_limit, financial_goal, residence_state
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
@@ -432,6 +432,7 @@ router.post("/import-scenario", async (req, res) => {
     scenario.birthYears ?? null,
     scenario.lifeExpectancy ?? null,
     scenario.inflationAssumption ?? null,
+    scenario.afterTaxContributionLimit ?? null,
     scenario.financialGoal ?? null,
     scenario.residenceState ?? null,
   ];
@@ -519,6 +520,7 @@ router.get("/export-scenario", async (req, res) => {
       investments: investments,
       eventSeries: eventSeries,
       inflationAssumption: scenario.inflation_assumption,
+      afterTaxContributionLimit: scenario.after_tax_contribution_limit,
       spendingStrategy: strategies.spendingStrategy,
       expenseWithdrawalStrategy: strategies.expenseWithdrawalStrategy,
       RMDStrategy: strategies.RMDStrategy,
@@ -1044,7 +1046,7 @@ async function insertInvestment(connection, scenario_id, investments) {
     else {
       investID = investment.investmentType + " " + investment.taxStatus;
     }
-    
+
     const investmentValues = [
       investID ?? null,
       scenario_id ?? null,
