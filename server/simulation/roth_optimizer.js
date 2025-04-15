@@ -1,12 +1,15 @@
 import { connection } from "../server.js";
 import { ensureConnection } from "../server.js";
 import { getFilingStatus } from "./monte_carlo_sim.js";
+import { logRothConversion } from "../logging.js";
 
 export async function runRothOptimizer(
   scenarioId,
   rothStrategy,
   incomeEvents,
-  investments
+  investments,
+  year,
+  evtlog,
 ) {
   console.log(`Running Roth optimizer for scenario ID: ${scenarioId}`);
   // step 1: determine user tax bracket and conversion amount:
@@ -24,8 +27,9 @@ export async function runRothOptimizer(
     if (pretax.value <= conversionAmt) {
       // transfer entire thing to equivalent account by just changing it to an after-tax account
       conversionAmt -= pretax.value;
-      pretax.taxStatus = "After-Tax";
-      // TODO: remove from strategy bc its not pre tax anymore
+      pretax.taxStatus = "after-tax";
+      logRothConversion(evtlog, year, pretax, pretax, pretax.value);
+      // remove from strategy bc its not pre tax anymore
       rothStrategy = rothStrategy.filter(
         (strategy) => strategy.investment_id !== pretax.id
       );
@@ -40,19 +44,22 @@ export async function runRothOptimizer(
       if (aftertax) {
         aftertax.value += conversionAmt;
         pretax.value -= conversionAmt;
+        logRothConversion(evtlog, year, pretax, aftertax, conversionAmt);
       } else {
         // create new after tax investment to transfer to
         const newInvestment = {
-          id: investments.length + 1, // really not sure about this
+          id: pretax.type + " after-tax",
           type: pretax.type,
-          taxStatus: "After-Tax",
+          taxStatus: "after-tax",
           value: conversionAmt,
         };
         investments.push(newInvestment);
+        logRothConversion(evtlog, year, pretax, pretax, conversionAmt);
       }
       conversionAmt = 0;
     }
   }
+
   return { investments, rothStrategy };
 }
 
@@ -63,11 +70,14 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
     totalIncome += incomeEvents[i].currentAmount;
   }
   const filingStatus = await getFilingStatus(scenarioId);
+  console.log(filingStatus);
   const taxBrackets = await getTaxBrackets(filingStatus);
-  let userMax = taxBrackets[0].income_max;
+  console.log(taxBrackets);
+
+  let userMax = taxBrackets[0].incomeMax;
   for (let i = 0; i < taxBrackets.length; i++) {
-    if (totalIncome <= taxBrackets[i].income_max) {
-      userMax = taxBrackets[i].income_max;
+    if (totalIncome <= taxBrackets[i].incomeMax) {
+      userMax = taxBrackets[i].incomeMax;
       break;
     }
   }
@@ -82,7 +92,7 @@ async function getTaxBrackets(filingStatus) {
   await ensureConnection();
   const [rows] = await connection.execute(
     `SELECT 
-            income_max
+            income_max as incomeMax
          FROM tax_brackets
          WHERE filing_status = ?`,
     [filingStatus]
