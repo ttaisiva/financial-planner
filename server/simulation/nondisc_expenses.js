@@ -14,6 +14,7 @@ import {
  * @param {number} inflationRate - The inflation rate for the current year.
  * @param {number} date - The current date.
  * @param {Array} investments - The list of investments.
+ * @param {number} taxes - The amount owed from federal, state, and capital gains tax
  * @returns {Object} Updated financial data.
  *
  */
@@ -24,7 +25,8 @@ export async function payNonDiscExpenses(
   currentSimulationYear,
   inflationRate,
   date,
-  investments
+  investments,
+  taxes
 ) {
   console.log(
     `Paying non-discretionary expenses for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
@@ -60,7 +62,8 @@ export async function payNonDiscExpenses(
     totalNonDiscExpenses
   );
 
-  let remainingWithdrawal = totalNonDiscExpenses;
+  console.log("nondisc taxes", taxes);
+  let remainingWithdrawal = totalNonDiscExpenses + taxes;
   console.log("Remaining withdrawal:", remainingWithdrawal);
 
   // Iterate over non-discretionary expenses and pay them
