@@ -230,6 +230,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
         cleanedFormData.spouseBirthYear,
       ]),
       inflationAssumption: JSON.stringify(cleanedFormData.inflationAssumption),
+      afterTaxContributionLimit: cleanedFormData.afterTaxContributionLimit,
     };
 
     const fullData = { scenario: scenarioData, cashData: finalCashData };
