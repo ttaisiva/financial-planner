@@ -89,16 +89,19 @@ export async function payDiscExpenses(
                 let capitalGain = 0;
                 if (investment.taxStatus === "non-retirement") {
                     console.log(`Withdrawing from non-retirement account: ${investment.id}`);
-                    const purchasePrice = getPurchasePrice(investment.id, scenarioId);
+                    const purchasePrice =  runningTotals.purchasePrices;
+                    console.log("purchase price", purchasePrice);
+                    console.log("investment id", investment.id);
+                    const purchasePriceID =  runningTotals.purchasePrices[String(investment.id)]; // Assuming purchasePrice is an object with investment IDs as keys
                     const currentValueBeforeSale = investment.value;
                     investment.value -= withdrawalAmount;
                     if (investment.value === 0) {
-                        capitalGain = withdrawalAmount - purchasePrice;
+                        capitalGain = withdrawalAmount - purchasePriceID;
                     }
                     else {
                         const fractionSold = withdrawalAmount / currentValueBeforeSale;
                         console.log(`Fraction sold: ${fractionSold}`);
-                        capitalGain = (currentValueBeforeSale - purchasePrice) * fractionSold;
+                        capitalGain = (currentValueBeforeSale - purchasePriceID) * fractionSold;
                     }
 
                     runningTotals.curYearGains += capitalGain;
@@ -274,48 +277,3 @@ export async function getExpenseWithdrawalStrategy(scenarioId) {
     }));
 }
 
-/**
- * Calculates the purchase price of an investment.
- * @param {number} investmentId - The ID of the investment.
- * @param {number} scenarioId - The ID of the scenario.
- * @returns {Promise<number>} The purchase price of the investment.
- */
-export async function getPurchasePrice(investmentId, scenarioId) {
-    console.log(`Fetching purchase price for investment ID: ${investmentId}, scenario ID: ${scenarioId}`);
-
-    // Ensure database connection
-    await ensureConnection();
-
-    // Fetch the initial value of the investment
-    const [initialValueRows] = await connection.execute(
-        `SELECT value
-         FROM investments
-         WHERE id = ? AND scenario_id = ?`,
-        [investmentId, scenarioId]
-    );
-
-    if (initialValueRows.length === 0) {
-        console.warn(`No initial value found for investment ID: ${investmentId}, scenario ID: ${scenarioId}`);
-        return 0;
-    }
-
-    const initialValue = parseFloat(initialValueRows[0].value);
-    console.log("Initial value fetched:", initialValue);
-
-    // Fetch all purchase transactions for this investment
-    const [purchaseRows] = await connection.execute(
-        `SELECT amount
-         FROM transactions
-         WHERE investment_id = ? AND scenario_id = ? AND type = 'purchase'`,
-        [investmentId, scenarioId]
-    );
-
-    // Sum up all purchase amounts
-    const totalPurchases = purchaseRows.reduce((sum, row) => sum + parseFloat(row.amount), 0);
-
-    // Calculate the total purchase price
-    const purchasePrice = initialValue + totalPurchases;
-
-    console.log(`Purchase price for investment ID: ${investmentId}, scenario ID: ${scenarioId} is ${purchasePrice}`);
-    return purchasePrice;
-}
