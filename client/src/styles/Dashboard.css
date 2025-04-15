@@ -77,6 +77,9 @@ h6.dashboard {
   display: none;
 }
 
+/* Code below here was made with help from AI */
+/* TP: GitHub Copilot GPT-4o, prompt - "how to make a pop up element after pressing a button on my website. */
+/* i am making a react app. this pop up element has buttons on it too" */
 .container-popup {
   display: flex;
   align-items: center;

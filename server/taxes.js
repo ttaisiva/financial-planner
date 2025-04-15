@@ -1,15 +1,23 @@
 import mysql from "mysql2/promise";
 import * as cheerio from "cheerio";
+import yaml from "js-yaml";
+import fs from "fs";
 import { connectToDatabase } from "./server.js";
 
 async function scrapeData() {
   scrapeTaxBrackets();
   scrapeStandardDeductions();
   scrapeCapitalGainsTax();
+  scrapeRMD();
+  insertStateTaxBrackets();
 }
 
 /**
+ * Scrapes IRS website for tax rates and tax bracket information and inserts it into the database.
+ *
  * taxBrackets [ {year, filingStatus, taxRate, incomeMin, incomeMax} ]
+ *
+ * @returns
  * TP: ChatGPT, prompt: "how do i scrape specifically tax rates and brackets for single and marid jointly"
  */
 var taxBrackets = [];
@@ -42,13 +50,13 @@ async function scrapeTaxBrackets() {
 
     if (tag === "h2" && content.includes("single")) {
       // If tag and content match this, the table tag after this will contain tax bracket info for filing single
-      currFilingStatus = "single";
+      currFilingStatus = "individual";
     } else if (tag === "a" && content.includes("Married filing jointly")) {
       // If tag and content match this, the table tag after this will contain tax bracket info for filing married jointly
-      currFilingStatus = "married";
+      currFilingStatus = "couple";
     } else if (
       tag === "table" &&
-      (currFilingStatus == "single" || currFilingStatus == "married")
+      (currFilingStatus == "individual" || currFilingStatus == "couple")
     ) {
       // Only scrape tax bracket info for single and married jointly
       $(element)
@@ -74,13 +82,18 @@ async function scrapeTaxBrackets() {
             incomeMax: incomeMax, // Int or null
           });
         });
-      if (currFilingStatus == "married") currFilingStatus = ""; // Change to "" so that no tax rate information is scraped after "married jointly"
+      if (currFilingStatus == "couple") currFilingStatus = ""; // Change to "" so that no tax rate information is scraped after "married jointly"
     }
   });
-  // console.log(taxBrackets);
   insertTaxBrackets(taxBrackets);
 }
 
+/**
+ * Checks if tax bracket information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ * @returns boolean
+ */
 async function isTaxBracketYearInDB(year) {
   try {
     const connection = await connectToDatabase();
@@ -104,6 +117,11 @@ async function isTaxBracketYearInDB(year) {
   }
 }
 
+/**
+ * Inserts tax bracket information into the database.
+ *
+ * @param {*} taxBrackets
+ */
 async function insertTaxBrackets(taxBrackets) {
   try {
     const connection = await connectToDatabase();
@@ -123,7 +141,11 @@ async function insertTaxBrackets(taxBrackets) {
 }
 
 /**
+ * Scrapes IRS website for standard deduction information and inserts it into the database.
+ *
  * standardDeductions [ {year, filingStatus, standardDeduction} ]
+ *
+ * @returns
  */
 var standardDeductions = [];
 async function scrapeStandardDeductions() {
@@ -160,13 +182,13 @@ async function scrapeStandardDeductions() {
           if ($(columns[0]).text().trim().includes("Single")) {
             standardDeductions.push({
               year: year,
-              filingStatus: "single",
+              filingStatus: "individual",
               standardDeduction: moneyToInt($(columns[1]).text().trim()),
             });
           } else if ($(columns[0]).text().trim().includes("Married")) {
             standardDeductions.push({
               year: year,
-              filingStatus: "married",
+              filingStatus: "couple",
               standardDeduction: moneyToInt($(columns[1]).text().trim()),
             });
           }
@@ -174,10 +196,15 @@ async function scrapeStandardDeductions() {
       isCorrectTable = false; // Set to False again so that no more tables are scraped after this
     }
   });
-  // console.log(standardDeductions);
   insertStandardDeductions(standardDeductions);
 }
 
+/**
+ * Checks if standard deduction information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ * @returns boolean
+ */
 async function isStandardDeductYearInDB(year) {
   try {
     const connection = await connectToDatabase();
@@ -201,6 +228,11 @@ async function isStandardDeductYearInDB(year) {
   }
 }
 
+/**
+ * Inserts standard deduction information into the database.
+ *
+ * @param {*} taxBrackets
+ */
 async function insertStandardDeductions(standardDeductions) {
   try {
     const connection = await connectToDatabase();
@@ -220,7 +252,11 @@ async function insertStandardDeductions(standardDeductions) {
 }
 
 /**
+ * Scrapes IRS website for capital gains tax rate information and inserts it into the database.
+ *
  * capitalGainsTaxRates [ {year, filingStatus, capitalGainsTaxRate, incomeMin, incomeMax} ]
+ *
+ * @returns
  */
 var capitalGainsTaxRates = [];
 async function scrapeCapitalGainsTax() {
@@ -292,22 +328,22 @@ async function scrapeCapitalGainsTax() {
           if (counter === 1) {
             // If first list on IRS site, single and married have the same rate, same min, but different maxes
             if (i === 0) {
-              currFilingStatus = "single";
+              currFilingStatus = "individual";
               incomeMin = 0;
               incomeMax = moneyToInt(extractMoney($(item).text().trim()));
             } else if (i === 1) {
-              currFilingStatus = "married";
+              currFilingStatus = "couple";
               incomeMin = 0;
               incomeMax = moneyToInt(extractMoney($(item).text().trim()));
             }
           } else if (counter === 2) {
             // If second list on IRS site, single and married have the same rate, but different min and maxes
             if (i === 0) {
-              currFilingStatus = "single";
+              currFilingStatus = "individual";
               incomeMin = moneyToInt(extractAllMoney($(item).text().trim())[0]);
               incomeMax = moneyToInt(extractAllMoney($(item).text().trim())[1]);
             } else if (i === 1) {
-              currFilingStatus = "married";
+              currFilingStatus = "couple";
               incomeMin = moneyToInt(extractAllMoney($(item).text().trim())[0]);
               incomeMax = moneyToInt(extractAllMoney($(item).text().trim())[1]);
               isCorrectList = false; // Set to False again so that no more lists are scraped after this
@@ -327,10 +363,15 @@ async function scrapeCapitalGainsTax() {
         });
     }
   });
-  // console.log(capitalGainsTaxRates);
   insertCapitalGains(capitalGainsTaxRates);
 }
 
+/**
+ * Checks if capital gains tax rate information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ * @returns boolean
+ */
 async function isCapitalGainsYearInDB(year) {
   try {
     const connection = await connectToDatabase();
@@ -354,6 +395,11 @@ async function isCapitalGainsYearInDB(year) {
   }
 }
 
+/**
+ * Inserts capital gains tax rate information into the database.
+ *
+ * @param {*} taxBrackets
+ */
 async function insertCapitalGains(capitalGainsTaxRates) {
   try {
     const connection = await connectToDatabase();
@@ -369,6 +415,163 @@ async function insertCapitalGains(capitalGainsTaxRates) {
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
+  }
+}
+
+var RMDs = [];
+async function scrapeRMD() {
+  const $ = await cheerio.fromURL("https://www.irs.gov/publications/p590b");
+
+  let year = extractYear($("title").text().trim());
+
+  if (await isRMDYearInDB(year)) {
+    // If year already in database, don't scrape and exit out of this function
+    console.log(`RMD data for ${year} already in database. Scrape canceled.`);
+    return;
+  }
+
+  $("table").each((_, element) => {
+    // Scrape RMD data
+    const tag = $(element).prop("tagName").toLowerCase();
+    const summary = $(element).attr("summary");
+
+    if (tag === "table" && summary === "Appendix B. Uniform Lifetime Table") {
+      $(element)
+        .find("tr")
+        .each((i, row) => {
+          // Rows 5 through 29 in this table contain the data for RMDs
+          if (i > 4 && i < 30) {
+            const columns = $(row).find("td");
+            const age1 = $(columns[0]).text().trim();
+            const distPeriod1 = $(columns[1]).text().trim();
+            const age2 = $(columns[2]).text().trim();
+            const distPeriod2 = $(columns[3]).text().trim();
+
+            // Age may be listed as "[int] and over", and if so, the age will be stored as the [int] listed in the string,
+            // and will be considered as 120 and over implicitly
+            if (age1) {
+              if (age1.includes("and over")) {
+                const newAge = extractInt(age1);
+                RMDs.push({
+                  year: year,
+                  age: newAge,
+                  distribution_period: distPeriod1,
+                });
+                console.log("new age", newage);
+              } else {
+                RMDs.push({
+                  year: year,
+                  age: age1,
+                  distribution_period: distPeriod1,
+                });
+              }
+            }
+
+            // Age may be listed as "[int] and over", and if so, the age will be stored as the [int] listed in the string,
+            // and will be considered as 120 and over implicitly
+            if (age2) {
+              if (age2.includes("and over")) {
+                const newAge = extractInt(age2);
+                RMDs.push({
+                  year: year,
+                  age: newAge,
+                  distribution_period: distPeriod2,
+                });
+              } else {
+                RMDs.push({
+                  year: year,
+                  age: age2,
+                  distribution_period: distPeriod2,
+                });
+              }
+            }
+          }
+        });
+    }
+  });
+  insertRMDs(RMDs);
+}
+
+/**
+ * Checks if RMD information for the year present in the IRS website is already present in the database
+ *
+ * @param {int} year
+ */
+async function isRMDYearInDB(year) {
+  try {
+    const connection = await connectToDatabase();
+    const sql = "SELECT year FROM rmds WHERE year=?";
+    const params = [year];
+
+    const [rows] = await connection.execute(sql, params);
+
+    await connection.end();
+
+    if (rows.length == 0) {
+      console.log(
+        `RMD data for ${year} NOT found in database. Continue scraping.`
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Database error:", err.message);
+    throw err;
+  }
+}
+
+/**
+ * Inserts RMD information into the database.
+ *
+ * @param {*} RMDs
+ */
+async function insertRMDs(RMDs) {
+  try {
+    const connection = await connectToDatabase();
+    const sql =
+      "INSERT INTO `rmds`(`year`, `age`, `distribution_period`) VALUES (?, ?, ?)";
+
+    RMDs.forEach((element) => {
+      const values = Object.values(element);
+      connection.execute(sql, values);
+    });
+
+    await connection.end();
+  } catch (err) {
+    console.error("Database error:", err.message);
+    throw err;
+  }
+}
+
+/**
+ * Inserts State Tax Brackets from the statetax.yaml file in the data folder if it is not already in DB
+ */
+async function insertStateTaxBrackets() {
+  const connection = await connectToDatabase();
+  const [isAdded] = await connection.execute(
+    `SELECT * FROM state_tax_brackets WHERE user_id IS NULL`
+  ); // Indicates that the pre-written state tax brackets were added; All other tax brackets are uploaded by users
+  if (isAdded.length == 0) {
+    const states = yaml.load(fs.readFileSync("data/statetax.yaml", "utf8"));
+    const query = `
+    INSERT INTO state_tax_brackets (state, user_id, year, filing_status, tax_rate, base, income_min, income_max)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    for (const state of states) {
+      for (const bracket of state[Object.keys(state)[0]]) {
+        const values = [
+          Object.keys(state)[0],
+          null,
+          bracket.year,
+          bracket.filing_status,
+          bracket.rate,
+          bracket.base,
+          bracket.income_min,
+          bracket.income_max,
+        ];
+        await connection.execute(query, values);
+      }
+    }
   }
 }
 
@@ -416,7 +619,7 @@ function extractMoney(text) {
 }
 
 /**
- *
+ * Returns all extractions of a string that consist of digits that are preceded by '$' and may have commas within it followed by 3 digits intervals
  * @param {String} text
  * @returns Array
  * TP: ChatGPT, prompt - "does this work if there are two instances in one string? ex: "I have $4000 and she has $3000""
@@ -428,6 +631,11 @@ function extractAllMoney(text) {
 
 function extractYear(text) {
   let match = text.match(/(?:\d{4})/);
+  return match ? match[0] : null;
+}
+
+function extractInt(text) {
+  let match = text.match(/\d+/);
   return match ? match[0] : null;
 }
 
