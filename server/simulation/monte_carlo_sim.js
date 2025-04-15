@@ -46,6 +46,15 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     let investEventYears = await getInvestEvents(scenarioId);
 
+    let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
+
+    //Step 0: run preliminaries -> need to further implement this
+    await ensureConnection();
+    const inflationRate = await run_preliminaries(
+      currentSimulationYear,
+      scenarioId
+    );
+
     console.log("Total years for simulation: ", totalYears);
     for (let year = 0; year < totalYears; year++) {
       //years in which the simulation is  being run
@@ -53,13 +62,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       const currentSimulationYear = date + year; //actual year being simulated
       console.log("current year", currentSimulationYear);
 
-      //Step 0: run preliminaries -> need to further implement this
-      await ensureConnection();
-      const inflationRate = await run_preliminaries(
-        currentSimulationYear,
-        scenarioId,
-        connection
-      );
       //   console.log(
       //     "Inflation rate for year ",
       //     currentSimulationYear,
@@ -273,3 +275,5 @@ async function getCashInvest(scenarioId) {
 
   return rows[0].value;
 }
+
+async function getAfterTaxLimit(scenarioId) {}

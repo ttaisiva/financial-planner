@@ -41,11 +41,8 @@ export async function get_preliminaries_data(scenarioId, connection) {
  *
  */
 
-export async function run_preliminaries(
-  current_simulation_year,
-  scenarioId,
-  connection
-) {
+export async function run_preliminaries(current_simulation_year, scenarioId) {
+  await ensureConnection();
   console.log("Running preliminaries for year:", current_simulation_year);
   const result = await get_preliminaries_data(scenarioId, connection);
   console.log("Inflation assumption data:", result);
