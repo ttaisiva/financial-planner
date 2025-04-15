@@ -10,7 +10,7 @@ import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
 import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
 import { initLogs } from '../logging.js';
-import { log } from "../logging.js";
+import { logResults } from "../logging.js";
 import { ensureConnection, connection } from "../server.js";
 import { generateNormalRandom, generateUniformRandom } from "../utils.js";
 /**
@@ -19,6 +19,7 @@ import { generateNormalRandom, generateUniformRandom } from "../utils.js";
 export async function simulation(date, numSimulations, userId, scenarioId) {
   console.log("Running Monte Carlo simulation...");
     const logs = await initLogs(userId); // open log files for writing
+
   await ensureConnection();
   const totalYears = await getTotalYears(date, scenarioId, connection);
 
@@ -51,6 +52,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let investEventYears = await getInvestEvents(scenarioId);
 
     let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
+    // log investments before any changes
+    if (sim == 0) logResults(logs.csvlog, logs.csvStream, investments, date-1);
 
     //Step 0: run preliminaries 
     await ensureConnection();
@@ -157,9 +160,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //     cash_flow: 0,
       //     investments: 0,
       //   });
-    }
+      if (sim == 0) logResults(logs.csvlog, logs.csvStream, investments, currentSimulationYear);
 
-    if (sim == 0) log(userId, yearlyResults);
+    }
+    logs.csvlog.end(); // close the csv log file
+
     simulationResults.push(yearlyResults);
   }
 

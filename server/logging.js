@@ -23,19 +23,23 @@ export async function initLogs(userId) {
  
      let path = `${dir}/${username}_${timestamp}.csv`; // do not change quotation type
      const csvlog = fs.createWriteStream(path); // creates/opens file
+    //  const csvlog = fs.createWriteStream(path, { flags: 'a' });
      path = `${dir}/${username}_${timestamp}.log`;
      const evtlog = fs.createWriteStream(path);
-     return {csvlog, evtlog};
+
+     const csvStream = format({ headers: false }) // no title row by default
+        .on('error', e => console.error(e));    
+    csvStream.pipe(csvlog); // connect the write stream to the csv file
+
+     return {csvlog, evtlog, csvStream};
 
 }
-export async function log(csvlog, investments, year) {
+export function logResults(csvlog, csvStream, investments, year) {
 
     // Copilot prompt: this function is called repeatedly so i 
         // want to make sure the title row doesn't get written multiple times, 
         // but that it does get modified if new investments are added
-    const csvStream = format({ headers: false }) // no title row by default
-        .on('error', e => console.error(e));    
-    csvStream.pipe(csvlog); // connect the write stream to the csv file
+    
     // Check if the title row needs to be updated or written
     if (!csvlog.titleRow || investments.some(investment => 
         !csvlog.titleRow.includes(investment.type + " (" + investment.taxStatus + ")"))) {
@@ -44,11 +48,8 @@ export async function log(csvlog, investments, year) {
         csvlog.titleRow = titleRow; // Cache the title row in the write stream object
     } 
     // Write the data row
-    const dataRow = [year, ...investments.map(investment => investment.dollarValue)];
+    const dataRow = [year, ...investments.map(investment => investment.value)];
     csvStream.write(dataRow);
-
-    csvStream.end();
-    
 }
 
 export async function logEvent(evtlog, event) {
