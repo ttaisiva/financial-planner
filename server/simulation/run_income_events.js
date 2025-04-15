@@ -104,8 +104,9 @@ export async function process_income_event(scenarioId, previousYearAmounts,infla
     }
 
     // Add to cash investment and income totals
-    runningTotals.cashInvestment += currentAmount;
-    runningTotals.curYearIncome += currentAmount;
+    runningTotals.cashInvestment =  Number(runningTotals.cashInvestment) + Number(currentAmount);
+    runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(currentAmount);
+   
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
 
     console.log(
@@ -113,7 +114,8 @@ export async function process_income_event(scenarioId, previousYearAmounts,infla
     );
 
     if (event.isSocialSecurity) {
-      runningTotals.curYearSS += currentAmount;
+        runningTotals.curYearSS = Number(runningTotals.curYearSS) + Number(currentAmount);
+     
       console.log(`Added adjustedAmount to curYearSS. Updated curYearSS: ${runningTotals.curYearSS}`);
     }
 
@@ -202,10 +204,8 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts, incomeEve
  * @returns {number} The calculated start year.
  */
 export function getEventStartYear(event) {
-    console.log(event.start)
-    if (!event.start || !event.start.type) {
-        throw new Error(`Invalid event start definition: ${JSON.stringify(event.start)}`);
-    }
+    console.log("event", event)
+
 
     const start = event.start;
 
@@ -224,10 +224,7 @@ export function getEventStartYear(event) {
 
         case "startWith":
             // Start year is the same as another event series
-            if (!start.eventSeries) {
-                throw new Error(`Missing eventSeries for startWith type: ${JSON.stringify(start)}`);
-            }
-            // Logic to fetch the start year of the referenced event series
+            console.log("startWith", start.eventSeries)
             return getEventStartYearFromSeries(start.eventSeries);
 
         case "startAfter":
