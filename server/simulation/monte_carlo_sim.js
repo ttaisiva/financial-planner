@@ -105,27 +105,27 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome, investments));
 
       //   Step 3: Optimize Roth conversions
-      //   if (
-      //     rothYears &&
-      //     currentSimulationYear >= rothYears.start_year &&
-      //     currentSimulationYear <= rothYears.end_year
-      //   ) {
-      //     console.log(
-      //       `Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`
-      //     );
-      //     const rothResult = await runRothOptimizer(
-      //       scenarioId,
-      //       rothStrategy,
-      //       incomeEvents,
-      //       investments
-      //     );
-      //     investments = rothResult.investments;
-      //     rothStrategy = rothResult.rothStrategy;
-      //   } else {
-      //     console.log(
-      //       `Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`
-      //     );
-      //   }
+        if (
+          rothYears &&
+          currentSimulationYear >= rothYears.start_year &&
+          currentSimulationYear <= rothYears.end_year
+        ) {
+          console.log(
+            `Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`
+          );
+          const rothResult = await runRothOptimizer(
+            scenarioId,
+            rothStrategy,
+            incomeEvents,
+            investments
+          );
+          investments = rothResult.investments;
+          rothStrategy = rothResult.rothStrategy;
+        } else {
+          console.log(
+            `Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`
+          );
+        }
 
       // Step 4: Update investments
       //({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome, investments));

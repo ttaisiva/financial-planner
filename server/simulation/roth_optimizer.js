@@ -64,6 +64,7 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
   }
   const filingStatus = await getFilingStatus(scenarioId);
   const taxBrackets = await getTaxBrackets(filingStatus);
+
   let userMax = taxBrackets[0].income_max;
   for (let i = 0; i < taxBrackets.length; i++) {
     if (totalIncome <= taxBrackets[i].income_max) {
@@ -79,6 +80,7 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
 }
 
 async function getTaxBrackets(filingStatus) {
+  if(filingStatus === 'individual') filingStatus = 'single';
   await ensureConnection();
   const [rows] = await connection.execute(
     `SELECT 
