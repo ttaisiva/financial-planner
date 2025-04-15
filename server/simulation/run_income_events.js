@@ -24,12 +24,12 @@ import { getUserBirthYear, getUserLifeExpectancy } from "./monte_carlo_sim.js";
  * @param {number} curYearSS - The current year's social security total.
  * @returns {Object} The updated financial data.
  */
-export async function process_income_event(scenarioId, previousYearAmounts,inflationRate,isUserAlive,isSpouseAlive,cashInvestment,curYearIncome,curYearSS,currentSimulationYear, incomeEventsStart, incomeEventsDuration) {
+export async function process_income_event(scenarioId, previousYearAmounts,inflationRate,isUserAlive,isSpouseAlive, runningTotals, currentSimulationYear, incomeEventsStart, incomeEventsDuration) {
 
 
   console.log(`Processing income events for scenario ID: ${scenarioId} with current simulation year: ${currentSimulationYear}`);
   console.log(
-    `Initial cash investment: ${cashInvestment}, curYearIncome: ${curYearIncome}, curYearSS: ${curYearSS}`
+    `Initial cash investment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}, curYearSS: ${runningTotals.curYearSS}`
   );
 
 
@@ -40,19 +40,14 @@ export async function process_income_event(scenarioId, previousYearAmounts,infla
     console.warn(
       `No income events found for scenario ID ${scenarioId}. Skipping income event processing.`
     );
-    return {
-      updatedAmounts: {},
-      cashInvestment,
-      curYearIncome,
-      curYearSS,
-    };
+    return ;//{curYearIncome, cashInvestment, curYearSS}; // Return early if no income events found
   }
 
   console.log(
     `Found ${incomeEvents.length} income events for scenario ID ${scenarioId}.`
   );
 
-  const updatedAmounts = {}; // To store currentAmount for each event
+  
 
   for (const event of incomeEvents) {
     const startYear = incomeEventsStart[event.id];
@@ -107,19 +102,19 @@ export async function process_income_event(scenarioId, previousYearAmounts,infla
     }
 
     // Add to cash investment and income totals
-    cashInvestment += currentAmount;
-    curYearIncome += currentAmount;
+    runningTotals.cashInvestment += currentAmount;
+    runningTotals.curYearIncome += currentAmount;
 
     console.log(
-      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${cashInvestment}, curYearIncome: ${curYearIncome}`
+      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}`
     );
 
     if (event.isSocialSecurity) {
-      curYearSS += currentAmount;
-      console.log(`Added adjustedAmount to curYearSS. Updated curYearSS: ${curYearSS}`);
+      runningTotals.curYearSS += currentAmount;
+      console.log(`Added adjustedAmount to curYearSS. Updated curYearSS: ${runningTotals.curYearSS}`);
     }
 
-    updatedAmounts[event.id] = currentAmount; // Save the pre-adjusted amount
+    
     previousYearAmounts[event.id] = currentAmount;
     console.log(`Updated previousYearAmounts for event ID ${event.id}: ${currentAmount}`);
   }
@@ -128,16 +123,9 @@ export async function process_income_event(scenarioId, previousYearAmounts,infla
     `Finished processing income events for scenario ID ${scenarioId}.`
   );
   console.log(
-    `Final cashInvestment: ${cashInvestment}, curYearIncome: ${curYearIncome}, curYearSS: ${curYearSS}`
+    `Final cashInvestment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}, curYearSS: ${runningTotals.curYearSS}`
   );
   
-
-  return {
-    updatedAmounts,
-    cashInvestment,
-    curYearIncome,
-    curYearSS,
-  };
 }
 
 /**
@@ -183,26 +171,6 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts, incomeEve
 
   return rows.map((event) => {
     const prevAmount = previousYearAmounts[event.id] || 0;
-    // console.log(
-    //   `Calculating current amount for event ID: ${event.id}, previousYearAmount: ${prevAmount}`
-    // );
-
-
-    //only do this if event has start_year = currentSimulationYear and duration is not over
-    // if (incomeEventsStart[event.id] < currentSimulationYear &&
-    //     (incomeEventsStart[event.id] + incomeEventsDuration[event.id] < currentSimulationYear )
-    // ) {
-    //     const sampledChange = sample(event.change_distribution);
-    //     console.log(`Sampled change for event ID: ${event.id}: ${sampledChange}`);
-    
-    //     const currentAmount = Number(prevAmount) + Number(sampledChange);
-    //     console.log(`Calculated currentAmount for event ID: ${event.id}: ${currentAmount}` );
-    // }
-    // else{
-    //     console.log(`Event ID: ${event.id} has not started or is already over. Using previous amount: ${prevAmount}`);
-    //     const currentAmount = prevAmount; // Use the previous amount if the event hasn't started yet
-    //     console.log(`Current amount for event ID: ${event.id}: ${currentAmount}` );
-    // }
     
 
     return {
