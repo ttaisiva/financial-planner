@@ -125,7 +125,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         runningTotals,
         currentSimulationYear,
         incomeEventsStart,
-        incomeEventsDuration
+        incomeEventsDuration,
+        logs.evtlog
       );
 
       console.log(
@@ -133,13 +134,14 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         runningTotals.curYearIncome
       );
 
-      //   Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
+      // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
       console.log("Perform RMDs for year: ", currentSimulationYear);
       await performRMDs(
         scenarioId,
         currentSimulationYear,
         runningTotals,
-        investments
+        investments,
+        logs.evtlog
       );
       console.log(
         "Current year income after perform RMDs: ",
@@ -310,7 +312,7 @@ async function initInvestments(scenarioId) {
     `SELECT 
             id,
             investment_type as type,
-            value as value,
+            value,
             tax_status as taxStatus
         
          FROM investments

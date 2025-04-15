@@ -11,6 +11,7 @@
 import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js";
 import { getUserBirthYear, getUserLifeExpectancy } from "./monte_carlo_sim.js";
+import { logIncome } from "../logging.js";
 
 /**
  * Processes an income event and updates financial data.
@@ -33,7 +34,8 @@ export async function process_income_event(
   runningTotals,
   currentSimulationYear,
   incomeEventsStart,
-  incomeEventsDuration
+  incomeEventsDuration,
+  evtlog
 ) {
   console.log(
     `Processing income events for scenario ID: ${scenarioId} with current simulation year: ${currentSimulationYear}`
@@ -137,6 +139,7 @@ export async function process_income_event(
     runningTotals.curYearIncome = (
       Number(runningTotals.curYearIncome) + Number(currentAmount)
     ).toFixed(2);
+    logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
 
     console.log(
       `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}`
