@@ -22,7 +22,7 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
  */
 export async function updateInvestments(
   scenarioId,
-  curYearIncome,
+  runningTotals,
   investments
 ) {
   console.log(`Starting updateInvestments for scenario ID: ${scenarioId}`);
@@ -34,7 +34,7 @@ export async function updateInvestments(
   console.log(
     `Fetched ${investments.length} investments for scenario ID: ${scenarioId}`
   );
-  console.log("investments", investments);
+  //   console.log("investments", investments);
   console.log(
     `Fetched ${
       Object.keys(investmentTypes).length
@@ -72,9 +72,9 @@ export async function updateInvestments(
       investment.taxStatus === "non-retirement" &&
       investmentType.taxability === "taxable"
     ) {
-      curYearIncome += generatedIncome;
+      runningTotals.curYearIncome += generatedIncome;
       console.log(
-        `Added generated income to curYearIncome. Updated curYearIncome: ${curYearIncome}`
+        `Added generated income to curYearIncome. Updated curYearIncome: ${runningTotals.curYearIncome}`
       );
     }
 
@@ -120,9 +120,6 @@ export async function updateInvestments(
   }
 
   console.log(`Finished updating investments for scenario ID: ${scenarioId}`);
-  return {
-    curYearIncome,
-  };
 }
 
 /**

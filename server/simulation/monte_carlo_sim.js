@@ -1,7 +1,11 @@
 import { process_income_event } from "./run_income_events.js";
 import { run_preliminaries, sample } from "./preliminaries.js";
 import { performRMDs } from "./perform_rmds.js";
-import { getIncomeEvents, getEventStartYear, getEventDuration } from "./run_income_events.js";
+import {
+  getIncomeEvents,
+  getEventStartYear,
+  getEventDuration,
+} from "./run_income_events.js";
 import { updateInvestments } from "./update_investments.js";
 import { runRothOptimizer } from "./roth_optimizer.js";
 import { payNondiscExpenses } from "./nondisc_expenses.js";
@@ -31,18 +35,28 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let yearlyResults = {};
     let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
     let incomeEventsStart = {};
-    let incomeEventsDuration= {};
+    let incomeEventsDuration = {};
 
     let isUserAlive = true;
     let isSpouseAlive = true;
 
-    // let cashInvestment = await getCashInvest(scenarioId);
-    let cashInvestment = 2000;
+    let cashInvestment = await getCashInvest(scenarioId);
+    let testCash;
 
-    let curYearIncome = 0;
-    let curYearSS = 0;
-    const incomeEvents = await getIncomeEvents(scenarioId, []); 
-    await populateYearsAndDuration(incomeEvents, incomeEventsStart, incomeEventsDuration); // Populate years and duration for income events
+    const runningTotals = {
+      cashInvestment: cashInvestment,
+      curYearIncome: 0,
+      curYearSS: 0,
+      curYearGains: 0,
+      curYearEarlyWithdrawals: 0,
+    };
+
+    const incomeEvents = await getIncomeEvents(scenarioId, []);
+    await populateYearsAndDuration(
+      incomeEvents,
+      incomeEventsStart,
+      incomeEventsDuration
+    ); // Populate years and duration for income events
     const rothYears = await getRothYears(scenarioId);
     let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
@@ -55,58 +69,63 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     // log investments before any changes
     if (sim == 0) logResults(logs.csvlog, logs.csvStream, investments, date-1);
 
-    //Step 0: run preliminaries 
+    //Step 0: run preliminaries
     await ensureConnection();
-    const inflationRate = await run_preliminaries(
-      date,
-      scenarioId
-    );
-
+    const inflationRate = await run_preliminaries(scenarioId);
 
     console.log("Total years for simulation: ", totalYears);
-    for (let year = 0; year < 10; year++) {
-      console.log("investments at start of year", investments);
+    for (let year = 0; year < totalYears; year++) {
       //years in which the simulation is  being run
 
       const currentSimulationYear = date + year; //actual year being simulated
       console.log("current year", currentSimulationYear);
 
-
-            if (year === 0) {
-            // Populate the object with initial amounts based on event IDs
-            if (incomeEvents.length === 0) {
-                console.log("No income events found for this scenario.");
-            } else {
-                incomeEvents.forEach((event) => {
-                previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
-                console.log(
-                    "Previous year amounts for income events: ",
-                    previousYearAmounts
-                );
-                });
-            }
-            }
+      if (year === 0) {
+        // Populate the object with initial amounts based on event IDs
+        if (incomeEvents.length === 0) {
+          console.log("No income events found for this scenario.");
+        } else {
+          incomeEvents.forEach((event) => {
+            previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
+            console.log(
+              "Previous year amounts for income events: ",
+              previousYearAmounts
+            );
+          });
+        }
+      }
 
       // Step 1: Run income events
-        let updatedAmounts;
-        ({ updatedAmounts, cashInvestment, curYearIncome, curYearSS } =
-          await process_income_event(
-            scenarioId,
-            previousYearAmounts,
-            inflationRate,
-            isUserAlive,
-            isSpouseAlive,
-            cashInvestment,
-            curYearIncome,
-            curYearSS,
-            currentSimulationYear,
-            incomeEventsStart,
-            incomeEventsDuration,
-          ));
+
+      //   await process_income_event(
+      //     scenarioId,
+      //     previousYearAmounts,
+      //     inflationRate,
+      //     isUserAlive,
+      //     isSpouseAlive,
+      //     runningTotals,
+      //     currentSimulationYear,
+      //     incomeEventsStart,
+      //     incomeEventsDuration
+      //   );
+
+      console.log(
+        "Current year income after income events: ",
+        runningTotals.curYearIncome
+      );
 
       // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-      // console.log("Perform RMDs for year: ", currentSimulationYear);
-      //({ curYearIncome } = await performRMDs(scenarioId, currentSimulationYear, curYearIncome, investments));
+      //   console.log("Perform RMDs for year: ", currentSimulationYear);
+      //   await performRMDs(
+      //     scenarioId,
+      //     currentSimulationYear,
+      //     runningTotals,
+      //     investments
+      //   );
+      //   console.log(
+      //     "Current year income after perform RMDs: ",
+      //     runningTotals.curYearIncome
+      //   );
 
       //   Step 3: Optimize Roth conversions
         if (
@@ -132,26 +151,39 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         }
 
       // Step 4: Update investments
-      //({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome, investments));
+      //   await updateInvestments(scenarioId, runningTotals, investments);
+      //   console.log(
+      //     "Current year income after update investments: ",
+      //     runningTotals.curYearIncome
+      //   );
 
       // Pay non-discretionary expenses
       await payNondiscExpenses(scenarioId, investments, currentSimulationYear);
 
       // Pay discretionary expenses
-      //payDiscExpenses(scenarioId);
+      //payDiscExpenses(    scenarioId, cashInvestment, curYearIncome, curYearSS, curYearGains, curYearEarlyWithdrawals, currentSimulationYear, inflationRate);
 
+      console.log(
+        "Cash Investment after running Income Event:",
+        runningTotals.cashInvestment
+      );
       // Step 9: Invest Events
-      //   await runInvestEvent(
-      //     currentSimulationYear,
-      //     scenarioId,
-      //     investEventYears,
-      //     cashInvestment,
-      //     investments,
-      //     inflationRate,
-      //     afterTaxContributionLimit
-      //   );
+      await runInvestEvent(
+        currentSimulationYear,
+        scenarioId,
+        investEventYears,
+        runningTotals,
+        investments,
+        inflationRate,
+        afterTaxContributionLimit,
+        date
+      );
+      console.log(
+        "Cash Investment after running Invest Event:",
+        runningTotals.cashInvestment
+      );
 
-      // console.log("updated investments after invest event:", investments);
+      //   console.log("updated investments after invest event:", investments);
 
       // Step 10: Rebalance investments
 
@@ -279,9 +311,17 @@ async function getCashInvest(scenarioId) {
   return rows[0].value;
 }
 
-async function getAfterTaxLimit(scenarioId) {}
+async function getAfterTaxLimit(scenarioId) {
+  await ensureConnection();
+  const [rows] = await connection.execute(
+    "SELECT after_tax_contribution_limit FROM scenarios WHERE id = ?",
+    [scenarioId]
+  );
 
+  //   console.log("after tax cont limit:", rows[0].after_tax_contribution_limit);
 
+  return rows[0].value;
+}
 
 /**
  * Populates the start years and durations for income events.
@@ -289,26 +329,38 @@ async function getAfterTaxLimit(scenarioId) {}
  * @param {Object} incomeEventsStart - Object to store start years for each event by ID.
  * @param {Object} eventsDurationStart - Object to store durations for each event by ID.
  */
-export async function populateYearsAndDuration(incomeEvents, incomeEventsStart, incomeEventsDuration) {
-    console.log("Populating start years and durations for income events...");
-   
-    for (const event of incomeEvents) {
-        console.log("events: ", event);
-        console.log("event ID: ", event.id);
-        console.log("income events start: ", incomeEventsStart);
-       
-        // Populate start year if not already calculated
-        if (!incomeEventsStart[event.id]) {
-            incomeEventsStart[event.id] = getEventStartYear(event);
-            console.log(`Calculated start year for event ID ${event.id}: ${incomeEventsStart[event.id]}`);
-        }
+export async function populateYearsAndDuration(
+  incomeEvents,
+  incomeEventsStart,
+  incomeEventsDuration
+) {
+  console.log("Populating start years and durations for income events...");
 
-        // Populate duration if not already calculated
-        if (!incomeEventsDuration[event.id]) {
-            incomeEventsDuration[event.id] = getEventDuration(event);
-            console.log(`Calculated duration for event ID ${event.id}: ${incomeEventsDuration[event.id]}`);
-        }
+  for (const event of incomeEvents) {
+    console.log("events: ", event);
+    console.log("event ID: ", event.id);
+    console.log("income events start: ", incomeEventsStart);
+
+    // Populate start year if not already calculated
+    if (!incomeEventsStart[event.id]) {
+      incomeEventsStart[event.id] = getEventStartYear(event);
+      console.log(
+        `Calculated start year for event ID ${event.id}: ${
+          incomeEventsStart[event.id]
+        }`
+      );
     }
 
-    console.log("Finished populating start years and durations.");
+    // Populate duration if not already calculated
+    if (!incomeEventsDuration[event.id]) {
+      incomeEventsDuration[event.id] = getEventDuration(event);
+      console.log(
+        `Calculated duration for event ID ${event.id}: ${
+          incomeEventsDuration[event.id]
+        }`
+      );
+    }
+  }
+
+  console.log("Finished populating start years and durations.");
 }

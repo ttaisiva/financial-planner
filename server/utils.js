@@ -78,6 +78,9 @@ export function removeIdsFromEvents(events) {
  * @param {*} upper
  */
 export function generateUniformRandom(lower, upper) {
+  lower = Number(lower);
+  upper = Number(lower);
+
   return Math.floor(Math.random() * (upper - lower + 1)) + lower;
 }
 
@@ -93,8 +96,14 @@ export function generateUniformRandom(lower, upper) {
  * @returns
  */
 export function generateNormalRandom(mean, stdev) {
+  mean = Number(mean);
+  stdev = Number(stdev);
+
   const u1 = Math.random();
   const u2 = Math.random();
   const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-  return z0 * stdev + mean;
+  const raw = z0 * stdev + mean;
+  const result = Math.max(0, Math.round(raw)); // ensures it's not negative
+  console.log("result: ", result);
+  return result;
 }
