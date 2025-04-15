@@ -10,6 +10,14 @@ export async function get_preliminaries_data(scenarioId) {
   // this would be different from guest
 
   await ensureConnection(); // Ensure the connection is established
+  console.log("perform query to get preliminaries data");
+  if (
+    !connection ||
+    connection.state === "disconnected" ||
+    connection._closing
+  ) {
+    throw new Error("Database connection is not active.");
+  }
   const [rows] = await connection.execute(
     `SELECT 
             inflation_assumption
@@ -21,6 +29,7 @@ export async function get_preliminaries_data(scenarioId) {
   if (rows.length === 0) {
     throw new Error(`No data found for scenario ID: ${scenarioId}`);
   }
+  console.log("rows", rows[0]);
 
   return rows[0]; // Return the first row containing the inflation assumption data
 }
@@ -43,8 +52,10 @@ export async function get_preliminaries_data(scenarioId) {
 
 export async function run_preliminaries(scenarioId) {
   await ensureConnection();
+  console.log("Running preliminaries for year:", current_simulation_year);
+  ensureConnection();
   const result = await get_preliminaries_data(scenarioId);
-  //   console.log("Inflation assumption data:", result);
+  console.log("Inflation assumption data:", result);
 
   const inflation_rate = sample(result.inflation_assumption);
 
