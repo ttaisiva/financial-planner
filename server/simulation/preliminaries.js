@@ -58,7 +58,7 @@ export async function run_preliminaries(scenarioId) {
 
   const inflation_rate = sample(result.inflation_assumption);
 
-  console.log("Sampled inflation rate for the current year:", inflation_rate);
+    // console.log("Sampled inflation rate for the current year:", inflation_rate);
 
   return inflation_rate;
 }
@@ -73,12 +73,12 @@ export async function run_preliminaries(scenarioId) {
 export function sample(item) {
   let result;
 
-  console.log(`Sampling item: ${JSON.stringify(item)}, of type: ${item.type}`);
-  switch (item.type) {
-    case "fixed":
-      // Use the fixed inflation rate
-      result = Number(item.value);
-      break;
+    // console.log(`Sampling item: ${JSON.stringify(item)}, of type: ${item.type}`);
+    switch (item.type) {
+        case "fixed":
+            // Use the fixed inflation rate
+            result = Number(item.value);
+            break;
 
     case "normal":
       // Sample from a normal distribution
@@ -100,8 +100,8 @@ export function sample(item) {
       throw new Error("Invalid type");
   }
 
-  console.log("Resulting value of sampling:", result);
-  return result;
+    // console.log("Resulting value of sampling:", result);
+    return result;
 }
 
 /**

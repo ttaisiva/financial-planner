@@ -13,8 +13,8 @@ import { payDiscExpenses } from "./disc_expenses.js";
 import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
 import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
-
-import { log } from "../logging.js";
+import { initLogs } from '../logging.js';
+import { logResults } from "../logging.js";
 import { ensureConnection, connection } from "../server.js";
 import { generateNormalRandom, generateUniformRandom } from "../utils.js";
 /**
@@ -22,6 +22,7 @@ import { generateNormalRandom, generateUniformRandom } from "../utils.js";
  */
 export async function simulation(date, numSimulations, userId, scenarioId) {
   console.log("Running Monte Carlo simulation...");
+    const logs = await initLogs(userId); // open log files for writing
 
   await ensureConnection();
   const totalYears = await getTotalYears(date, scenarioId, connection);
@@ -65,6 +66,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let investEventYears = await getInvestEvents(scenarioId);
 
     let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
+    // log investments before any changes
+    if (sim == 0) logResults(logs.csvlog, logs.csvStream, investments, date-1);
 
     //Step 0: run preliminaries
     await ensureConnection();
@@ -125,27 +128,29 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //   );
 
       //   Step 3: Optimize Roth conversions
-      // if (
-      //   rothYears &&
-      //   currentSimulationYear >= rothYears.start_year &&
-      //   currentSimulationYear <= rothYears.end_year
-      // ) {
-      //   console.log(
-      //     `Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`
-      //   );
-      //   const rothResult = await runRothOptimizer(
-      //     scenarioId,
-      //     rothStrategy,
-      //     incomeEvents,
-      //     investments
-      //   );
-      //   investments = rothResult.investments;
-      //   rothStrategy = rothResult.rothStrategy;
-      // } else {
-      //   console.log(
-      //     `Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`
-      //   );
-      // }
+        if (
+          rothYears &&
+          currentSimulationYear >= rothYears.start_year &&
+          currentSimulationYear <= rothYears.end_year
+        ) {
+          console.log(
+            `Roth conversion optimizer enabled for years ${rothYears.start_year}-${rothYears.end_year}.`
+          );
+          const rothResult = await runRothOptimizer(
+            scenarioId,
+            rothStrategy,
+            incomeEvents,
+            investments,
+            currentSimulationYear,
+            logs.evtlog,
+          );
+          investments = rothResult.investments;
+          rothStrategy = rothResult.rothStrategy;
+        } else {
+          console.log(
+            `Roth conversion optimizer disabled for year ${currentSimulationYear}, skipping step 3.`
+          );
+        }
 
       // Step 4: Update investments
       //   await updateInvestments(scenarioId, runningTotals, investments);
@@ -155,7 +160,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //   );
 
       // Pay non-discretionary expenses
-      //payNondiscExpenses(scenarioId);
+      await payNondiscExpenses(scenarioId, investments, currentSimulationYear);
 
       // Pay discretionary expenses
       //payDiscExpenses(    scenarioId, cashInvestment, curYearIncome, curYearSS, curYearGains, curYearEarlyWithdrawals, currentSimulationYear, inflationRate);
@@ -190,12 +195,14 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //     cash_flow: 0,
       //     investments: 0,
       //   });
-    }
+      if (sim == 0) logResults(logs.csvlog, logs.csvStream, investments, currentSimulationYear);
 
-    if (sim == 0) log(userId, yearlyResults);
+    }
+    logs.csvlog.end(); // close the csv log file
+
     simulationResults.push(yearlyResults);
   }
-
+  logs.evtlog.end(); // close the event log file
   return calculateStats(simulationResults); // Calculate median, mean, and other statistics
 }
 
