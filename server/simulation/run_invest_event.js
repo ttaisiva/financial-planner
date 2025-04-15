@@ -9,7 +9,7 @@ export async function runInvestEvent(
   currentSimulationYear,
   scenarioId,
   investEventYears,
-  cashInvestment,
+  runningTotals,
   investments,
   inflationRate,
   afterTaxContributionLimit,
@@ -19,7 +19,7 @@ export async function runInvestEvent(
     currentSimulationYear,
     investEventYears
   );
-  // console.log("active event:", activeEventId);
+  console.log("****** INVEST EVENT ****** active event:", activeEventId);
 
   // If there is an invest event that is active on the currentSimulationYear
   if (activeEventId) {
@@ -33,8 +33,9 @@ export async function runInvestEvent(
 
     console.log("Max cash for event:", maxCash);
 
-    if (cashInvestment > maxCash) {
-      const excessCash = cashInvestment - maxCash;
+    if (runningTotals.cashInvestment > maxCash) {
+      const excessCash = runningTotals.cashInvestment - maxCash;
+      runningTotals.cashInvestment = runningTotals.cashInvestment - excessCash;
       const allocations = await getAssetAllocations(activeEventId);
       // console.log("allocation:", allocations);
 

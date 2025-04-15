@@ -39,10 +39,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let isUserAlive = true;
     let isSpouseAlive = true;
 
-    // let cashInvestment = await getCashInvest(scenarioId);
+    let cashInvestment = await getCashInvest(scenarioId);
+    let testCash;
 
     const runningTotals = {
-      cashInvestment: 20000,
+      cashInvestment: cashInvestment,
       curYearIncome: 0,
       curYearSS: 0,
       curYearGains: 0,
@@ -67,7 +68,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     //Step 0: run preliminaries
     await ensureConnection();
-    const inflationRate = await run_preliminaries(date, scenarioId);
+    const inflationRate = await run_preliminaries(scenarioId);
 
     console.log("Total years for simulation: ", totalYears);
     for (let year = 0; year < totalYears; year++) {
@@ -93,17 +94,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
       // Step 1: Run income events
 
-      await process_income_event(
-        scenarioId,
-        previousYearAmounts,
-        inflationRate,
-        isUserAlive,
-        isSpouseAlive,
-        runningTotals,
-        currentSimulationYear,
-        incomeEventsStart,
-        incomeEventsDuration
-      );
+      //   await process_income_event(
+      //     scenarioId,
+      //     previousYearAmounts,
+      //     inflationRate,
+      //     isUserAlive,
+      //     isSpouseAlive,
+      //     runningTotals,
+      //     currentSimulationYear,
+      //     incomeEventsStart,
+      //     incomeEventsDuration
+      //   );
 
       console.log(
         "Current year income after income events: ",
@@ -111,17 +112,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       );
 
       // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-      console.log("Perform RMDs for year: ", currentSimulationYear);
-      await performRMDs(
-        scenarioId,
-        currentSimulationYear,
-        runningTotals,
-        investments
-      );
-      console.log(
-        "Current year income after perform RMDs: ",
-        runningTotals.curYearIncome
-      );
+      //   console.log("Perform RMDs for year: ", currentSimulationYear);
+      //   await performRMDs(
+      //     scenarioId,
+      //     currentSimulationYear,
+      //     runningTotals,
+      //     investments
+      //   );
+      //   console.log(
+      //     "Current year income after perform RMDs: ",
+      //     runningTotals.curYearIncome
+      //   );
 
       //   Step 3: Optimize Roth conversions
       // if (
@@ -147,11 +148,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       // }
 
       // Step 4: Update investments
-      await updateInvestments(scenarioId, runningTotals, investments);
-      console.log(
-        "Current year income after update investments: ",
-        runningTotals.curYearIncome
-      );
+      //   await updateInvestments(scenarioId, runningTotals, investments);
+      //   console.log(
+      //     "Current year income after update investments: ",
+      //     runningTotals.curYearIncome
+      //   );
 
       // Pay non-discretionary expenses
       //payNondiscExpenses(scenarioId);
@@ -159,19 +160,27 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       // Pay discretionary expenses
       //payDiscExpenses(    scenarioId, cashInvestment, curYearIncome, curYearSS, curYearGains, curYearEarlyWithdrawals, currentSimulationYear, inflationRate);
 
+      console.log(
+        "Cash Investment after running Income Event:",
+        runningTotals.cashInvestment
+      );
       // Step 9: Invest Events
       await runInvestEvent(
         currentSimulationYear,
         scenarioId,
         investEventYears,
-        cashInvestment,
+        runningTotals,
         investments,
         inflationRate,
         afterTaxContributionLimit,
         date
       );
+      console.log(
+        "Cash Investment after running Invest Event:",
+        runningTotals.cashInvestment
+      );
 
-      // console.log("updated investments after invest event:", investments);
+      //   console.log("updated investments after invest event:", investments);
 
       // Step 10: Rebalance investments
 

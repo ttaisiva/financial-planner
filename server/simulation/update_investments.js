@@ -34,7 +34,7 @@ export async function updateInvestments(
   console.log(
     `Fetched ${investments.length} investments for scenario ID: ${scenarioId}`
   );
-  console.log("investments", investments);
+  //   console.log("investments", investments);
   console.log(
     `Fetched ${
       Object.keys(investmentTypes).length
@@ -120,7 +120,6 @@ export async function updateInvestments(
   }
 
   console.log(`Finished updating investments for scenario ID: ${scenarioId}`);
-
 }
 
 /**
