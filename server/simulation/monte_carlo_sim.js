@@ -140,7 +140,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
             scenarioId,
             rothStrategy,
             incomeEvents,
-            investments
+            investments,
+            currentSimulationYear,
+            logs.evtlog,
           );
           investments = rothResult.investments;
           rothStrategy = rothResult.rothStrategy;
@@ -200,7 +202,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     simulationResults.push(yearlyResults);
   }
-
+  logs.evtlog.end(); // close the event log file
   return calculateStats(simulationResults); // Calculate median, mean, and other statistics
 }
 

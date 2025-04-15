@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { format } from 'fast-csv';
 import { ensureConnection, connection } from "./server.js";
+import { log } from 'console';
 
 
 export async function initLogs(userId) {
@@ -53,7 +54,24 @@ export function logResults(csvlog, csvStream, investments, year) {
 }
 
 export async function logEvent(evtlog, event) {
+    const eventString = 
+    `Year: ${event.year}
+    Event: ${event.type}
+    $${event.amount}\n`;
+    evtlog.write(eventString); // Write the event to the log file
 }
+
+// event logging below
+
+export function logRothConversion(evtlog, year, pretax, aftertax, conversionAmt) {
+    const event = {
+        year: year,
+        type: `Roth conversion from pre-tax investment "${pretax.type}" to after-tax investment "${aftertax.type}"`,
+        amount: conversionAmt, 
+    }
+    logEvent(evtlog, event);
+}
+
 
 /**
  * Fetches the user's name from the database.
