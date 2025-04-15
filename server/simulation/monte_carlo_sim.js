@@ -17,6 +17,10 @@ import { initLogs } from "../logging.js";
 import { logResults } from "../logging.js";
 import { ensureConnection, connection } from "../server.js";
 import { generateNormalRandom, generateUniformRandom } from "../utils.js";
+import {
+  getRebalanceEvents,
+  runRebalanceEvents,
+} from "./run_rebalance_events.js";
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
@@ -70,6 +74,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let investEventYears = await getInvestEvents(scenarioId);
 
     let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
+
+    let rebalanceEvents = await getRebalanceEvents(scenarioId);
+
     // log investments before any changes
     if (sim == 0)
       logResults(logs.csvlog, logs.csvStream, investments, date - 1);
@@ -196,6 +203,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //   console.log("updated investments after invest event:", investments);
 
       // Step 10: Rebalance investments
+      console.log("investments before rebalance: event", investments);
+      await runRebalanceEvents(rebalanceEvents, investments, runningTotals);
+      console.log("investments after rebalance: event", investments);
 
       // Collect yearly results -> need to impelemnt this
       //   yearlyResults.push({
@@ -287,6 +297,7 @@ export async function getUserBirthYear(scenarioId) {
 }
 
 export async function getUserLifeExpectancy(scenarioId) {
+  await ensureConnection();
   if (connection) {
     const query = `SELECT 
             life_expectancy

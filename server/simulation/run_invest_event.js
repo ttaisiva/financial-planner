@@ -1,10 +1,18 @@
-// NEED TO USE:
-// - check if active event series for current simulation year
-// - if cash.value > event.max_cash, distribute among investments
-
 import { ensureConnection, connection } from "../server.js";
 import { generateNormalRandom, generateUniformRandom } from "../utils.js";
 
+/**
+ * Runs invest events for the durations they are active. Allocates excess cash to investements based on asset allocation info.
+ *
+ * @param {*} currentSimulationYear
+ * @param {*} scenarioId
+ * @param {*} investEventYears
+ * @param {*} runningTotals
+ * @param {*} investments
+ * @param {*} inflationRate
+ * @param {*} afterTaxContributionLimit
+ * @param {*} date
+ */
 export async function runInvestEvent(
   currentSimulationYear,
   scenarioId,
