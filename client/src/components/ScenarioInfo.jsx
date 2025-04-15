@@ -48,7 +48,7 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
             Select sample life expectancy
           </option>
           <option value="fixed">Fixed</option>
-          <option value="normal_distribution">Normal Distribution</option>
+          <option value="normal">Normal Distribution</option>
         </select>
 
         <span
@@ -93,7 +93,7 @@ const RetirementAgeForm = ({ prefix, handleChange, formData }) => (
           Select sample life expectancy
         </option>
         <option value="fixed">Fixed</option>
-        <option value="normal_distribution">Normal Distribution</option>
+        <option value="normal">Normal Distribution</option>
       </select>
 
       <span
@@ -439,8 +439,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
               Select format
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
-            <option value="uniform_distribution">Uniform Distribution</option>
+            <option value="normal">Normal Distribution</option>
+            <option value="uniform">Uniform Distribution</option>
           </select>
 
           {inputTypes({

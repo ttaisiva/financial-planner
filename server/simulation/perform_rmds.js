@@ -53,9 +53,9 @@ export async function performRMDs(
   console.log(`User is eligible for RMD. Fetching pre-tax investments...`);
 
   // Step b: Fetch pre-tax investments
-  console.log("My investments", investments)
+  console.log("My investments", investments);
   const preTaxInvestments = await getPreTaxInvestments(investments);
-  
+
   console.log(`Found ${preTaxInvestments.length} pre-tax investments.`);
 
   if (preTaxInvestments.length === 0) {
@@ -75,7 +75,7 @@ export async function performRMDs(
 
   // Step d: Calculate the sum of pre-tax investment values (s)
   const totalPreTaxValue = preTaxInvestments.reduce(
-    (sum, inv) => sum + Number(inv.dollarValue),
+    (sum, inv) => sum + Number(inv.value),
     0
   );
   console.log(`Total pre-tax investment value: ${totalPreTaxValue}`);
@@ -98,41 +98,39 @@ export async function performRMDs(
   for (const inv of preTaxInvestments) {
     if (remainingRMD <= 0) break;
 
-    const transferAmount = Math.min(Number(inv.dollarValue), remainingRMD);
+    const transferAmount = Math.min(Number(inv.value), remainingRMD);
     remainingRMD -= transferAmount;
-    console.log(`Transferring $${transferAmount} from investment ID ${inv.id}. Remaining RMD: ${remainingRMD}`);
+    console.log(
+      `Transferring $${transferAmount} from investment ID ${inv.id}. Remaining RMD: ${remainingRMD}`
+    );
 
     // Check if a non-retirement investment with the same type exists
     const targetInvestment = investments.find(
       (investment) =>
         investment.type === inv.type &&
-        investment.taxStatus === "non-retirement" 
-    
+        investment.taxStatus === "non-retirement"
     );
 
     if (targetInvestment) {
-        console.log("Target investment found with: ", targetInvestment);
-
-    } else { //if not found make one
-        console.log("Target investment not found. Creating new one.");
-        // Create a new non-retirement investment
-        targetInvestment = {
-            investment_type: inv.type,
-            taxStatus: "non-retirement",
-            dollarValue: 0,
-        
-            
-        };
-        investments.push(targetInvestment); // Add the new investment to the investments array
+      console.log("Target investment found with: ", targetInvestment);
+    } else {
+      //if not found make one
+      console.log("Target investment not found. Creating new one.");
+      // Create a new non-retirement investment
+      targetInvestment = {
+        investment_type: inv.type,
+        taxStatus: "non-retirement",
+        value: 0,
+      };
+      investments.push(targetInvestment); // Add the new investment to the investments array
     }
 
     //update investment
     transfer(inv, targetInvestment, transferAmount);
-    
   }
 
-  console.log("RMD process completed.")
-  
+  console.log("RMD process completed.");
+
   // Return the updated investments and curYearIncome
   return { curYearIncome };
 }
@@ -163,5 +161,3 @@ export async function getRMDTable(connection) {
     throw new Error("Unable to fetch RMD table.");
   }
 }
-
-

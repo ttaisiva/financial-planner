@@ -71,3 +71,30 @@ export function removeIdsFromEvents(events) {
   });
   return events;
 }
+
+/**
+ * Generates a value for uniform distribution
+ * @param {*} lower
+ * @param {*} upper
+ */
+export function generateUniformRandom(lower, upper) {
+  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+}
+
+/**
+ * Generates a value for normal distribution
+ *
+ * TP: ChatGpt, prompt - "there is also a "normal" type that represents normal distribution with this format:
+ * {type: normal, mean: <number>, stdev: <number>} add a case where if type is "normal",
+ * it will choose a random start year based on the mean and standard deviation. end year will be currentsimulationyear"
+ *
+ * @param {*} mean
+ * @param {*} stdev
+ * @returns
+ */
+export function generateNormalRandom(mean, stdev) {
+  const u1 = Math.random();
+  const u2 = Math.random();
+  const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  return z0 * stdev + mean;
+}
