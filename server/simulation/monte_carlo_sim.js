@@ -131,7 +131,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome, investments));
 
       // Pay non-discretionary expenses
-      //payNondiscExpenses(scenarioId);
+      await payNondiscExpenses(scenarioId, investments, currentSimulationYear);
 
       // Pay discretionary expenses
       //payDiscExpenses(scenarioId);
