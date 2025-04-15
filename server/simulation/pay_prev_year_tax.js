@@ -9,8 +9,6 @@ import { ensureConnection, connection } from "../server.js";
 
 /**
  * TODO:
- * - Implement year checking so we can actually make it prev year
- * - Deductions
  * - Selling expenses
  * - Capital Gain Tax
  * - Early Withdrawal Tax
@@ -19,17 +17,18 @@ import { ensureConnection, connection } from "../server.js";
 /**
  * @param scenarioID ID of given scenario
  * @param incomeEvents income events for the given scenario
+ * @param investments list of investments
  * @param year Simulation year minus one (to calculate prev year taxes)
  */
-export async function payTaxes(scenarioID, incomeEvents, year) {
+export async function payTaxes(scenarioID, incomeEvents, investments, year) {
     await ensureConnection();
     const scenario = await getScenario(scenarioID);
     // const incomeEvents = await getIncomeEvents(scenarioID); // List of income events
 
     // Find the amount owed by taxing all sources of income federally and by state
     const amtOwed = (await computeFederal(incomeEvents, scenario.marital_status, year) + await computeState(incomeEvents, scenario.marital_status, scenario.residence_state, year)) - await getDeduction(scenario.marital_status, year);
-    const cash = await getCashInvestment(scenarioID);
-    if (cash.value > amtOwed) {
+    const cash = await getCashInvestment(investments);
+    if (cash.value >= amtOwed) {
         // No need to sell expenses; Pay from cash
 
         // return here
@@ -56,22 +55,15 @@ const getScenario = async (scenarioID) => {
 
 /**
  * Returns the cash investment for a given scenario
- * @param scenarioID ID of scenario of the cash investment
+ * @param investments list of investments
  * @returns the cash investment
  */
-const getCashInvestment = async (scenarioID) => {
-    const query = `
-        SELECT * FROM EVENTS
-        WHERE scenario_id = ? AND investment_type = ?
-        LIMIT 1
-    `
-    const values = [
-        scenarioID,
-        "cash"
-    ]
-
-    const [cash] = await connection.execute(query, values);
-    return cash[0];
+const getCashInvestment = async (investments) => {
+    for (const investment of investments) {
+        if (investment.investment_type == "cash") {
+            return investment;
+        }
+    }
 }
 
 /**
@@ -113,19 +105,19 @@ const computeFederal = async (income, ssIncome, filingStatus, year) => {
     // Prepare query for bracket calculations
     const query = `
         SELECT * FROM tax_brackets
-        WHERE income_min < ? AND filing_status = ${filingStatus} AND year = ${year}
+        WHERE income_min < ? AND filing_status = ? AND year = ?
     `
 
     const fallbackQuery = `
-        SELECT * FROM tax_brackets
-        WHERE income_min < ? AND filing_status = ${filingStatus} AND year > ?
+        SELECT MAX(year) FROM tax_brackets
+        WHERE income_min < ? AND filing_status = ?
     `
 
     let sum = 0;
     // Each event will be taxed individually and added to an overall sum
-    let [brackets] = await connection.execute(query, income);
+    let [brackets] = await connection.execute(query, [income, filingStatus, year]);
     if (brackets.length == 0) {
-        brackets = await connection.execute(fallbackQuery, [income, year])
+        brackets = await connection.execute(fallbackQuery, [income, filingStatus])
     }
 
     for (const bracket of brackets) {
@@ -162,19 +154,19 @@ const computeState = async (income, filingStatus, state, year) => {
     // Prepare query for bracket calculations
     const query = `
         SELECT * FROM state_tax_brackets
-        WHERE income_min < ? AND filing_status = ${filingStatus} AND state = ${state} AND year = ${year}
+        WHERE income_min < ? AND filing_status = ? AND state = ? AND year = ?
     `
 
     const fallbackQuery = `
-        SELECT * FROM state_tax_brackets
-        WHERE income_min < ? AND filing_status = ${filingStatus} AND state = ${state} AND year > ?
+        SELECT MAX(year) FROM state_tax_brackets
+        WHERE income_min < ? AND filing_status = ? AND state = ?
     `
 
     let sum = 0;
     // Each event will be taxed individually and added to an overall sum
-    let [brackets] = await connection.execute(query, [income]);
+    let [brackets] = await connection.execute(query, [income, filingStatus, state, year]);
     if (brackets.length == 0) { // No brackets for current year
-        brackets = await connection.execute(fallbackQuery, [income, year])
+        brackets = await connection.execute(fallbackQuery, [income, filingStatus, state])
     }
 
     for (const bracket of brackets) {
@@ -195,17 +187,9 @@ const computeState = async (income, filingStatus, state, year) => {
  * @returns deduction value
  */
 const getDeduction = async (filingStatus, year) => {
-    let filing;
-    if (filingStatus == "individual") {
-        filing = "single";
-    }
-    else {
-        filing = "married";
-    }
-
     query = `
         SELECT * FROM standard_deductions
-        WHERE filing_status = ${filing} AND year = ${year}
+        WHERE filing_status = ${filingStatus} AND year = ${year}
         LIMIT 1
     `
     const [rows] = await connection.execute(query)
