@@ -149,6 +149,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       lower: "",
       upper: "",
     },
+    afterTaxContributionLimit: "",
   });
 
   // Cash Investment Form. handleSubmitUserInfo() handles inserting cash investment data into database
@@ -229,6 +230,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
         cleanedFormData.spouseBirthYear,
       ]),
       inflationAssumption: JSON.stringify(cleanedFormData.inflationAssumption),
+      afterTaxContributionLimit: cleanedFormData.afterTaxContributionLimit,
     };
 
     const fullData = { scenario: scenarioData, cashData: finalCashData };
@@ -427,8 +429,11 @@ const ScenarioInfo = forwardRef((props, ref) => {
           </div>
         </div>
 
+        <label>
+          <h4>Inflation Assumption %:</h4>
+        </label>
+
         <div>
-          <label>Inflation Assumption %: </label>
           <select
             name="inflationAssumption.type"
             value={formData.inflationAssumption.type}
@@ -450,6 +455,28 @@ const ScenarioInfo = forwardRef((props, ref) => {
             prefix: "inflationAssumption",
           })}
           {console.log("form Data", formData)}
+        </div>
+
+        <label>
+          <h4>After-Tax Contribution Limit:</h4>
+        </label>
+        <p>
+          {" "}
+          Initial limit on annual contributions to after-tax retirement
+          accounts. Limits are is imposed by the IRS. It is inflation-adjusted,
+          i.e., assumed to increase annually at the rate of inflation.
+        </p>
+
+        <div>
+          <input
+            type="number"
+            min="0"
+            name="afterTaxContributionLimit"
+            value={formData.afterTaxContributionLimit}
+            onChange={handleChange}
+            placeholder="0.00"
+            required
+          />
         </div>
 
         <div className="divider"></div>
