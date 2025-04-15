@@ -54,6 +54,7 @@ export function logResults(csvlog, csvStream, investments, year) {
 }
 
 export async function logEvent(evtlog, event) {
+    console.log('event amount in logEvent', event.amount);
     const eventString = 
     `Year: ${event.year}
     Event: ${event.type}
@@ -63,12 +64,23 @@ export async function logEvent(evtlog, event) {
 
 // event logging below
 
+export function logIncome(evtlog, year, name, currentAmount) {
+    const event = {
+        year: year,
+        type: `Income "${name}"`,
+        amount: currentAmount,
+    }
+    logEvent(evtlog, event);
+}
+
+
 export function logRothConversion(evtlog, year, pretax, aftertax, conversionAmt) {
     const event = {
         year: year,
         type: `Roth conversion from pre-tax investment "${pretax.type}" to after-tax investment "${aftertax.type}"`,
         amount: conversionAmt, 
     }
+    console.log('event amount in logRothConversion', event.amount);
     logEvent(evtlog, event);
 }
 

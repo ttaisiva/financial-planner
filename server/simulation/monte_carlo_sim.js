@@ -247,7 +247,7 @@ async function initInvestments(scenarioId) {
     `SELECT 
             id,
             investment_type as type,
-            value as value,
+            value,
             tax_status as taxStatus
         
          FROM investments
