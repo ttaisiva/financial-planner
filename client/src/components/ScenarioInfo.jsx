@@ -6,7 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
-import EventsForm from "./EventsForm";
+import { EventsForm, ViewEventsDetails } from "./EventsForm";
 import {
   InvestmentType,
   Investment,
@@ -19,77 +19,60 @@ import {
   loadAnimation,
 } from "../utils";
 import Strategy from "./Strategy";
+import { inputTypes, updateNestedState } from "../utils";
+import { useNavigate } from "react-router-dom";
+import { cleanScenario } from "../utils";
 
-const LifeExpectancyForm = ({ prefix, data, handleChange }) => (
-  <div className="section-new-scenario">
-    <label>
-      <h4>
-        {" "}
-        {(prefix === "user" && "Your") ||
-          (prefix === "spouse" && "Spouse's")}{" "}
-        life expectancy:{" "}
-      </h4>
-    </label>
+//maybe move these to utils
+const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
+  const key = prefix === "user" ? "userLifeExpectancy" : "spouseLifeExpectancy";
 
-    <div>
-      <select
-        name={`${prefix}LifeExpectancyType`}
-        value={data.lifeExpectancyType}
-        onChange={handleChange}
-      >
-        <option value="" disabled>
-          Select sample life expectancy
-        </option>
-        <option value="fixed">Fixed</option>
-        <option value="dist">Normal Distribution</option>
-      </select>
+  return (
+    <div className="section-new-scenario">
+      <label>
+        <h4>
+          {" "}
+          {(prefix === "user" && "Your") ||
+            (prefix === "spouse" && "Spouse's")}{" "}
+          life expectancy:{" "}
+        </h4>
+      </label>
 
-      <span
-        data-tooltip-id="tooltip"
-        data-tooltip-content={tooltipContent.lifeExpectancy}
-        className="info-icon"
-      >
-        ℹ️
-      </span>
+      <div>
+        <select
+          name={`${key}.type`}
+          value={formData[key]?.type}
+          onChange={handleChange}
+        >
+          <option value="" disabled>
+            Select sample life expectancy
+          </option>
+          <option value="fixed">Fixed</option>
+          <option value="normal">Normal Distribution</option>
+        </select>
+
+        <span
+          data-tooltip-id="tooltip"
+          data-tooltip-content={tooltipContent.lifeExpectancy}
+          className="info-icon"
+        >
+          ℹ️
+        </span>
+
+        {inputTypes({
+          type: formData[`${key}`]?.type,
+          formData,
+          handleChange,
+          prefix: key,
+        })}
+      </div>
+
+      <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
     </div>
+  );
+};
 
-    <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-    {data.lifeExpectancyType === "fixed" ? (
-      <input
-        type="number"
-        min="0"
-        name={`${prefix}LifeExpectancyValue`}
-        placeholder="Enter value"
-        value={data.lifeExpectancyValue}
-        onChange={handleChange}
-        required
-      />
-    ) : data.lifeExpectancyType === "dist" ? (
-      <>
-        <input
-          type="number"
-          min="0"
-          name={`${prefix}LifeExpectancyMean`}
-          placeholder="Enter mean"
-          value={data.lifeExpectancyMean}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="number"
-          min="0"
-          name={`${prefix}LifeExpectancyStdDev`}
-          placeholder="Enter standard deviation"
-          value={data.lifeExpectancyStdDev}
-          onChange={handleChange}
-          required
-        />
-      </>
-    ) : null}
-  </div>
-);
-
-const RetirementAgeForm = ({ prefix, data, handleChange }) => (
+const RetirementAgeForm = ({ prefix, handleChange, formData }) => (
   <div className="section-new-scenario">
     <label>
       <h4>
@@ -102,16 +85,17 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
 
     <div>
       <select
-        name={`${prefix}RetirementAge`}
-        value={data.retirementAge}
+        name={`${prefix}.retirementAge.type`}
+        value={formData[prefix]?.retirementAge?.type}
         onChange={handleChange}
       >
         <option value="" disabled>
-          Select sample retirement age
+          Select sample life expectancy
         </option>
         <option value="fixed">Fixed</option>
-        <option value="dist">Normal Distribution</option>
+        <option value="normal">Normal Distribution</option>
       </select>
+
       <span
         data-tooltip-id="tooltip"
         data-tooltip-content={tooltipContent.retirementAge}
@@ -119,41 +103,14 @@ const RetirementAgeForm = ({ prefix, data, handleChange }) => (
       >
         ℹ️
       </span>
-    </div>
 
-    <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-    {data.retirementAge === "fixed" ? (
-      <input
-        type="number"
-        min="0"
-        name={`${prefix}RetirementAgeValue`}
-        placeholder="Enter value"
-        value={data.retirementAgeValue}
-        onChange={handleChange}
-        required
-      />
-    ) : data.retirementAge === "dist" ? (
-      <>
-        <input
-          type="number"
-          min="0"
-          name={`${prefix}RetirementAgeMean`}
-          placeholder="Enter mean"
-          value={data.retirementAgeMean}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="number"
-          min="0"
-          name={`${prefix}RetirementAgeStdDev`}
-          placeholder="Enter standard deviation"
-          value={data.retirementAgeStdDev}
-          onChange={handleChange}
-          required
-        />
-      </>
-    ) : null}
+      {inputTypes({
+        type: formData[`${prefix}`]?.retirementAge?.type,
+        formData,
+        handleChange,
+        prefix: `${prefix}.retirementAge`,
+      })}
+    </div>
   </div>
 );
 
@@ -162,32 +119,45 @@ const ScenarioInfo = forwardRef((props, ref) => {
     loadAnimation();
   });
 
+  const navigate = useNavigate();
+
   // State to manage form data
   const [formData, setFormData] = useState({
-    scenarioName: "",
+    name: "",
     financialGoal: "",
-    filingStatus: "single",
-    stateOfResidence: "",
-    userData: {
-      lifeExpectancyType: "",
-      lifeExpectancyValue: "",
-      lifeExpectancyMean: "",
-      lifeExpectancyStdDev: "",
-      retirementAge: "",
-      retirementAgeValue: "",
-      retirementAgeMean: "",
-      retirementAgeStdDev: "",
+    maritalStatus: "individual",
+    residenceState: "",
+    userLifeExpectancy: {
+      type: "",
+      value: "",
+      mean: "",
+      stdev: "",
     },
-    spouseData: {
-      lifeExpectancyType: "",
-      lifeExpectancyValue: "",
-      lifeExpectancyMean: "",
-      lifeExpectancyStdDev: "",
-      retirementAge: "",
-      retirementAgeValue: "",
-      retirementAgeMean: "",
-      retirementAgeStdDev: "",
+    spouseLifeExpectancy: {
+      type: "",
+      value: "",
+      mean: "",
+      stdev: "",
     },
+    userBirthYear: "",
+    spouseBirthYear: "",
+    inflationAssumption: {
+      type: "",
+      value: "",
+      mean: "",
+      stdev: "",
+      lower: "",
+      upper: "",
+    },
+    afterTaxContributionLimit: "",
+  });
+
+  // Cash Investment Form. handleSubmitUserInfo() handles inserting cash investment data into database
+  const [cashData, setCashData] = useState({
+    id: "cash",
+    investmentType: "cash",
+    value: 0,
+    taxStatus: "non-retirement",
   });
 
   const [showSpouseForm, setShowSpouseForm] = useState(false);
@@ -196,6 +166,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [investments, setInvestments] = useState([]);
   const [investmentTypes, setInvestmentTypes] = useState([]);
+  const [events, setEvents] = useState([]);
 
   const handleAddSpouse = () => {
     setShowSpouseForm(!showSpouseForm);
@@ -205,70 +176,26 @@ const ScenarioInfo = forwardRef((props, ref) => {
     setShowEventsForm(true); // Show the EventsForm when button is clicked
   };
 
-  // Helper function to update nested state objects
-  const updateNestedState = (prefix, key, value) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      [prefix]: { ...prevData[prefix], [key]: value },
-    }));
-  };
-
-  // Handle input changes
+  // Handle input changes -> maybe modularize this a bit (you could probably combine inflation assumptino with user and spouse)
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    //specific updates for user and spouse
-    if (name.startsWith("user")) {
-      const key =
-        name.replace("user", "").charAt(0).toLowerCase() +
-        name.replace("user", "").slice(1);
-      updateNestedState("userData", key, value);
-    } else if (name.startsWith("spouse")) {
-      const key =
-        name.replace("spouse", "").charAt(0).toLowerCase() +
-        name.replace("spouse", "").slice(1);
-      updateNestedState("spouseData", key, value);
-    } else {
-      //update all other fields
-      setFormData({ ...formData, [name]: value });
-    }
+    console.log("name and value: ", name, value);
 
-    // Reset values when switching from "fixed" to "distribution"
-    if (name.endsWith("LifeExpectancyType") && value === "fixed") {
-      updateNestedState(
-        name.startsWith("user") ? "userData" : "spouseData",
-        "lifeExpectancyMean",
-        ""
-      );
-      updateNestedState(
-        name.startsWith("user") ? "userData" : "spouseData",
-        "lifeExpectancyStdDev",
-        ""
-      );
-    } else if (name.endsWith("LifeExpectancyType") && value === "dist") {
-      updateNestedState(
-        name.startsWith("user") ? "userData" : "spouseData",
-        "lifeExpectancyValue",
-        ""
-      );
-    }
-    if (name.endsWith("RetirementAge") && value === "fixed") {
-      updateNestedState(
-        name.startsWith("user") ? "userData" : "spouseData",
-        "retirementAgeMean",
-        ""
-      );
-      updateNestedState(
-        name.startsWith("user") ? "userData" : "spouseData",
-        "retirementAgeStdDev",
-        ""
-      );
-    } else if (name.endsWith("RetirementAge") && value === "dist") {
-      updateNestedState(
-        name.startsWith("user") ? "userData" : "spouseData",
-        "retirementAgeValue",
-        ""
-      );
+    const parts = name.split(".");
+    const parentKey = parts[0]; // inflationAssumption
+    const childKey = parts[1]; // type
+
+    if (
+      name.startsWith("inflationAssumption") ||
+      name.startsWith("userLifeExpectancy") ||
+      name.startsWith("spouseLifeExpectancy")
+    ) {
+      //nested once
+      updateNestedState(parentKey, childKey, value, setFormData);
+    } else {
+      //update all other fields that are not stupidly nested
+      setFormData({ ...formData, [name]: value });
     }
   };
 
@@ -276,20 +203,59 @@ const ScenarioInfo = forwardRef((props, ref) => {
     if (e) e.preventDefault();
     console.log("User Scenario Info Submitted:", formData);
 
+    // Clean cash investment dollar vale
+    const parsedValue = parseFloat(cashData.value);
+    const cleanValue = isNaN(parsedValue) ? 0 : parsedValue;
+
+    const finalCashData = {
+      // Sets to clean value in case of NaN entry
+      ...cashData,
+      value: cleanValue,
+    };
+
+    // Correctly format the scenario form data
+    const cleanedFormData = cleanScenario(formData);
+
+    const scenarioData = {
+      name: cleanedFormData.name,
+      financialGoal: cleanedFormData.financialGoal,
+      maritalStatus: cleanedFormData.maritalStatus,
+      residenceState: cleanedFormData.residenceState,
+      lifeExpectancy: JSON.stringify([
+        cleanedFormData.userLifeExpectancy,
+        cleanedFormData.spouseLifeExpectancy,
+      ]),
+      birthYears: JSON.stringify([
+        cleanedFormData.userBirthYear,
+        cleanedFormData.spouseBirthYear,
+      ]),
+      inflationAssumption: JSON.stringify(cleanedFormData.inflationAssumption),
+      afterTaxContributionLimit: cleanedFormData.afterTaxContributionLimit,
+    };
+
+    const fullData = { scenario: scenarioData, cashData: finalCashData };
+
+    // Insert User Scenario Info into database
     try {
-      const response = await fetch('http://localhost:3000/api/user-scenario-info', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      })
+      const response = await fetch(
+        "http://localhost:3000/api/create-scenario",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(fullData),
+        }
+      );
 
       console.log(response);
 
       if (response.ok) {
-        console.log("User details saved successfully");
+        const data = await response.json();
+        console.log("Scenario saved successfully:", data);
+        console.log("scenario id: ", data.scenario_id);
+        navigate(`/scenario/${data.scenario_id}`);
       } else {
         console.error("Failed to save user details");
       }
@@ -297,7 +263,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
       console.error("Error:", error);
     }
 
-    console.log("Form Submitted with Data:", formData);
+    console.log("Form Submitted with Data:", cashData);
   };
 
   // Expose handleSubmitUserInfo to parent component
@@ -313,26 +279,45 @@ const ScenarioInfo = forwardRef((props, ref) => {
     setShowInvestmentForm(true);
   };
 
+  const handleCashChange = (e) => {
+    const { name, value } = e.target;
+
+    // Allow empty input so users can clear the field
+    if (value === "") {
+      setCashData({ ...cashData, [name]: value });
+      return;
+    }
+
+    // Allow only up to 2 decimals
+    const regex = /^\d*\.?\d{0,2}$/;
+    if (regex.test(value)) {
+      setCashData({ ...cashData, [name]: value });
+    }
+  };
+
   return (
     <div className="section-new-scenario">
       <form onSubmit={handleSubmitUserInfo}>
-        <h1 className="fade-in">New Scenario</h1>
+        <h1>New Scenario</h1>
+        <div className="divider"></div>
+
         <label>
-          <h2 className="fade-in">Scenario Name</h2>
+          <h2>Scenario Name</h2>
         </label>
-        <div className="fade-in">
+        <div>
           <input
             type="text"
-            name="scenarioName"
-            value={formData.scenarioName}
+            name="name"
+            value={formData.name}
             placeholder="Enter scenario name"
             onChange={handleChange}
             required
           />
         </div>
 
-        <h2 className="fade-in">Financial goal</h2>
-        <div className="fade-in">
+        <div className="divider"></div>
+        <h2>Financial goal</h2>
+        <div>
           <p>
             Your financial goal is the extra amount you would like to have left
             over after meeting all expenses. <br />A zero financial goal means
@@ -363,8 +348,9 @@ const ScenarioInfo = forwardRef((props, ref) => {
           </div>
         </div>
 
-        <h2 className="fade-in">Tax Information</h2>
-        <div className="fade-in">
+        <div className="divider"></div>
+        <h2>Tax Information</h2>
+        <div>
           <p>
             Your tax information will be used to compute federal and state
             income taxes, capital gains taxes, and early withdrawal taxes where
@@ -385,8 +371,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
           <div>
             <select
-              name="stateOfResidence"
-              value={formData.stateOfResidence}
+              name="residenceState"
+              value={formData.residenceState}
               onChange={handleChange}
             >
               <option value="">Select your state</option>
@@ -419,17 +405,17 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
           <div>
             <select
-              name="filingStatus"
-              value={formData.filingStatus}
+              name="maritalStatus"
+              value={formData.maritalStatus}
               onChange={handleChange}
               required
             >
-              <option value="single">Single</option>
-              <option value="married">Married</option>
+              <option value="individual">Individual</option>
+              <option value="couple">Couple</option>
             </select>
             <span
               data-tooltip-id="tooltip"
-              data-tooltip-html={tooltipContent.filingStatus}
+              data-tooltip-html={tooltipContent.maritalStatus}
               className="info-icon"
             >
               ℹ️
@@ -443,8 +429,59 @@ const ScenarioInfo = forwardRef((props, ref) => {
           </div>
         </div>
 
-        <h2 className="fade-in">Major Life Events </h2>
-        <div className="fade-in">
+        <label>
+          <h4>Inflation Assumption %:</h4>
+        </label>
+
+        <div>
+          <select
+            name="inflationAssumption.type"
+            value={formData.inflationAssumption.type}
+            onChange={handleChange}
+            required
+          >
+            <option value="" disabled>
+              Select format
+            </option>
+            <option value="fixed">Fixed</option>
+            <option value="normal">Normal Distribution</option>
+            <option value="uniform">Uniform Distribution</option>
+          </select>
+
+          {inputTypes({
+            type: formData.inflationAssumption.type,
+            formData,
+            handleChange,
+            prefix: "inflationAssumption",
+          })}
+          {console.log("form Data", formData)}
+        </div>
+
+        <label>
+          <h4>After-Tax Contribution Limit:</h4>
+        </label>
+        <p>
+          {" "}
+          Initial limit on annual contributions to after-tax retirement
+          accounts. Limits are is imposed by the IRS. It is inflation-adjusted,
+          i.e., assumed to increase annually at the rate of inflation.
+        </p>
+
+        <div>
+          <input
+            type="number"
+            min="0"
+            name="afterTaxContributionLimit"
+            value={formData.afterTaxContributionLimit}
+            onChange={handleChange}
+            placeholder="0.00"
+            required
+          />
+        </div>
+
+        <div className="divider"></div>
+        <h2>Major Life Events </h2>
+        <div>
           <p>
             Event simulation will begin in the current year. <br />
             Please estimate your desired retirement age and lifespan in years.
@@ -460,18 +497,36 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
           <LifeExpectancyForm
             prefix="user"
-            data={formData.userData}
             handleChange={handleChange}
+            formData={formData}
           />
-          <RetirementAgeForm
+          {/* <RetirementAgeForm
             prefix="user"
-            data={formData.userData}
             handleChange={handleChange}
-          />
+            formData={formData}
+          /> */}
+
+          <div>
+            <label>
+              {" "}
+              <h4>Your birth year:</h4>{" "}
+            </label>
+            <input
+              type="number"
+              name="userBirthYear"
+              value={formData.userBirthYear}
+              onChange={handleChange}
+              placeholder=""
+              min="1900"
+              max={new Date().getFullYear()} // Restrict to valid years
+              required
+            />
+          </div>
         </div>
 
-        <h2 className="fade-in">Add Spouse</h2>
-        <div className="fade-in">
+        <div className="divider"></div>
+        <h2>Add Spouse</h2>
+        <div>
           <button type="button" onClick={handleAddSpouse}>
             {showSpouseForm ? "Remove Spouse" : "Add Spouse"}
           </button>
@@ -482,20 +537,57 @@ const ScenarioInfo = forwardRef((props, ref) => {
             <h3>Spouse Information</h3>
             <LifeExpectancyForm
               prefix="spouse"
-              data={formData.spouseData}
               handleChange={handleChange}
+              formData={formData}
             />
-            <RetirementAgeForm
+            {/* <RetirementAgeForm
               prefix="spouse"
-              data={formData.spouseData}
               handleChange={handleChange}
-            />
+              formData={formData}
+            /> */}
+            <div>
+              <label>
+                {" "}
+                <h4>Spouse's birth year:</h4>{" "}
+              </label>
+              <input
+                type="number"
+                name="spouseBirthYear"
+                value={formData.spouseBirthYear}
+                onChange={handleChange}
+                placeholder=""
+                min="1900"
+                max={new Date().getFullYear()} // Restrict to valid years
+                required
+              />
+            </div>
           </div>
         )}
       </form>
 
-      <h2 className="fade-in">Investment Types and Investments</h2>
-      <div className="fade-in">
+      <div className="divider"></div>
+      <h2>Cash Investment</h2>
+      <div>
+        <label>
+          <h4>Input Current Cash Investment (in $):</h4>
+        </label>
+        <div>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            name="value"
+            value={cashData.value}
+            onChange={handleCashChange}
+            placeholder="0.00"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="divider"></div>
+      <h2>Investment Types and Investments</h2>
+      <div>
         <button onClick={handleInvestmentType}>New Investment Type</button>
         {showInvestmentTypeForm && (
           <InvestmentType
@@ -506,7 +598,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
         )}
       </div>
 
-      <div className="fade-in">
+      <div>
         <button onClick={handleInvestment}>New Investment</button>
         {showInvestmentForm && (
           <Investment
@@ -517,12 +609,19 @@ const ScenarioInfo = forwardRef((props, ref) => {
         )}
       </div>
       <div>
-        <ViewInvestmentDetails investments={investments} investmentTypes={investmentTypes} />
+        <ViewInvestmentDetails
+          investments={investments}
+          investmentTypes={investmentTypes}
+        />
       </div>
 
-      <h2 className="fade-in">Event Series</h2>
-      <p> Event series is a sequence of annual events. You may choose income, expense, invest,
-        or rebalance events that will happen every year within a desired time range.
+      <div className="divider"></div>
+      <h2>Event Series</h2>
+      <p>
+        {" "}
+        Event series is a sequence of annual events. You may choose income,
+        expense, invest, or rebalance events that will happen every year within
+        a desired time range.
         <span
           data-tooltip-id="tooltip"
           data-tooltip-html={tooltipContent.eventSeries}
@@ -531,16 +630,22 @@ const ScenarioInfo = forwardRef((props, ref) => {
           ℹ️
         </span>
         <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
-
       </p>
-      
 
-      <div className="fade-in">
-        <button  onClick={handleCreateEvent} > Create Event </button>
-        {showEventsForm && <EventsForm setShowEventsForm={ setShowEventsForm }/>}
+      <div>
+        <button onClick={handleCreateEvent}> Create Event </button>
+        {showEventsForm && (
+          <EventsForm
+            events={events}
+            setEvents={setEvents}
+            setShowEventsForm={setShowEventsForm}
+          />
+        )}
+
+        <ViewEventsDetails events={events} />
       </div>
-    
-      <div className="fade-in">
+
+      <div>
         <Strategy investments={investments} showEventsForm={showEventsForm} />
       </div>
     </div>

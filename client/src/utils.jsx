@@ -1,25 +1,3 @@
-//import { rnorm } from 'probability-distributions';
-
-// /**
-//  * Samples a number from a normal distribution with a provided mean and standard deviation.
-//  * @param {number} mean - The mean of the normal distribution.
-//  * @param {number} stdDev - The standard deviation of the normal distribution.
-//  * @returns {number} - A random number sampled from the normal distribution.
-//  */
-// export const sampleNormalDistribution = (mean, stdDev) => {
-//   return rnorm(1, mean, stdDev)[0];
-// };
-
-// /**
-//  * Samples a number from a uniform distribution with provided lower and upper bounds.
-//  * @param {number} lower - The lower bound of the uniform distribution.
-//  * @param {number} upper - The upper bound of the uniform distribution.
-//  * @returns {number} - A random number sampled from the uniform distribution.
-//  */
-// export const sampleUniformDistribution = (lower, upper) => {
-//     return runif(1, lower, upper)[0];
-//   };
-
 import yaml from "js-yaml";
 
 export const handleFileUpload = (e) => {
@@ -47,98 +25,69 @@ export const handleScenarioUpload = (e) => {
   //TODO: send scenario to database
 };
 
-// export const resetTypes = (type) => {
-//   switch (type) {
-//     case "fixed":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     case "normal_distribution":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     case "uniform_distribution":
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//     default:
-//       return {
-//         startValue: "",
-//         startMean: "",
-//         startStdDev: "",
-//         startLower: "",
-//         startUpper: "",
-//       };
-//   }
-// };
-
 export const inputTypes = ({ type, formData, handleChange, prefix }) => {
+  /**
+   * This function handles the display for user options for fixed, normal, and uniform distributions.
+   */
+  const data = formData[prefix] || {};
+  console.log("key:", prefix);
+  console.log("data:", data);
+
   switch (type) {
     case "fixed":
       return (
         <input
           type="number"
           min="0"
-          name={`${prefix}Value`}
+          name={`${prefix}.value`} //should be .value instead oops
           placeholder="Enter value"
-          value={formData[`${prefix}Value`] || ""}
+          value={data.value || ""}
           onChange={handleChange}
           required
         />
       );
-    case "normal_distribution":
+    case "normal":
       return (
         <>
           <input
             type="number"
             min="0"
-            name={`${prefix}Mean`}
+            name={`${prefix}.mean`}
             placeholder="Enter mean"
-            value={formData[`${prefix}Mean`] || ""}
+            value={data.mean || ""}
             onChange={handleChange}
             required
           />
           <input
             type="number"
             min="0"
-            name={`${prefix}StdDev`}
+            step="any"
+            name={`${prefix}.stdev`}
             placeholder="Enter standard deviation"
-            value={formData[`${prefix}StdDev`] || ""}
+            value={data.stdev || ""}
             onChange={handleChange}
             required
           />
         </>
       );
-    case "uniform_distribution":
+    case "uniform":
       return (
         <>
           <input
             type="number"
             min="0"
-            name={`${prefix}Lower`}
+            name={`${prefix}.lower`}
             placeholder="Enter lower bound"
-            value={formData[`${prefix}Lower`] || ""}
+            value={data.lower || ""}
             onChange={handleChange}
             required
           />
           <input
             type="number"
             min="0"
-            name={`${prefix}Upper`}
+            name={`${prefix}.upper`}
             placeholder="Enter upper bound"
-            value={formData[`${prefix}Upper`] || ""}
+            value={data.upper || ""}
             onChange={handleChange}
             required
           />
@@ -149,39 +98,76 @@ export const inputTypes = ({ type, formData, handleChange, prefix }) => {
   }
 };
 
-export const resetTypes = (selectedType, prefix) => {
-  const reset = {};
+//sophie was working on this but didnt finish
+// export const resetTypes = (formData, selectedType, prefix) => { //this needs some reworking
 
-  // Clear all possible inputs under this prefix
-  reset[`${prefix}Value`] = "";
-  reset[`${prefix}Mean`] = "";
-  reset[`${prefix}StdDev`] = "";
-  reset[`${prefix}Lower`] = "";
-  reset[`${prefix}Upper`] = "";
+//   /**
+//    * This function handles the reset for user options for fixed, normal, and uniform distributions.
+//    */
 
-  // Optionally, keep only the needed fields for the selected type
-  switch (selectedType) {
-    case "fixed":
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "normal_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Lower`];
-      delete reset[`${prefix}Upper`];
-      break;
-    case "uniform_distribution":
-      delete reset[`${prefix}Value`];
-      delete reset[`${prefix}Mean`];
-      delete reset[`${prefix}StdDev`];
-      break;
-  }
+//   console.log("Type in reset: ", selectedType)
+//   console.log("Item to reset: ", prefix)
+//   const parts = prefix.split(".");
+//   console.log("parts: ", parts);
+//   const reset = {};
 
-  return reset;
-};
+//   // Reset only fields related to the selectedType
+//   if (selectedType === "fixed") {
+//     if (parts.length == 2){ //user object
+//       reset[formData[parts[0]]?.parts[1]?.Value] = "";
+//     } else{
+//       console.log("this is being reset: ", formData[parts[0]]?.Value);
+//       reset[formData[parts[0]]?.Value] = ""; //this is 4 but instead it should be inflation_assumption.Value not the actual value that inflation_assumptino holds
+//     }
+//     // Reset Value //need to access formData[prefix[0]]?.prefix[1]?.
+//   } else if (selectedType === "normal_distribution") {
+//     if (parts.length == 2){
+//       reset[formData[parts[0]]?.parts[1]?.Mean] = "";  // Reset Mean
+//       reset[formData[parts[0]]?.parts[1]?.StdDev] = ""; // Reset StdDev
+//     }
+//     reset[formData[parts[0]]?.Mean] = "";  // Reset Mean
+//     reset[formData[parts[0]]?.StdDev] = ""; // Reset StdDev
 
+//   } else if (selectedType === "uniform_distribution") {
+//     reset[formData[parts[0]]?.parts[1]?.Lower] = ""; // Reset Lower
+//     reset[formData[parts[0]]?.parts[1]?.Upper] = ""; // Reset Upper
+//   }
+
+//   return reset;
+// };
+
+// export const resetTypes = (selectedType, prefix) => {
+//   const reset = {};
+
+//   // Clear all possible inputs under this prefix
+//   reset[`${prefix}Value`] = "";
+//   reset[`${prefix}Mean`] = "";
+//   reset[`${prefix}StdDev`] = "";
+//   reset[`${prefix}Lower`] = "";
+//   reset[`${prefix}Upper`] = "";
+
+//   // Optionally, keep only the needed fields for the selected type
+//   switch (selectedType) {
+//     case "fixed":
+//       delete reset[`${prefix}Mean`];
+//       delete reset[`${prefix}StdDev`];
+//       delete reset[`${prefix}Lower`];
+//       delete reset[`${prefix}Upper`];
+//       break;
+//     case "normal_distribution":
+//       delete reset[`${prefix}Value`];
+//       delete reset[`${prefix}Lower`];
+//       delete reset[`${prefix}Upper`];
+//       break;
+//     case "uniform_distribution":
+//       delete reset[`${prefix}Value`];
+//       delete reset[`${prefix}Mean`];
+//       delete reset[`${prefix}StdDev`];
+//       break;
+//   }
+
+//   return reset;
+// };
 
 export const states = [
   { code: "AL", name: "Alabama" },
@@ -280,4 +266,158 @@ export const loadAnimation = () => {
     const delay = rect.top / window.innerHeight;
     element.style.animationDelay = `${delay}s`;
   });
+};
+
+export const updateNestedState = (prefix, key, value, setFormData) => {
+  setFormData((prevData) => {
+    // If the prefix is user.lifeExpectancy, break it into its parts
+    const prefixParts = prefix.split(".");
+
+    // Create a copy of prevData to ensure we don't mutate the state directly
+    const updated = { ...prevData };
+
+    // Navigate to the correct place in the object
+    let currentLevel = updated;
+
+    // Loop through the prefixParts to reach the correct level
+    for (let i = 0; i < prefixParts.length - 1; i++) {
+      currentLevel = currentLevel[prefixParts[i]] = {
+        ...currentLevel[prefixParts[i]], // Spread to avoid direct mutation
+      };
+    }
+
+    // Finally, update the value at the deepest level (key)
+    currentLevel[prefixParts[prefixParts.length - 1]] = {
+      ...currentLevel[prefixParts[prefixParts.length - 1]], // Spread to avoid direct mutation
+      [key]: value,
+    };
+
+    return updated;
+  });
+};
+
+/**
+ * Used in ScenarioInfo to clean form data.
+ * Gets rid of key value pairs where value = "", and converts numbers represented as string into int
+ * Returns the object but cleaned.
+ *
+ * Use like this:
+ *    const cleanFormData = cleanScenario(formData);
+ *
+ * TP: ChatGPT, prompt - i only need to make sure it is an int before sending it to the router.
+ * i also want to remove any key value pairs where the value is "".
+ *
+ * @param {*} obj
+ * @returns
+ */
+export const cleanScenario = (obj) => {
+  const result = {};
+
+  if (!obj || typeof obj !== "object") return result;
+
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip empty strings, undefined, or null
+    if (value === "" || value === null || value === undefined) continue;
+
+    // If the value is an object, clean it recursively
+    if (typeof value === "object" && !Array.isArray(value)) {
+      const nested = cleanScenario(value);
+      if (Object.keys(nested).length > 0) {
+        result[key] = nested;
+      }
+    } else {
+      // Convert to int if key matches and value is string
+      const numericKeys = [
+        "value",
+        "mean",
+        "stdev",
+        "upper",
+        "lower",
+        "userLifeExpectancy",
+        "spouseLifeExpectancy",
+        "userBirthYear",
+        "spouseBirthYear",
+      ];
+
+      if (numericKeys.includes(key) && typeof value === "string") {
+        const parsed = parseInt(value, 10);
+        if (!isNaN(parsed)) result[key] = parsed;
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Used in EventForm to clean form data.
+ * Gets rid of key value pairs where value = "" or false, and converts numbers represented as string into int
+ * Returns the object but cleaned.
+ *
+ * TP: ChatGPT, prompt - how would i send the cleaned data to the router if this is what i have right now: {EventForm code}
+ * @param {*} obj
+ * @returns
+ */
+export const cleanEvent = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj
+      .map(cleanEvent)
+      .filter((item) => item !== undefined && item !== null);
+  }
+
+  if (typeof obj === "object" && obj !== null) {
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+      const cleanedValue = cleanEvent(value);
+
+      if (
+        cleanedValue !== "" &&
+        cleanedValue !== false &&
+        cleanedValue !== null &&
+        (typeof cleanedValue !== "object" ||
+          Object.keys(cleanedValue).length > 0)
+      ) {
+        acc[key] = cleanedValue;
+      }
+
+      return acc;
+    }, {});
+  }
+
+  return obj;
+};
+
+/**
+ * Used in EventForm to change assetAllocation to correct format before sending to router
+ *
+ * TP: ChatGPT, prompt - "my assetAllocation value is currently formatted like this:
+ * {"two after-tax": {"end": 40, "start": 80}, "434 non-retirement": {"end": 60, "start": 20}}
+ * i want to change this format such that the "start" values would be with assetAllocation1 key like {"two after-tax": 80, "434 non-retirement": 20}
+ * and the "end" values would be with assetAllocation2 like {"two after-tax": 40, "434 non-retirement": 60}
+ * note that there may be more than 2 elements in the object as well. it depends on how many items the user inputs"
+ *
+ * @param {*} allocation
+ * @returns
+ */
+export const processAssetAllocation = (allocation) => {
+  const resultStart = {};
+  const resultEnd = {};
+  let hasEnd = false;
+
+  for (const [key, value] of Object.entries(allocation)) {
+    if (value && typeof value === "object") {
+      if ("start" in value) {
+        resultStart[key] = value.start / 100; // convert to decimal (yaml format)
+      }
+      if ("end" in value) {
+        resultEnd[key] = value.end / 100; // convert to decimal (yaml format)
+        hasEnd = true;
+      }
+    }
+  }
+
+  return hasEnd
+    ? { assetAllocation: resultStart, assetAllocation2: resultEnd }
+    : { assetAllocation: resultStart };
 };

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import { createTablesIfNotExist } from "./db_tables.js";
+import { pool } from "./utils.js";
 
 dotenv.config({ path: path.resolve("../.env") }); // this is for sophie pls dont delete otherwise my env wont work
 
@@ -8,7 +9,7 @@ import mysql from "mysql2/promise";
 import express from "express";
 import session from "express-session";
 import cors from "cors";
-import { scrapeData } from "./scraping.js";
+import { scrapeData } from "./taxes.js";
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:5175'],
+    origin: ["http://localhost:5173", "http://localhost:5175"],
     credentials: true,
   })
 );
@@ -61,13 +62,12 @@ startServer();
 
 async function startServer() {
   try {
-    await connectToDatabase();
-   
+    await ensureConnection();
+
+    await createTablesIfNotExist();
     await scrapeData();
     console.log("Scraping completed.");
-    await createTablesIfNotExist(connection);
     console.log("All tables created or already exist.");
-    
   } catch (err) {
     console.error("Error:", err.message);
     throw err;
@@ -82,14 +82,10 @@ app.listen(PORT, () => {
 import authRouter from "./routers/authentication.js";
 app.use("/auth", authRouter);
 
-import scenarioRouter from "./routers/scenario_endpoints.js";
+import scenarioRouter from "./routers/scenario.js";
 app.use("/api", scenarioRouter);
 
 import userRouter from "./routers/user.js";
 app.use("/user", userRouter);
-
-
-
-
 
 export { connectToDatabase, connection };
