@@ -88,7 +88,7 @@ export async function performRMDs(
   console.log(`Calculated RMD: ${rmd}`);
 
   // Step f: Add RMD to curYearIncome
-  runningTotals.curYearIncome += Number(rmd);
+  runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(rmd);
   console.log(`Updated curYearIncome after adding RMD: ${runningTotals.curYearIncome}`);
 
   // Step g: Transfer investments in-kind to non-retirement accounts
@@ -121,7 +121,7 @@ export async function performRMDs(
       console.log("Target investment not found. Creating new one.");
       // Create a new non-retirement investment
       targetInvestment = {
-        id: `${inv.type} ${inv.taxStatus}`, 
+        id: `${inv.type} non-retirement`, 
         investment_type: inv.type,
         taxStatus: "non-retirement",
         value: 0,
