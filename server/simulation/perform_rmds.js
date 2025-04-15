@@ -108,7 +108,7 @@ export async function performRMDs(
     );
 
     // Check if a non-retirement investment with the same type exists
-    const targetInvestment = investments.find(
+    let targetInvestment = investments.find(
       (investment) =>
         investment.type === inv.type &&
         investment.taxStatus === "non-retirement"
