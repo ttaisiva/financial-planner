@@ -599,7 +599,7 @@ async function getInvestments(connection, scenario_id) {
   rows.forEach((invest) => {
     const investment = {
       investmentType: invest.investment_type,
-      value: invest.value,
+      value: +invest.value,
       taxStatus: invest.tax_status,
       id: invest.id,
     };
