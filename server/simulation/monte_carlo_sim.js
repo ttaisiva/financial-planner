@@ -9,6 +9,7 @@ import {
 import { updateInvestments } from "./update_investments.js";
 import { runRothOptimizer } from "./roth_optimizer.js";
 import { payNonDiscExpenses } from "./nondisc_expenses.js";
+import { payTaxes } from "./pay_prev_year_tax.js";
 import { payDiscExpenses } from "./disc_expenses.js";
 import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
@@ -49,6 +50,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     let purchasePrices = await getPurchasePrices(scenarioId);
     // console.log("purchase prices:", purchasePrices);
+
+    let taxData = await getTaxData(scenarioId, date);
+    console.log("tax", taxData);
 
     const runningTotals = {
       cashInvestment: cashInvestment,
@@ -106,6 +110,10 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           });
         }
       }
+
+      // Prelims
+      // Adjusting tax brackets for inflation
+      
 
       // Step 1: Run income events
 
@@ -184,6 +192,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         date,
         investments
       );
+
+      // Pay taxes
+      payTaxes(runningTotals, scenarioId, incomeEvents, investments, taxData)
 
       // Pay discretionary expenses
       console.log(
@@ -433,4 +444,94 @@ export async function populateYearsAndDuration(
   }
 
   console.log("Finished populating start years and durations.");
+}
+
+/**
+ * Gets the tax brackets for the given scenario
+ * @param scenarioID id of scenario
+ * @param year initial year
+ * @returns All tax brackets in an Object
+ */
+const getTaxData = async (scenarioID, year) => {
+  await ensureConnection();
+  console.log("scneerairo", scenarioID, year);
+  // Get scenario
+  const scnQuery = `
+    SELECT * FROM scenarios
+    WHERE id = ?
+  `
+  const [scenario] = (await connection.execute(scnQuery, [scenarioID]))[0];
+  console.log(scenario.marital_status);
+
+  // Get federal income tax brackets
+  const fedQuery = `
+    SELECT * FROM tax_brackets
+    WHERE year = ? AND filing_status = ?
+  `
+  let [fedTaxBrackets] = await connection.execute(fedQuery, [year, scenario.marital_status]);
+  if (fedTaxBrackets.length == 0) {
+    await ensureConnection();
+    const query = `
+      SELECT * from tax_brackets
+      WHERE filing_status = ? AND year = (SELECT MAX(YEAR) FROM tax_brackets)
+    `
+    fedTaxBrackets = await connection.execute(query, [scenario.marital_status]);
+    fedTaxBrackets = fedTaxBrackets[0];
+  }
+
+  // Get state income tax brackets
+  const stateQuery = `
+    SELECT * FROM state_tax_brackets
+    WHERE year = ? AND filing_status = ? AND state = ?
+  `
+  let [stateTaxBrackets] = await connection.execute(stateQuery, [year, scenario.marital_status, scenario.residence_state]);
+  if (stateTaxBrackets.length == 0) {
+    await ensureConnection();
+    const query = `
+      SELECT * from state_tax_brackets
+      WHERE filing_status = ? AND state = ? AND year = (SELECT MAX(YEAR) FROM state_tax_brackets)
+    `
+    stateTaxBrackets = await connection.execute(query, [scenario.marital_status, scenario.residence_state]);
+    stateTaxBrackets = stateTaxBrackets[0]
+  }
+
+  // Get capital gains tax brackets
+  const cptQuery = `
+    SELECT * FROM capital_gains_tax
+    WHERE year = ? AND filing_status = ?
+  `
+  let [capitalTaxBrackets] = await connection.execute(cptQuery, [year, scenario.marital_status]);
+  if (capitalTaxBrackets.length == 0) {
+    await ensureConnection();
+    const query = `
+      SELECT * FROM capital_gains_tax
+      WHERE filing_status = ? AND year = (SELECT MAX(YEAR) FROM capital_gains_tax)
+    `
+    capitalTaxBrackets = await connection.execute(query, [scenario.marital_status]);
+    capitalTaxBrackets = capitalTaxBrackets[0];
+  }
+
+  //Get deductions
+  const deductionQuery = `
+    SELECT * FROM standard_deductions
+    WHERE filing_status = ? AND year = ?
+  `
+  let [deductions] = await connection.execute(deductionQuery, [scenario.marital_status, year]);
+  if (deductions.length == 0) {
+    await ensureConnection();
+    const query = `
+      SELECT * FROM standard_deductions
+      WHERE filing_status = ? and year = (SELECT MAX(YEAR) FROM standard_deductions)
+    `
+    deductions = await connection.execute(query, [scenario.marital_status]);
+    deductions = deductions[0];
+  }
+
+  const taxData = {
+    federal: fedTaxBrackets,
+    state: stateTaxBrackets,
+    capital: capitalTaxBrackets,
+    deduction: deductions,
+  }
+  return taxData;
 }

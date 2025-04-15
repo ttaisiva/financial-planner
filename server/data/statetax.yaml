@@ -1,341 +1,341 @@
 - NY:
-  ## MARRIED
+  ## COUPLE
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .04
     base: 0
     income_min: 0
     income_max: 17150
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .045
     base: 686
     income_min: 17150
     income_max: 23600
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0525
     base: 976
     income_min: 23600
     income_max: 27900
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .055
     base: 1202
     income_min: 27900
     income_max: 161550
 
   - year: 2024
-    filing_status: married 
+    filing_status: couple 
     rate: .06
     base: 8553
     income_min: 161550
     income_max: 323200
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0685
     base: 18252
     income_min: 323200
     income_max: 2155350
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0965
     base: 143754
     income_min: 2155350
     income_max: 5000000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .103
     base: 418263
     income_min: 5000000
     income_max: 25000000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .109
     base: 2478263
     income_min: 25000000
     income_max: null
 
-  ## SINGLE
+  ## INDIVIDUAL
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .04
     base: 0
     income_min: 0
     income_max: 8500
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .045
     base: 340
     income_min: 8500
     income_max: 11700
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .0525
     base: 484
     income_min: 11700
     income_max: 13900
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .055
     base: 600
     income_min: 13900
     income_max: 80650
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .06
     base: 4271
     income_min: 80650
     income_max: 215400
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .0685
     base: 12356
     income_min: 215400
     income_max: 1077550
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .0965
     base: 71413
     income_min: 1077550
     income_max: 5000000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .103
     base: 449929
     income_min: 5000000
     income_max: 25000000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .109
     base: 2509929
     income_min: 25000000
     income_max: null
 
 - NJ:
-  ## MARRIED
+  ## COUPLE
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .014
     base: 0
     income_min: 0
     income_max: 20000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0175
     base: -70
     income_min: 20000
     income_max: 50000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0245
     base: -420
     income_min: 50000
     income_max: 70000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .035
     base: -1154.50
     income_min: 70000
     income_max: 80000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .05525
     base: -2775
     income_min: 80000
     income_max: 150000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0637
     base: -4042.50
     income_min: 150000
     income_max: 500000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0897
     base: -17042.50
     income_min: 500000
     income_max: 1000000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .1075
     base: -34842.50
     income_min: 1000000
     income_max: null
 
-  ## SINGLE
+  ## INDIVIDUAL
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .014
     base: 0
     income_min: 0
     income_max: 20000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .0175
     base: -70
     income_min: 20000
     income_max: 35000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .035
     base: -682.50
     income_min: 35000
     income_max: 40000
     
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .05525
     base: -1492.50
     income_min: 40000
     income_max: 75000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .0637
     base: -2126.25
     income_min: 75000
     income_max: 500000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .0897
     base: -15126.25
     income_min: 500000
     income_max: 1000000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .1075
     base: -32926.25
     income_min: 1000000
     income_max: null
 
 - CT:
-  ## MARRIED
+  ## COUPLE
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .02
     base: 0
     income_min: 0
     income_max: 20000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .045
     base: 0
     income_min: 20000
     income_max: 100000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .055
     base: 0
     income_min: 100000
     income_max: 200000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .06
     base: 0
     income_min: 200000
     income_max: 400000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .065
     base: 0
     income_min: 400000
     income_max: 500000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .069
     base: 0
     income_min: 500000
     income_max: 1000000
 
   - year: 2024
-    filing_status: married
+    filing_status: couple
     rate: .0699
     base: 0
     income_min: 1000000
     income_max: null
 
-  # SINGLE
+  # INDIVIDUAL
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .02 
     base: 0
     income_min: 0
     income_max: 10000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .045
     base: 0
     income_min: 10000
     income_max: 50000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .055
     base: 0
     income_min: 50000
     income_max: 100000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .06
     base: 0
     income_min: 100000
     income_max: 200000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .065
     base: 0
     income_min: 200000
     income_max: 250000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .069
     base: 0
     income_min: 250000
     income_max: 500000
 
   - year: 2024
-    filing_status: single
+    filing_status: individual
     rate: .0699
     base: 0
     income_min: 500000
