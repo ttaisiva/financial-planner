@@ -112,6 +112,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         currentSimulationYear,
         incomeEventsStart,
         incomeEventsDuration,
+        logs.evtlog
         );
 
       console.log(
@@ -125,7 +126,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           scenarioId,
           currentSimulationYear,
           runningTotals,
-          investments
+          investments,
+          logs.evtlog,
         );
         console.log(
           "Current year income after perform RMDs: ",

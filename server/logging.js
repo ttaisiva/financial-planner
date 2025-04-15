@@ -26,7 +26,7 @@ export async function initLogs(userId) {
      const csvlog = fs.createWriteStream(path); // creates/opens file
     //  const csvlog = fs.createWriteStream(path, { flags: 'a' });
      path = `${dir}/${username}_${timestamp}.log`;
-     const evtlog = fs.createWriteStream(path);
+     const evtlog = fs.createWriteStream(path, { flags: 'a' });
 
      const csvStream = format({ headers: false }) // no title row by default
         .on('error', e => console.error(e));    
@@ -69,6 +69,15 @@ export function logIncome(evtlog, year, name, currentAmount) {
         year: year,
         type: `Income "${name}"`,
         amount: currentAmount,
+    }
+    logEvent(evtlog, event);
+}
+
+export function logRMD(evtlog, year, inv, transferAmount) {
+    const event = {
+        year: year,
+        type: `RMD tranfer from investment "${inv}".`,
+        amount: transferAmount,
     }
     logEvent(evtlog, event);
 }
