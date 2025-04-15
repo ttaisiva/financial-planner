@@ -53,6 +53,8 @@ export async function runRothOptimizer(
       conversionAmt = 0;
     }
   }
+  console.log("investments after conversion", investments);
+
   return { investments, rothStrategy };
 }
 

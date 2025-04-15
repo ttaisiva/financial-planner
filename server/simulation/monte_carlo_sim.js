@@ -65,6 +65,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     console.log("Total years for simulation: ", totalYears);
     for (let year = 0; year < 10; year++) {
+      console.log("investments at start of year", investments);
       //years in which the simulation is  being run
 
       const currentSimulationYear = date + year; //actual year being simulated

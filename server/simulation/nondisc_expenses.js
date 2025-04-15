@@ -1,9 +1,9 @@
 import { connection } from "../server.js";
 import { ensureConnection } from "../server.js";
 
-export async function payNondiscExpenses(scenarioId) {
+export async function payNondiscExpenses(scenarioId, investments, year) {
 
-    expenses = await getNondiscExpenses(scenarioId, investments, year);
+    const expenses = await getNondiscExpenses(scenarioId);
     if (expenses.length === 0) {
         console.log("No non-discretionary expenses found for scenario ID #", scenarioId);
         return;
@@ -29,9 +29,9 @@ async function getNondiscExpenses(scenarioId) {
             initial_amount as initialAmt,
             change_amt_or_pct as changeType,
             inflation_adjusted as inflationAdjusted,
-            user_fraction as userFraction,
+            user_fraction as userFraction
          FROM events
-         WHERE scenario_id = ? AND type='expense' AND discretionary = false`,
+         WHERE scenario_id = ? AND type='expense' AND discretionary=0`,
         [scenarioId]
     );
     return rows;
