@@ -39,11 +39,12 @@ export async function runRothOptimizer(
       let aftertax = investments.find(
         (investment) =>
           investment.type === pretax.type &&
-          investment.taxStatus === "After-Tax"
+          investment.taxStatus === "after-tax"
       );
       if (aftertax) {
         aftertax.value += conversionAmt;
         pretax.value -= conversionAmt;
+
         logRothConversion(evtlog, year, pretax, aftertax, conversionAmt);
       } else {
         // create new after tax investment to transfer to
@@ -54,6 +55,7 @@ export async function runRothOptimizer(
           value: conversionAmt,
         };
         investments.push(newInvestment);
+
         logRothConversion(evtlog, year, pretax, pretax, conversionAmt);
       }
       conversionAmt = 0;
@@ -72,9 +74,14 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
   const filingStatus = await getFilingStatus(scenarioId);
   console.log(filingStatus);
   const taxBrackets = await getTaxBrackets(filingStatus);
-  console.log(taxBrackets);
 
-  let userMax = taxBrackets[0].incomeMax;
+  let userMax;
+  try {
+    userMax = taxBrackets[0].incomeMax;
+  } catch {
+    console.error("Couldn't extract income max from tax brackets.");
+    return 0;
+  }
   for (let i = 0; i < taxBrackets.length; i++) {
     if (totalIncome <= taxBrackets[i].incomeMax) {
       userMax = taxBrackets[i].incomeMax;
@@ -89,6 +96,9 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
 }
 
 async function getTaxBrackets(filingStatus) {
+  if(filingStatus==='individual') filingStatus='single';
+  if(filingStatus==='couple') filingStatus='married';
+
   await ensureConnection();
   const [rows] = await connection.execute(
     `SELECT 
