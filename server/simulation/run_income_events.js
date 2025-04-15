@@ -34,14 +34,20 @@ export async function process_income_event(
   curYearIncome,
   curYearSS,
   currentSimulationYear
+ 
 ) {
+
+
   console.log(`Processing income events for scenario ID: ${scenarioId} with current simulation year: ${currentSimulationYear}`);
   console.log(
     `Initial cash investment: ${cashInvestment}, curYearIncome: ${curYearIncome}, curYearSS: ${curYearSS}`
   );
 
+  const incomeEventsStart = {}
+  const incomeEventsDuration = {}
+
   // Get all income events and calculate current amounts
-  const incomeEvents = await getIncomeEvents(scenarioId, previousYearAmounts);
+  const incomeEvents = await getIncomeEvents(scenarioId, previousYearAmounts, incomeEventsStart, incomeEventsDuration, currentSimulationYear);
 
   if (incomeEvents.length === 0) {
     console.warn(
@@ -62,16 +68,15 @@ export async function process_income_event(
   const updatedAmounts = {}; // To store currentAmount for each event
 
   for (const event of incomeEvents) {
-    const startYear = getEventStartYear(event);
-    console.log("Event start Year: ", startYear);
-    console.log("current simulation year: ", currentSimulationYear);
-    if(startYear >= currentSimulationYear) {
+    const startYear = incomeEventsStart[event.id];
+    console.log(`Event start year: ${startYear}, Current simulation year: ${currentSimulationYear}`);
+    if(startYear > currentSimulationYear) {
         console.log(`Skipping event ID: ${event.id} as it starts in the future.`);
         continue;
     }
-    const duration = getEventDuration(event);
+    const duration = incomeEventsDuration[event.id];
     console.log("Event duration: ", duration);
-    if(startYear + duration > currentSimulationYear) {
+    if(startYear + duration < currentSimulationYear) {
         console.log(`Skipping event ID: ${event.id} as its duration is over.`);
         continue;
     }
@@ -145,9 +150,11 @@ export async function process_income_event(
  * @param {Object} previousYearAmounts - An object mapping event IDs to their previous year amounts.
  * @returns {Array} The calculated data for the income events.
  */
-export async function getIncomeEvents(scenarioId, previousYearAmounts) {
+export async function getIncomeEvents(scenarioId, previousYearAmounts, incomeEventsStart, incomeEventsDuration, currentSimulationYear) {
   console.log(`Fetching income events for scenario ID: ${scenarioId}`);
   await ensureConnection();
+
+
 
   const [rows] = await connection.execute(
     `SELECT 
@@ -182,14 +189,33 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
       `Calculating current amount for event ID: ${event.id}, previousYearAmount: ${prevAmount}`
     );
 
-    const sampledChange = sample(event.change_distribution);
+    //do this only once
+    console.log("event", event)
+    if (!incomeEventsStart[event.id]) {
+        console.log("Calculating event start year for event ID: ", event.id)
+        incomeEventsStart[event.id] = getEventStartYear(event);
+    }
+    if (!incomeEventsDuration[event.id]) {
+        console.log("Calculating event duration for event ID: ", event.id)
+        incomeEventsDuration[event.id] = getEventDuration(event);
+    }
 
-    console.log(`Sampled change for event ID: ${event.id}: ${sampledChange}`);
-
-    const currentAmount = Number(prevAmount) + Number(sampledChange);
-    console.log(
-      `Calculated currentAmount for event ID: ${event.id}: ${currentAmount}`
-    );
+    //only do this if event has start_year = currentSimulationYear and duration is not over
+    if (incomeEventsStart[event.id] < currentSimulationYear &&
+        (incomeEventsStart[event.id] + incomeEventsDuration[event.id] < currentSimulationYear )
+    ) {
+        const sampledChange = sample(event.change_distribution);
+        console.log(`Sampled change for event ID: ${event.id}: ${sampledChange}`);
+    
+        const currentAmount = Number(prevAmount) + Number(sampledChange);
+        console.log(`Calculated currentAmount for event ID: ${event.id}: ${currentAmount}` );
+    }
+    else{
+        console.log(`Event ID: ${event.id} has not started or is already over. Using previous amount: ${prevAmount}`);
+        const currentAmount = prevAmount; // Use the previous amount if the event hasn't started yet
+        console.log(`Current amount for event ID: ${event.id}: ${currentAmount}` );
+    }
+    
 
     return {
       id: event.id,
@@ -199,8 +225,8 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
       userPercentage: event.user_percentage || 0,
       spousePercentage: event.spouse_percentage || 0,
       isSocialSecurity: event.is_social_security || false,
-      start: event.start,
-      duration: event.duration,
+      start: incomeEventsStart[event.id],
+      duration: incomeEventsDuration[event.id],
     };
   });
 }

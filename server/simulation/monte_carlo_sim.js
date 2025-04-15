@@ -21,6 +21,7 @@ export async function simulation(
   userId,
   scenarioId,
   connection
+
 ) {
   console.log("Running Monte Carlo simulation...");
 
@@ -60,8 +61,7 @@ export async function simulation(
             ensureConnection();
             const inflationRate = await run_preliminaries(
             currentSimulationYear,
-            scenarioId,
-            connection
+            scenarioId
             );
             console.log(
             "Inflation rate for year ",
@@ -87,12 +87,14 @@ export async function simulation(
 
             // Step 1: Run income events
             let updatedAmounts;
+            console.log("currentSimulation year: ", currentSimulationYear);
+
             ({
                 updatedAmounts,
                 cashInvestment,
                 curYearIncome,
-                curYearSS,
-                currentSimulationYear
+                curYearSS
+               
             } = await process_income_event(
                 scenarioId,
                 previousYearAmounts,
@@ -101,7 +103,8 @@ export async function simulation(
                 isSpouseAlive,
                 cashInvestment,
                 curYearIncome,
-                curYearSS
+                curYearSS,
+                currentSimulationYear
             ));
 
       // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
