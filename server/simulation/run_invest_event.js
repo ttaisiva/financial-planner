@@ -53,6 +53,7 @@ export async function runInvestEvent(
           inflationRate,
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
+          runningTotals,
         });
       } else {
         applyFixedAssetAllocation({
@@ -65,6 +66,7 @@ export async function runInvestEvent(
           inflationRate,
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
+          runningTotals,
         });
       }
     } else {
@@ -354,6 +356,7 @@ async function applyGlideAssetAllocation({
   inflationRate = 0.03,
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
+  runningTotals,
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -412,8 +415,14 @@ async function applyGlideAssetAllocation({
       const availableRoom = Math.max(adjustedLimit, 0); // Expandable: subtract already contributed this year
       const cappedAmount = Math.min(proposedAmount, availableRoom);
 
-      target.value = (currentValue + cappedAmount).toFixed(2);
+      const newValue = (currentValue + cappedAmount).toFixed(2);
+      target.value = newValue;
       remainingToAllocate -= cappedAmount;
+
+      // Update the matching purchase price
+      if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
+        runningTotals.purchasePrices[target.id] = newValue;
+      }
 
       if (proposedAmount > cappedAmount) {
         uncappedAllocations[investmentId] = 0;
@@ -439,7 +448,13 @@ async function applyGlideAssetAllocation({
     const weight = percent / totalUncappedWeight;
     const reallocAmount = remainingToAllocate * weight;
 
-    target.value = (currentValue + reallocAmount).toFixed(2);
+    const newValue = (currentValue + reallocAmount).toFixed(2);
+    target.value = newValue;
+
+    // Update the matching purchase price
+    if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
+      runningTotals.purchasePrices[target.id] = newValue;
+    }
   }
 }
 
@@ -463,6 +478,7 @@ async function applyFixedAssetAllocation({
   inflationRate = 0.03,
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
+  runningTotals,
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -500,8 +516,14 @@ async function applyFixedAssetAllocation({
       const availableRoom = Math.max(adjustedLimit, 0);
       const cappedAmount = Math.min(proposedAmount, availableRoom);
 
-      target.value = (currentValue + cappedAmount).toFixed(2);
+      const newValue = (currentValue + cappedAmount).toFixed(2);
+      target.value = newValue;
       remainingToAllocate -= cappedAmount;
+
+      // Update the matching purchase price
+      if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
+        runningTotals.purchasePrices[target.id] = newValue;
+      }
 
       if (proposedAmount > cappedAmount) {
         uncappedAllocations[investmentId] = 0;
@@ -527,6 +549,12 @@ async function applyFixedAssetAllocation({
     const weight = percent / totalUncappedWeight;
     const reallocAmount = remainingToAllocate * weight;
 
-    target.value = (currentValue + reallocAmount).toFixed(2);
+    const newValue = (currentValue + reallocAmount).toFixed(2);
+    target.value = newValue;
+
+    // Update the matching purchase price
+    if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
+      runningTotals.purchasePrices[target.id] = newValue;
+    }
   }
 }
