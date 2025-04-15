@@ -61,7 +61,7 @@ export async function process_income_event(
 
   for (const event of incomeEvents) {
     console.log(
-      `Processing income event ID: ${event.id}, currentAmount: ${event.currentAmount}`
+      `Processing income event ID: ${event.id}, current Amount: ${event.currentAmount}`
     );
 
     let adjustedAmount = event.currentAmount;
@@ -137,9 +137,11 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
   const [rows] = await connection.execute(
     `SELECT 
             id,
+            scenario_id,
             change_distribution,
             change_amt_or_pct,
             inflation_adjusted, 
+            initial_amount, 
             user_fraction, 
             social_security
          FROM events 
@@ -167,13 +169,14 @@ export async function getIncomeEvents(scenarioId, previousYearAmounts) {
 
     console.log(`Sampled change for event ID: ${event.id}: ${sampledChange}`);
 
-    const currentAmount = prevAmount + sampledChange;
+    const currentAmount = Number(prevAmount) + Number(sampledChange);
     console.log(
       `Calculated currentAmount for event ID: ${event.id}: ${currentAmount}`
     );
 
     return {
       id: event.id,
+      initialAmount: event.initial_amount,
       currentAmount,
       inflationAdjusted: event.inflation_adjusted || false,
       userPercentage: event.user_percentage || 0,

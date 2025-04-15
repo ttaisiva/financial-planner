@@ -21,6 +21,7 @@ import {
 import Strategy from "./Strategy";
 import { inputTypes, updateNestedState } from "../utils";
 import { useNavigate } from "react-router-dom";
+import { cleanScenario } from "../utils";
 
 //maybe move these to utils
 const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
@@ -47,7 +48,7 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
             Select sample life expectancy
           </option>
           <option value="fixed">Fixed</option>
-          <option value="normal_distribution">Normal Distribution</option>
+          <option value="normal">Normal Distribution</option>
         </select>
 
         <span
@@ -92,7 +93,7 @@ const RetirementAgeForm = ({ prefix, handleChange, formData }) => (
           Select sample life expectancy
         </option>
         <option value="fixed">Fixed</option>
-        <option value="normal_distribution">Normal Distribution</option>
+        <option value="normal">Normal Distribution</option>
       </select>
 
       <span
@@ -130,13 +131,13 @@ const ScenarioInfo = forwardRef((props, ref) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
     },
     spouseLifeExpectancy: {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
     },
     userBirthYear: "",
     spouseBirthYear: "",
@@ -144,10 +145,11 @@ const ScenarioInfo = forwardRef((props, ref) => {
       type: "",
       value: "",
       mean: "",
-      stdDev: "",
+      stdev: "",
       lower: "",
       upper: "",
     },
+    afterTaxContributionLimit: "",
   });
 
   // Cash Investment Form. handleSubmitUserInfo() handles inserting cash investment data into database
@@ -212,20 +214,23 @@ const ScenarioInfo = forwardRef((props, ref) => {
     };
 
     // Correctly format the scenario form data
+    const cleanedFormData = cleanScenario(formData);
+
     const scenarioData = {
-      name: formData.name,
-      financialGoal: formData.financialGoal,
-      maritalStatus: formData.maritalStatus,
-      residenceState: formData.residenceState,
-      lifeExpectancy: JSON.stringify({
-        user: JSON.stringify(formData.userLifeExpectancy),
-        spouse: JSON.stringify(formData.spouseLifeExpectancy),
-      }),
-      birthYears: JSON.stringify({
-        user: formData.userBirthYear,
-        spouse: formData.spouseBirthYear,
-      }),
-      inflationAssumption: JSON.stringify(formData.inflationAssumption),
+      name: cleanedFormData.name,
+      financialGoal: cleanedFormData.financialGoal,
+      maritalStatus: cleanedFormData.maritalStatus,
+      residenceState: cleanedFormData.residenceState,
+      lifeExpectancy: JSON.stringify([
+        cleanedFormData.userLifeExpectancy,
+        cleanedFormData.spouseLifeExpectancy,
+      ]),
+      birthYears: JSON.stringify([
+        cleanedFormData.userBirthYear,
+        cleanedFormData.spouseBirthYear,
+      ]),
+      inflationAssumption: JSON.stringify(cleanedFormData.inflationAssumption),
+      afterTaxContributionLimit: cleanedFormData.afterTaxContributionLimit,
     };
 
     const fullData = { scenario: scenarioData, cashData: finalCashData };
@@ -424,8 +429,11 @@ const ScenarioInfo = forwardRef((props, ref) => {
           </div>
         </div>
 
+        <label>
+          <h4>Inflation Assumption %:</h4>
+        </label>
+
         <div>
-          <label>Inflation Assumption %: </label>
           <select
             name="inflationAssumption.type"
             value={formData.inflationAssumption.type}
@@ -436,8 +444,8 @@ const ScenarioInfo = forwardRef((props, ref) => {
               Select format
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
-            <option value="uniform_distribution">Uniform Distribution</option>
+            <option value="normal">Normal Distribution</option>
+            <option value="uniform">Uniform Distribution</option>
           </select>
 
           {inputTypes({
@@ -447,6 +455,28 @@ const ScenarioInfo = forwardRef((props, ref) => {
             prefix: "inflationAssumption",
           })}
           {console.log("form Data", formData)}
+        </div>
+
+        <label>
+          <h4>After-Tax Contribution Limit:</h4>
+        </label>
+        <p>
+          {" "}
+          Initial limit on annual contributions to after-tax retirement
+          accounts. Limits are is imposed by the IRS. It is inflation-adjusted,
+          i.e., assumed to increase annually at the rate of inflation.
+        </p>
+
+        <div>
+          <input
+            type="number"
+            min="0"
+            name="afterTaxContributionLimit"
+            value={formData.afterTaxContributionLimit}
+            onChange={handleChange}
+            placeholder="0.00"
+            required
+          />
         </div>
 
         <div className="divider"></div>

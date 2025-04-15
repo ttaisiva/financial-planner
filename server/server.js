@@ -9,7 +9,7 @@ import mysql from "mysql2/promise";
 import express from "express";
 import session from "express-session";
 import cors from "cors";
-import { scrapeData } from "./scraping.js";
+import { scrapeData } from "./taxes.js";
 
 dotenv.config();
 
@@ -62,8 +62,7 @@ startServer();
 
 async function startServer() {
   try {
-    await connectToDatabase();
-    // const connection = pool.getConnection();
+    await ensureConnection();
 
     await createTablesIfNotExist(connection);
     await scrapeData();

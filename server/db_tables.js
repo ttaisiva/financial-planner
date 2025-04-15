@@ -10,6 +10,19 @@ export async function createTablesIfNotExist(connection) {
     )
   `;
 
+  const createStateTaxBracketsTable = `
+  CREATE TABLE IF NOT EXISTS state_tax_brackets (
+    state CHAR(2) NOT NULL,
+    user_id VARCHAR(255),
+    year INT NOT NULL,
+    filing_status VARCHAR(20) NOT NULL,
+    tax_rate DECIMAL(5, 3) NOT NULL,
+    base DECIMAL(10, 2) NOT NULL,
+    income_min DECIMAL(10, 2) NOT NULL,
+    income_max DECIMAL(10, 2)
+  )
+`;
+
   const createStandardDeductionsTable = `
     CREATE TABLE IF NOT EXISTS standard_deductions (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -66,6 +79,7 @@ export async function createTablesIfNotExist(connection) {
     birth_years JSON,
     life_expectancy JSON,
     inflation_assumption JSON,
+    after_tax_contribution_limit INT NOT NULL,
     financial_goal DECIMAL(10, 2) NOT NULL,
     residence_state CHAR(2),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -140,13 +154,14 @@ export async function createTablesIfNotExist(connection) {
       investment_id VARCHAR(255) DEFAULT NULL, -- applies to investment-based strategies
       expense_id INT DEFAULT NULL,    -- applies to spending strategie
       strategy_order INT NOT NULL,    -- indicates the order
-      FOREIGN KEY (scenario_id) REFERENCES scenarios(id),
-      FOREIGN KEY (expense_id) REFERENCES events(id)
+      FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE,
+      FOREIGN KEY (expense_id) REFERENCES events(id) ON DELETE CASCADE
     );
   `;
 
   // Create tables
   await connection.execute(createTaxBracketsTable);
+  await connection.execute(createStateTaxBracketsTable);
   await connection.execute(createStandardDeductionsTable);
   await connection.execute(createCapitalGainsTaxTable);
   await connection.execute(createRMDsTable);
