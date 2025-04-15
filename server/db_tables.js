@@ -1,4 +1,5 @@
-export async function createTablesIfNotExist(connection) {
+import { connection } from "./server.js";
+export async function createTablesIfNotExist() {
   const createTaxBracketsTable = `
     CREATE TABLE IF NOT EXISTS tax_brackets (
       id INT AUTO_INCREMENT PRIMARY KEY,
