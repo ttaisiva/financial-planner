@@ -32,7 +32,7 @@ import { transfer, getPreTaxInvestments } from "./preliminaries.js";
 export async function performRMDs(
   scenarioId,
   currentSimulationYear,
-  curYearIncome,
+  runningTotals,
   investments
 ) {
   console.log(
@@ -47,7 +47,7 @@ export async function performRMDs(
   // Check if the user is at least 74 and has pre-tax investments
   if (userAge < 73) {
     console.log(`No RMD required for user age ${userAge}.`);
-    return { curYearIncome }; // No RMD required
+    return ; // No RMD required
   }
 
   console.log(`User is eligible for RMD. Fetching pre-tax investments...`);
@@ -60,7 +60,7 @@ export async function performRMDs(
 
   if (preTaxInvestments.length === 0) {
     console.warn("No pre-tax investments found. Skipping RMD process.");
-    return { curYearIncome }; // No pre-tax investments
+    return ; // No pre-tax investments
   }
 
   // Step c: Lookup distribution period (d) from the RMD table
@@ -86,8 +86,8 @@ export async function performRMDs(
   console.log(`Calculated RMD: ${rmd}`);
 
   // Step f: Add RMD to curYearIncome
-  curYearIncome += Number(rmd);
-  console.log(`Updated curYearIncome after adding RMD: ${curYearIncome}`);
+  runningTotals.curYearIncome += Number(rmd);
+  console.log(`Updated curYearIncome after adding RMD: ${runningTotals.curYearIncome}`);
 
   // Step g: Transfer investments in-kind to non-retirement accounts
   let remainingRMD = Number(rmd);
@@ -118,6 +118,7 @@ export async function performRMDs(
       console.log("Target investment not found. Creating new one.");
       // Create a new non-retirement investment
       targetInvestment = {
+        id: `${inv.type} ${inv.taxStatus}`, 
         investment_type: inv.type,
         taxStatus: "non-retirement",
         value: 0,
@@ -131,8 +132,7 @@ export async function performRMDs(
 
   console.log("RMD process completed.");
 
-  // Return the updated investments and curYearIncome
-  return { curYearIncome };
+
 }
 
 /**
