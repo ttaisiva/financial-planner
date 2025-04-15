@@ -175,7 +175,7 @@ async function getDiscretionaryExpenses(scenarioId) {
  * @param {number} scenarioId - The ID of the scenario.
  * @returns {Array} Ordered list of discretionary expense names.
  */
-async function getSpendingStrategy(scenarioId) {
+export async function getSpendingStrategy(scenarioId) {
     console.log(`Fetching spending strategy for scenario ID: ${scenarioId}`);
     const [rows] = await connection.execute(
         `SELECT expense_id, strategy_order
