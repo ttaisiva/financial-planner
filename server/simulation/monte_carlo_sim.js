@@ -338,6 +338,11 @@ async function getAfterTaxLimit(scenarioId) {
   return rows[0].value;
 }
 
+/**
+ *
+ * @param {*} scenarioId
+ * @returns {investId: investValue, investId2: investValue2, ...}
+ */
 async function getPurchasePrices(scenarioId) {
   await ensureConnection();
   const [rows] = await connection.execute(
