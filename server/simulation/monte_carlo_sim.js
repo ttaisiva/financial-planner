@@ -79,7 +79,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     const inflationRate = await run_preliminaries(scenarioId);
 
     console.log("Total years for simulation: ", totalYears);
-    for (let year = 0; year < totalYears; year++) {
+    for (let year = 0; year < 1; year++) {
       //years in which the simulation is  being run
 
       const currentSimulationYear = date + year; //actual year being simulated
@@ -101,18 +101,18 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       }
 
       // Step 1: Run income events
-
-      //   await process_income_event(
-      //     scenarioId,
-      //     previousYearAmounts,
-      //     inflationRate,
-      //     isUserAlive,
-      //     isSpouseAlive,
-      //     runningTotals,
-      //     currentSimulationYear,
-      //     incomeEventsStart,
-      //     incomeEventsDuration
-      //   );
+       
+    //    await process_income_event(
+    //     scenarioId,
+    //     previousYearAmounts,
+    //     inflationRate,
+    //     isUserAlive,
+    //     isSpouseAlive,
+    //     runningTotals,
+    //     currentSimulationYear,
+    //     incomeEventsStart,
+    //     incomeEventsDuration,
+    //     );
 
       console.log(
         "Current year income after income events: ",
@@ -168,13 +168,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       await payNondiscExpenses(scenarioId, investments, currentSimulationYear);
 
       // Pay discretionary expenses
-      //payDiscExpenses(    scenarioId, cashInvestment, curYearIncome, curYearSS, curYearGains, curYearEarlyWithdrawals, currentSimulationYear, inflationRate);
-
-      console.log(
-        "Cash Investment after running Income Event:",
-        runningTotals.cashInvestment
-      );
-      console.log("purchase prices before invest event:", purchasePrices);
+       console.log("Cash investment before paying discretionary expenses: ", runningTotals.cashInvestment); 
+        await payDiscExpenses(scenarioId, runningTotals, currentSimulationYear, inflationRate, date, investments);
+       console.log("Cash investment after paying discretionary expenses: ", runningTotals.cashInvestment);
 
       // Step 9: Invest Events
       await runInvestEvent(
