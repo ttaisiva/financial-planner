@@ -50,13 +50,13 @@ async function scrapeTaxBrackets() {
 
     if (tag === "h2" && content.includes("single")) {
       // If tag and content match this, the table tag after this will contain tax bracket info for filing single
-      currFilingStatus = "single";
+      currFilingStatus = "individual";
     } else if (tag === "a" && content.includes("Married filing jointly")) {
       // If tag and content match this, the table tag after this will contain tax bracket info for filing married jointly
-      currFilingStatus = "married";
+      currFilingStatus = "couple";
     } else if (
       tag === "table" &&
-      (currFilingStatus == "single" || currFilingStatus == "married")
+      (currFilingStatus == "individual" || currFilingStatus == "couple")
     ) {
       // Only scrape tax bracket info for single and married jointly
       $(element)
@@ -82,7 +82,7 @@ async function scrapeTaxBrackets() {
             incomeMax: incomeMax, // Int or null
           });
         });
-      if (currFilingStatus == "married") currFilingStatus = ""; // Change to "" so that no tax rate information is scraped after "married jointly"
+      if (currFilingStatus == "couple") currFilingStatus = ""; // Change to "" so that no tax rate information is scraped after "married jointly"
     }
   });
   insertTaxBrackets(taxBrackets);
@@ -182,13 +182,13 @@ async function scrapeStandardDeductions() {
           if ($(columns[0]).text().trim().includes("Single")) {
             standardDeductions.push({
               year: year,
-              filingStatus: "single",
+              filingStatus: "individual",
               standardDeduction: moneyToInt($(columns[1]).text().trim()),
             });
           } else if ($(columns[0]).text().trim().includes("Married")) {
             standardDeductions.push({
               year: year,
-              filingStatus: "married",
+              filingStatus: "couple",
               standardDeduction: moneyToInt($(columns[1]).text().trim()),
             });
           }
@@ -328,22 +328,22 @@ async function scrapeCapitalGainsTax() {
           if (counter === 1) {
             // If first list on IRS site, single and married have the same rate, same min, but different maxes
             if (i === 0) {
-              currFilingStatus = "single";
+              currFilingStatus = "individual";
               incomeMin = 0;
               incomeMax = moneyToInt(extractMoney($(item).text().trim()));
             } else if (i === 1) {
-              currFilingStatus = "married";
+              currFilingStatus = "couple";
               incomeMin = 0;
               incomeMax = moneyToInt(extractMoney($(item).text().trim()));
             }
           } else if (counter === 2) {
             // If second list on IRS site, single and married have the same rate, but different min and maxes
             if (i === 0) {
-              currFilingStatus = "single";
+              currFilingStatus = "individual";
               incomeMin = moneyToInt(extractAllMoney($(item).text().trim())[0]);
               incomeMax = moneyToInt(extractAllMoney($(item).text().trim())[1]);
             } else if (i === 1) {
-              currFilingStatus = "married";
+              currFilingStatus = "couple";
               incomeMin = moneyToInt(extractAllMoney($(item).text().trim())[0]);
               incomeMax = moneyToInt(extractAllMoney($(item).text().trim())[1]);
               isCorrectList = false; // Set to False again so that no more lists are scraped after this
@@ -548,13 +548,15 @@ async function insertRMDs(RMDs) {
  */
 async function insertStateTaxBrackets() {
   const connection = await connectToDatabase();
-  const [isAdded] = await connection.execute(`SELECT * FROM state_tax_brackets WHERE user_id IS NULL`); // Indicates that the pre-written state tax brackets were added; All other tax brackets are uploaded by users
+  const [isAdded] = await connection.execute(
+    `SELECT * FROM state_tax_brackets WHERE user_id IS NULL`
+  ); // Indicates that the pre-written state tax brackets were added; All other tax brackets are uploaded by users
   if (isAdded.length == 0) {
-    const states = yaml.load(fs.readFileSync('data/statetax.yaml', 'utf8'));
+    const states = yaml.load(fs.readFileSync("data/statetax.yaml", "utf8"));
     const query = `
     INSERT INTO state_tax_brackets (state, user_id, year, filing_status, tax_rate, base, income_min, income_max)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `
+    `;
     for (const state of states) {
       for (const bracket of state[Object.keys(state)[0]]) {
         const values = [
@@ -565,7 +567,7 @@ async function insertStateTaxBrackets() {
           bracket.rate,
           bracket.base,
           bracket.income_min,
-          bracket.income_max
+          bracket.income_max,
         ];
         await connection.execute(query, values);
       }
