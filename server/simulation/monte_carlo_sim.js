@@ -136,7 +136,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         // }
 
       // Step 4: Update investments
-      //({ curYearIncome } = await updateInvestments(scenarioId, curYearIncome, investments));
+        await updateInvestments(scenarioId, runningTotals, investments);
+        console.log("Current year income after update investments: ", runningTotals.curYearIncome);
 
       // Pay non-discretionary expenses
       //payNondiscExpenses(scenarioId);
