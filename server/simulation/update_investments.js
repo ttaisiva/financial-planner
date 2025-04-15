@@ -72,9 +72,10 @@ export async function updateInvestments(
       investment.taxStatus === "non-retirement" &&
       investmentType.taxability === "taxable"
     ) {
-      runningTotals.curYearIncome += generatedIncome;
+        runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(generatedIncome);
+      
       console.log(
-        `Added generated income to curYearIncome. Updated curYearIncome: ${runningTotals.curYearIncome}`
+        `Added generated income to curYearIncome. Updated curYearIncome: ${Number(runningTotals.curYearIncome)}`
       );
     }
 
