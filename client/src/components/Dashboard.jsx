@@ -150,6 +150,7 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
           birthYears: yamlScn.birthYears,
           lifeExpectancy: yamlScn.lifeExpectancy,
           inflationAssumption: yamlScn.inflationAssumption,
+          afterTaxContributionLimit: yamlScn.afterTaxContributionLimit,
           financialGoal: yamlScn.financialGoal,
           residenceState: yamlScn.residenceState,
         }

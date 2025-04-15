@@ -46,11 +46,8 @@ export async function get_preliminaries_data(scenarioId) {
  *
  */
 
-export async function run_preliminaries(
-  current_simulation_year,
-  scenarioId,
- 
-) {
+export async function run_preliminaries(current_simulation_year, scenarioId) {
+  await ensureConnection();
   console.log("Running preliminaries for year:", current_simulation_year);
   ensureConnection();
   const result = await get_preliminaries_data(scenarioId);
@@ -144,19 +141,19 @@ export function transfer(investment1, investment2, amount) {
   );
 
   // Ensure the source investment has enough value to transfer
-  if (investment1.dollarValue < amount) {
+  if (investment1.value < amount) {
     throw new Error(
-      `Insufficient funds in investment ${investment1.id}. Available: ${investment1.dollarValue}, Requested: ${amount}`
+      `Insufficient funds in investment ${investment1.id}. Available: ${investment1.value}, Requested: ${amount}`
     );
   }
 
   // Perform the transfer
-  investment1.dollarValue = Number(investment1.dollarValue) - Number(amount); // Deduct the amount from the source investment
-  investment2.dollarValue = Number(investment2.dollarValue) + Number(amount); // Add the amount to the target investment
+  investment1.value = Number(investment1.value) - Number(amount); // Deduct the amount from the source investment
+  investment2.value = Number(investment2.value) + Number(amount); // Add the amount to the target investment
 
   console.log(`Transfer complete. New values:`);
-  console.log(`Investment ${investment1.id}: ${investment1.dollarValue}`);
-  console.log(`Investment ${investment2.id}: ${investment2.dollarValue}`);
+  console.log(`Investment ${investment1.id}: ${investment1.value}`);
+  console.log(`Investment ${investment2.id}: ${investment2.value}`);
 }
 
 /**

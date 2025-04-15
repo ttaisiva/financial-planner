@@ -278,7 +278,7 @@ export const InvestmentType = ({
               Select expected annual return
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
+            <option value="normal">Normal Distribution</option>
           </select>
           <select
             name="expAnnReturn.amtOrPct"
@@ -325,7 +325,7 @@ export const InvestmentType = ({
               Select expected annual income
             </option>
             <option value="fixed">Fixed</option>
-            <option value="normal_distribution">Normal Distribution</option>
+            <option value="normal">Normal Distribution</option>
           </select>
           <select
             name="expAnnIncome.amtOrPct"

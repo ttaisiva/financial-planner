@@ -62,8 +62,7 @@ startServer();
 
 async function startServer() {
   try {
-    await connectToDatabase();
-    // const connection = pool.getConnection();
+    await ensureConnection();
 
     await createTablesIfNotExist(connection);
     await scrapeData();
