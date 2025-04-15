@@ -21,6 +21,7 @@
 import { connection, ensureConnection } from "../server.js";
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { transfer, getPreTaxInvestments } from "./preliminaries.js";
+import { logRMD } from "../logging.js";
 
 /**
  * Performs the Required Minimum Distribution (RMD) for the previous year.
@@ -33,7 +34,8 @@ export async function performRMDs(
   scenarioId,
   currentSimulationYear,
   runningTotals,
-  investments
+  investments,
+  evtlog
 ) {
   console.log(
     `Starting RMD process for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
@@ -100,6 +102,7 @@ export async function performRMDs(
 
     const transferAmount = Math.min(Number(inv.value), remainingRMD);
     remainingRMD -= transferAmount;
+    logRMD(evtlog, currentSimulationYear, inv.id, transferAmount);
     console.log(
       `Transferring $${transferAmount} from investment ID ${inv.id}. Remaining RMD: ${remainingRMD}`
     );
