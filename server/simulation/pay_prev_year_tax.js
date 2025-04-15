@@ -27,6 +27,7 @@ export async function payTaxes(totals, scenarioID, incomeEvents, investments, ta
     // Find the amount owed by taxing all sources of income federally and by state
     const fedOwe = Number(await computeFederal(totals.curYearIncome, totals.curYearSS, taxData));
     const stOwe = Number(await computeState(totals.curYearIncome, taxData));
+    const cptOwe = Number(await computeCapital(totals.curYearGains, taxData));
     const amtOwed = Number(+fedOwe + +stOwe);
     console.log("federal", fedOwe, "state", stOwe, "deduction", taxData.deduction[0].standard_deduction);
     console.log("amtOwed", amtOwed);
@@ -93,4 +94,14 @@ const computeState = async (income, taxData) => {
         }
     }
     return sum;
+}
+
+/**
+ * Computes capital gains tax
+ * @param gains capital gains
+ * @param taxData tax brackets
+ * @return amount of capital gains tax owed
+ */
+const computeCapital = async (gains, taxData) => {
+
 }
