@@ -102,15 +102,17 @@ export async function process_income_event(scenarioId, previousYearAmounts,infla
     }
 
     // Add to cash investment and income totals
-    runningTotals.cashInvestment += currentAmount;
-    runningTotals.curYearIncome += currentAmount;
+    runningTotals.cashInvestment =  Number(runningTotals.cashInvestment) + Number(currentAmount);
+    runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(currentAmount);
+   
 
     console.log(
       `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}`
     );
 
     if (event.isSocialSecurity) {
-      runningTotals.curYearSS += currentAmount;
+        runningTotals.curYearSS = Number(runningTotals.curYearSS) + Number(currentAmount);
+     
       console.log(`Added adjustedAmount to curYearSS. Updated curYearSS: ${runningTotals.curYearSS}`);
     }
 
