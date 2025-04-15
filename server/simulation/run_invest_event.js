@@ -10,7 +10,8 @@ export async function runInvestEvent(
   scenarioId,
   investEventYears,
   cashInvestment,
-  investments
+  investments,
+  inflationRate
 ) {
   const activeEventId = getActiveEventId(
     currentSimulationYear,
@@ -44,7 +45,10 @@ export async function runInvestEvent(
         eventId: activeEventId,
         currentYear: currentSimulationYear,
         investEventYears,
+        inflationRate,
       });
+    } else {
+      console.log("No excess cash available to allocate to investments");
     }
   }
 }
@@ -281,6 +285,7 @@ async function applyAssetAllocationWithGlide({
   eventId,
   currentYear,
   investEventYears,
+  inflationRate = 0.02, // Default to 2% inflation
 }) {
   console.log("eventid:", eventId);
   const event = await getEventById(eventId);
@@ -319,6 +324,11 @@ async function applyAssetAllocationWithGlide({
 
   // Apply allocation
   for (const [investmentId, percent] of Object.entries(computedAllocation)) {
+    if (typeof percent !== "number" || isNaN(percent)) {
+      console.warn(`Invalid percent for ${investmentId}:`, percent);
+      continue;
+    }
+
     const target = investments.find((inv) => inv.id === investmentId);
     if (!target) {
       console.warn(`Investment with id "${investmentId}" not found.`);
@@ -339,5 +349,14 @@ async function applyAssetAllocationWithGlide({
     console.log("New Value:", currentValue + allocationAmount);
 
     target.value = (currentValue + allocationAmount).toFixed(2);
+  }
+
+  // 🔥 Apply inflation adjustment to after-tax accounts
+  for (const investment of investments) {
+    if (investment.taxStatus === "after-tax") {
+      const value = parseFloat(investment.value);
+      const adjusted = value * (1 + inflationRate);
+      investment.value = adjusted.toFixed(2);
+    }
   }
 }

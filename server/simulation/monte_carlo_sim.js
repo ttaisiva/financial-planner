@@ -29,12 +29,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     console.log("Running simulation number: ", sim);
     let yearlyResults = {};
     let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
-    let inflationRate = await getInflationRate(scenarioId);
     let isUserAlive = true;
     let isSpouseAlive = true;
 
-    let cashInvestment = await getCashInvest(scenarioId);
-    // let cashInvestment = 2000;
+    // let cashInvestment = await getCashInvest(scenarioId);
+    let cashInvestment = 2000;
 
     let curYearIncome = 0;
     let curYearSS = 0;
@@ -61,12 +60,12 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         scenarioId,
         connection
       );
-      console.log(
-        "Inflation rate for year ",
-        currentSimulationYear,
-        " is: ",
-        inflationRate
-      );
+      //   console.log(
+      //     "Inflation rate for year ",
+      //     currentSimulationYear,
+      //     " is: ",
+      //     inflationRate
+      //   );
 
       if (year === 0) {
         // Populate the object with initial amounts based on event IDs
@@ -84,27 +83,27 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       }
 
       // Step 1: Run income events
-      let updatedAmounts;
-      ({ updatedAmounts, cashInvestment, curYearIncome, curYearSS } =
-        await process_income_event(
-          scenarioId,
-          previousYearAmounts,
-          inflationRate,
-          isUserAlive,
-          isSpouseAlive,
-          cashInvestment,
-          curYearIncome,
-          curYearSS
-        ));
+      //   let updatedAmounts;
+      //   ({ updatedAmounts, cashInvestment, curYearIncome, curYearSS } =
+      //     await process_income_event(
+      //       scenarioId,
+      //       previousYearAmounts,
+      //       inflationRate,
+      //       isUserAlive,
+      //       isSpouseAlive,
+      //       cashInvestment,
+      //       curYearIncome,
+      //       curYearSS
+      //     ));
 
       //   Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-      console.log("Perform RMDs for year: ", currentSimulationYear);
-      ({ curYearIncome } = await performRMDs(
-        scenarioId,
-        currentSimulationYear,
-        curYearIncome,
-        investments
-      ));
+      //   console.log("Perform RMDs for year: ", currentSimulationYear);
+      //   ({ curYearIncome } = await performRMDs(
+      //     scenarioId,
+      //     currentSimulationYear,
+      //     curYearIncome,
+      //     investments
+      //   ));
 
       //   Step 3: Optimize Roth conversions
       //   if (
@@ -144,10 +143,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         scenarioId,
         investEventYears,
         cashInvestment,
-        investments
+        investments,
+        inflationRate
       );
 
-      //   console.log("updated investments after invest event:", investments);
+      console.log("updated investments after invest event:", investments);
 
       // Step 10: Rebalance investments
 
@@ -173,17 +173,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
  * @returns {number} The total number of years for the simulation.
  */
 export async function getTotalYears(date, scenarioId) {
-  console.log("Date: ", date);
+  //   console.log("Date: ", date);
   await ensureConnection();
   const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
-  console.log("User birth year: ", userBirthYear);
+  //   console.log("User birth year: ", userBirthYear);
   const userLifeExpectancy = Number(
     await getUserLifeExpectancy(scenarioId, connection)
   );
-  console.log("User life expectancy: ", userLifeExpectancy);
+  //   console.log("User life expectancy: ", userLifeExpectancy);
 
   const userLifespan = userBirthYear + userLifeExpectancy;
-  console.log("User lifespan: ", userLifespan);
+  //   console.log("User lifespan: ", userLifespan);
 
   return userLifespan - date;
 }
@@ -214,7 +214,7 @@ async function initInvestments(scenarioId) {
          WHERE scenario_id = ?`,
     [scenarioId]
   );
-  console.log("Simulation investments initialized.", rows);
+  //   console.log("Simulation investments initialized.", rows);
   return rows;
 }
 
@@ -261,31 +261,6 @@ export async function getFilingStatus(scenarioId) {
     [scenarioId]
   );
   return rows[0].marital_status;
-}
-
-async function getInflationRate(scenarioId) {
-  await ensureConnection();
-  const [rows] = await connection.execute(
-    `SELECT 
-        inflation_assumption
-        FROM scenarios
-        WHERE id = ?`,
-    [scenarioId]
-  );
-
-  const inflationObject = rows[0].inflation_assumption;
-  console.log("inflation object:", inflationObject);
-
-  if (inflationObject.type === "fixed") {
-    return inflationObject.value;
-  } else if (inflationObject.type === "normal") {
-    return generateNormalRandom(inflationObject.mean, inflationObject.stdev);
-  } else if (inflationObject.type === "uniform") {
-    return generateUniformRandom(inflationObject.lower, inflationObject.upper);
-  }
-
-  //   console.log("inflation:", rows);
-  return rows[0].inflation_assumption;
 }
 
 async function getCashInvest(scenarioId) {
