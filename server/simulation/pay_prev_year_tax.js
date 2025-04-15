@@ -28,7 +28,7 @@ export async function payTaxes(totals, scenarioID, incomeEvents, investments, ta
     const fedOwe = Number(await computeFederal(totals.curYearIncome, totals.curYearSS, taxData));
     const stOwe = Number(await computeState(totals.curYearIncome, taxData));
     const cptOwe = Number(await computeCapital(totals.curYearGains, taxData));
-    const amtOwed = Number(+fedOwe + +stOwe);
+    const amtOwed = Number(+fedOwe + +stOwe + +cptOwe);
     console.log("federal", fedOwe, "state", stOwe, "deduction", taxData.deduction[0].standard_deduction);
     console.log("amtOwed", amtOwed);
     return amtOwed;
@@ -103,5 +103,16 @@ const computeState = async (income, taxData) => {
  * @return amount of capital gains tax owed
  */
 const computeCapital = async (gains, taxData) => {
-
+    const cptBrackets = taxData.capital;
+    let sum = 0;
+    for (const bracket of cptBrackets) {
+        if (gains > +bracket.income_max) { // Checks if we are in a bracket that is completely full
+            sum += (+bracket.income_max * bracket.cap_gains_tax_rate);
+        }
+        else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
+            console.log("bracket rate", bracket.cap_gains_tax_rate);
+            sum += ((gains - +bracket.income_min) * bracket.cap_gains_tax_rate);
+            return sum;
+        }
+    }
 }
