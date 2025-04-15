@@ -174,10 +174,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
       // Pay non-discretionary expenses
       console.log("Paying non discretionary expenses with cash: ", runningTotals.cashInvestment);
-      await payNonDiscExpenses(scenarioId, runningTotals, currentSimulationYear, inflationRate, date, investments);
-
-      // Pay taxes
-      payTaxes(runningTotals, scenarioId, incomeEvents, investments, taxData)
+      const taxes = await payTaxes(runningTotals, scenarioId, incomeEvents, investments, taxData);
+      await payNonDiscExpenses(scenarioId, runningTotals, currentSimulationYear, inflationRate, date, investments, taxes);
 
       // Pay discretionary expenses
        console.log("Cash investment before paying discretionary expenses: ", runningTotals.cashInvestment); 
