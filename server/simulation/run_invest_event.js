@@ -11,7 +11,8 @@ export async function runInvestEvent(
   investEventYears,
   cashInvestment,
   investments,
-  inflationRate
+  inflationRate,
+  afterTaxContributionLimit
 ) {
   const activeEventId = getActiveEventId(
     currentSimulationYear,
@@ -46,6 +47,7 @@ export async function runInvestEvent(
         currentYear: currentSimulationYear,
         investEventYears,
         inflationRate,
+        baseRetirementLimit: afterTaxContributionLimit,
       });
     } else {
       console.log("No excess cash available to allocate to investments");
@@ -285,7 +287,8 @@ async function applyAssetAllocationWithGlide({
   eventId,
   currentYear,
   investEventYears,
-  inflationRate = 0.02, // Default to 2% inflation
+  inflationRate = 0.02, // default 2%
+  baseRetirementLimit = 6500, // base annual retirement contribution limit
 }) {
   console.log("eventid:", eventId);
   const event = await getEventById(eventId);
@@ -296,6 +299,7 @@ async function applyAssetAllocationWithGlide({
 
   let computedAllocation = {};
 
+  // 1. Compute glide path allocation if needed
   if (event.glide_path === 1) {
     const glideYears = investEventYears[eventId];
     if (!glideYears) {
@@ -314,15 +318,17 @@ async function applyAssetAllocationWithGlide({
     for (const key in allocations.asset_allocation) {
       const startPercent = allocations.asset_allocation[key] || 0;
       const endPercent = allocations.asset_allocation2?.[key] || 0;
-
-      // Linear interpolation
       computedAllocation[key] = startPercent + t * (endPercent - startPercent);
     }
   } else {
     computedAllocation = allocations.asset_allocation;
   }
 
-  // Apply allocation
+  // 2. Track how much has been added to retirement (after-tax) investments
+  let retirementContributed = 0;
+  const adjustedRetirementLimit = baseRetirementLimit * (1 + inflationRate);
+
+  // 3. Apply allocation (respecting inflation-adjusted retirement limits)
   for (const [investmentId, percent] of Object.entries(computedAllocation)) {
     if (typeof percent !== "number" || isNaN(percent)) {
       console.warn(`Invalid percent for ${investmentId}:`, percent);
@@ -335,28 +341,24 @@ async function applyAssetAllocationWithGlide({
       continue;
     }
 
-    console.log("Allocating to:", investmentId);
-    console.log("Target:", target);
-    console.log("Target value (before):", target.value);
-    console.log("Percent:", percent);
-    console.log("excess cash:", amountToAllocate);
-
+    const isRetirement = target.taxStatus === "after-tax";
     const currentValue = parseFloat(target.value);
-    const allocationAmount = amountToAllocate * percent;
+    let allocationAmount = amountToAllocate * percent;
 
-    console.log("CurrentValue:", currentValue);
-    console.log("AllocationAmount:", allocationAmount);
-    console.log("New Value:", currentValue + allocationAmount);
+    // ⚠️ Adjust amount for inflation *before* contribution to retirement accounts
+    if (isRetirement) {
+      // Apply inflation to the dollar amount being contributed
+      allocationAmount *= 1 + inflationRate;
+
+      // Enforce annual limit
+      const availableSpace = adjustedRetirementLimit - retirementContributed;
+      if (allocationAmount > availableSpace) {
+        allocationAmount = availableSpace;
+      }
+
+      retirementContributed += allocationAmount;
+    }
 
     target.value = (currentValue + allocationAmount).toFixed(2);
-  }
-
-  // 🔥 Apply inflation adjustment to after-tax accounts
-  for (const investment of investments) {
-    if (investment.taxStatus === "after-tax") {
-      const value = parseFloat(investment.value);
-      const adjusted = value * (1 + inflationRate);
-      investment.value = adjusted.toFixed(2);
-    }
   }
 }

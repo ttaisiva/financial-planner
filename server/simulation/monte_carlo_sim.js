@@ -138,14 +138,15 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //payDiscExpenses(scenarioId);
 
       // Step 9: Invest Events
-      await runInvestEvent(
-        currentSimulationYear,
-        scenarioId,
-        investEventYears,
-        cashInvestment,
-        investments,
-        inflationRate
-      );
+      //   await runInvestEvent(
+      //     currentSimulationYear,
+      //     scenarioId,
+      //     investEventYears,
+      //     cashInvestment,
+      //     investments,
+      //     inflationRate,
+      //     afterTaxContributionLimit
+      //   );
 
       console.log("updated investments after invest event:", investments);
 
