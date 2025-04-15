@@ -198,7 +198,7 @@ async function getSpendingStrategy(scenarioId) {
  * @param {number} currentSimulationYear - The current simulation year.
  * @returns {number} The calculated expense amount.
  */
-function calculateExpenseAmount(expense, currentSimulationYear, inflationRate) {
+export function calculateExpenseAmount(expense, currentSimulationYear, inflationRate) {
     let amount = expense.initialAmount;
 
     // Apply annual change

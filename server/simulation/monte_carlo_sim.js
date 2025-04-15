@@ -8,7 +8,7 @@ import {
 } from "./run_income_events.js";
 import { updateInvestments } from "./update_investments.js";
 import { runRothOptimizer } from "./roth_optimizer.js";
-import { payNondiscExpenses } from "./nondisc_expenses.js";
+import { payNonDiscExpenses } from "./nondisc_expenses.js";
 import { payDiscExpenses } from "./disc_expenses.js";
 import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
@@ -102,17 +102,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
       // Step 1: Run income events
        
-    //    await process_income_event(
-    //     scenarioId,
-    //     previousYearAmounts,
-    //     inflationRate,
-    //     isUserAlive,
-    //     isSpouseAlive,
-    //     runningTotals,
-    //     currentSimulationYear,
-    //     incomeEventsStart,
-    //     incomeEventsDuration,
-    //     );
+       await process_income_event(
+        scenarioId,
+        previousYearAmounts,
+        inflationRate,
+        isUserAlive,
+        isSpouseAlive,
+        runningTotals,
+        currentSimulationYear,
+        incomeEventsStart,
+        incomeEventsDuration,
+        );
 
       console.log(
         "Current year income after income events: ",
@@ -120,17 +120,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       );
 
       // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-      //   console.log("Perform RMDs for year: ", currentSimulationYear);
-      //   await performRMDs(
-      //     scenarioId,
-      //     currentSimulationYear,
-      //     runningTotals,
-      //     investments
-      //   );
-      //   console.log(
-      //     "Current year income after perform RMDs: ",
-      //     runningTotals.curYearIncome
-      //   );
+        console.log("Perform RMDs for year: ", currentSimulationYear);
+        await performRMDs(
+          scenarioId,
+          currentSimulationYear,
+          runningTotals,
+          investments
+        );
+        console.log(
+          "Current year income after perform RMDs: ",
+          runningTotals.curYearIncome
+        );
 
       //   Step 3: Optimize Roth conversions
       //   if (
@@ -158,14 +158,15 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //   }
 
       // Step 4: Update investments
-      //   await updateInvestments(scenarioId, runningTotals, investments);
-      //   console.log(
-      //     "Current year income after update investments: ",
-      //     runningTotals.curYearIncome
-      //   );
+        await updateInvestments(scenarioId, runningTotals, investments);
+        console.log(
+          "Current year income after update investments: ",
+          runningTotals.curYearIncome
+        );
 
       // Pay non-discretionary expenses
-      await payNondiscExpenses(scenarioId, investments, currentSimulationYear);
+      console.log("Paying non discretionary expenses with cash: ", runningTotals.cashInvestment);
+      await payNonDiscExpenses(scenarioId, runningTotals, currentSimulationYear, inflationRate, date, investments);
 
       // Pay discretionary expenses
        console.log("Cash investment before paying discretionary expenses: ", runningTotals.cashInvestment); 
