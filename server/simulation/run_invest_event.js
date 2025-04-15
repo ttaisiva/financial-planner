@@ -43,7 +43,8 @@ export async function runInvestEvent(
 
     if (runningTotals.cashInvestment > maxCash) {
       const excessCash = runningTotals.cashInvestment - maxCash;
-      runningTotals.cashInvestment = runningTotals.cashInvestment - excessCash;
+      runningTotals.cashInvestment =
+        Number(runningTotals.cashInvestment) - Number(excessCash);
       const allocations = await getAssetAllocations(activeEventId);
       // console.log("allocation:", allocations);
 

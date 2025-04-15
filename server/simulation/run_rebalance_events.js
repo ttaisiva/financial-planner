@@ -1,5 +1,6 @@
 import { ensureConnection, connection } from "../server.js";
 import { generateNormalRandom, generateUniformRandom } from "../utils.js";
+import { getInvestEvents } from "./run_invest_event.js";
 
 /**
  *
@@ -12,13 +13,22 @@ import { generateNormalRandom, generateUniformRandom } from "../utils.js";
  * @param {*} runningTotals
  */
 export async function runRebalanceEvents(
+  currentSimulationYear,
   rebalanceEvents,
   investments,
   runningTotals
 ) {
+  const rebalanceEventYears = await getInvestEvents(rebalanceEvents);
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {
+    const eventYears = rebalanceEventYears[rebalanceEvent.id];
+    if (!eventYears) continue;
+
+    const { startYear, endYear } = eventYears;
+    if (currentSimulationYear < startYear || currentSimulationYear > endYear)
+      continue;
+
     const assetAllocation = rebalanceEvent.asset_allocation;
     if (!assetAllocation) continue;
 
