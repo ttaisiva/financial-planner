@@ -16,9 +16,10 @@ export async function createTablesIfNotExist(connection) {
     user_id VARCHAR(255),
     year INT NOT NULL,
     filing_status VARCHAR(20) NOT NULL,
-    tax_rate DECIMAL(3, 2) NOT NULL,
-    income_min DECIMAL(10, 0) NOT NULL,
-    income_max DECIMAL(10, 0)
+    tax_rate DECIMAL(5, 3) NOT NULL,
+    base DECIMAL(10, 2) NOT NULL,
+    income_min DECIMAL(10, 2) NOT NULL,
+    income_max DECIMAL(10, 2)
   )
 `;
 
@@ -78,6 +79,7 @@ export async function createTablesIfNotExist(connection) {
     birth_years JSON,
     life_expectancy JSON,
     inflation_assumption JSON,
+    after_tax_contribution_limit INT NOT NULL,
     financial_goal DECIMAL(10, 2) NOT NULL,
     residence_state CHAR(2),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
