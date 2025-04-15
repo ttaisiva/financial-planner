@@ -363,9 +363,9 @@ const RothConversionSettings = ({
               <label>Start year:</label>
               <input
                 type="number"
-                name="RothStartYear"
+                name="rothStartYear"
                 placeholder="Enter year"
-                value={rothData.RothStartYear || ""}
+                value={rothData.rothStartYear || ""}
                 onChange={handleChange}
                 required
               />
@@ -374,9 +374,9 @@ const RothConversionSettings = ({
               <label>End year:</label>
               <input
                 type="number"
-                name="RothEndYear"
+                name="rothEndYear"
                 placeholder="Enter year"
-                value={rothData.RothEndYear || ""}
+                value={rothData.rothEndYear || ""}
                 onChange={handleChange}
                 required
               />
