@@ -42,15 +42,15 @@ export async function updateInvestments(
   );
 
   for (const investment of investments) {
-    console.log(
-      `Processing investment ID: ${investment.id}, type: ${investment.type}, value: ${investment.value}`
-    );
-    console.log("investment", investment);
+    // console.log(
+    //   `Processing investment ID: ${investment.id}, type: ${investment.type}, value: ${investment.value}`
+    // );
+    console.log("Processing investment:", investment.id);
 
     const investmentType = investmentTypes[investment.type];
 
     if (!investmentType) {
-      console.error(`Investment type ${investment.type} not found.`);
+      //console.error(`Investment type ${investment.type} not found.`);
       continue; // Skip this investment if its type is not found
     }
 

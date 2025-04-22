@@ -26,7 +26,7 @@ import {
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
 export async function simulation(date, numSimulations, userId, scenarioId) {
-  console.log("Running Monte Carlo simulation...");
+  console.log("RUNNING Monte Carlo simulation...");
   const logs = await initLogs(userId); // open log files for writing
 
   await ensureConnection();
@@ -37,7 +37,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   for (let sim = 0; sim < numSimulations; sim++) {
     await ensureConnection();
     console.log("Running simulation number: ", sim);
-    let yearlyResults = {};
+    let yearlyResults = [];
     let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
     let incomeEventsStart = {};
     let incomeEventsDuration = {};
@@ -53,6 +53,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     let taxData = await getTaxData(scenarioId, date);
     console.log("tax", taxData);
+
+    // add to runningTotals: curYearExpenses (including taxes) and
+    // percentage of total discretionary expenses incurred
 
     const runningTotals = {
       cashInvestment: cashInvestment,
@@ -111,8 +114,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         }
       }
 
-      // Prelims
-      // Adjusting tax brackets for inflation
+      // Prelims Adjusting tax brackets for inflation
 
       // Step 1: Run income events
 
@@ -202,7 +204,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         taxes
       );
 
-      // Pay discretionary expenses
+      //Pay discretionary expenses
       console.log(
         "Cash investment before paying discretionary expenses: ",
         runningTotals.cashInvestment
@@ -237,7 +239,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       );
       console.log("purchase prices after invest event:", purchasePrices);
 
-      //   console.log("updated investments after invest event:", investments);
+      console.log("updated investments after invest event:", investments);
 
       // Step 10: Rebalance investments
       console.log("investments before rebalance: event", investments);
@@ -249,12 +251,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       );
       console.log("investments after rebalance: event", investments);
 
-      // Collect yearly results -> need to impelemnt this
-      //   yearlyResults.push({
-      //     year: currentSimulationYear,
-      //     cash_flow: 0,
-      //     investments: 0,
-      //   });
+ 
+      
+        yearlyResults.push({
+          year: currentSimulationYear,
+          cashInvestment: runningTotals.cashInvestment,
+          curYearIncome: runningTotals.curYearIncome,
+          curYearSS: runningTotals.curYearSS,
+          curYearGains: runningTotals.curYearGains,
+          curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
+          purchasePrices: runningTotals.purchasePrices
+        });
       if (sim == 0)
         logResults(
           logs.csvlog,
@@ -268,7 +275,10 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     simulationResults.push(yearlyResults);
   }
   logs.evtlog.end(); // close the event log file
-  return calculateStats(simulationResults); // Calculate median, mean, and other statistics
+
+  const stats = calculateStats(simulationResults); // Calculate median, mean, and other statistics
+  console.log("Returning stats: ", stats);
+  return stats; 
 }
 
 /**
@@ -297,12 +307,48 @@ export async function getTotalYears(date, scenarioId) {
  * Placeholder for calculating statistics from the simulation results.
  */
 export function calculateStats(simulationResults) {
-  console.log("Calculating statistics from simulation results");
+  console.log("Calculating statistics from simulation results", simulationResults);
+  
+  
+
+  // Flatten the yearly results into a single array of cash investments
+  const allCashInvestments = simulationResults.flatMap((yearlyResults) =>
+    yearlyResults.map((result) => result.cashInvestment)
+  );
+  console.log("all Cash investments: ", allCashInvestments)
+
+  // Calculate mean
+  const total = allCashInvestments.reduce((sum, value) => sum + value, 0);
+  console.log("total: ", total)
+  const mean = total / allCashInvestments.length;
+  console.log("mean: ", mean)
+
+  // Calculate median
+  const sorted = [...allCashInvestments].sort((a, b) => a - b);
+  console.log("sorted: ", sorted)
+  const mid = Math.floor(sorted.length / 2);
+  
+  const median =
+    sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+
+  // Calculate other statistics (e.g., min, max)
+  const min = Math.min(...allCashInvestments);
+  console.log("min: ", min)
+  const max = Math.max(...allCashInvestments);
+  console.log("max: ", max)
+
+  console.log("Simulation Results to return: ", simulationResults)
   return {
-    median: 0,
-    mean: 0,
-    otherInfo: {},
+    median,
+    mean,
+    min,
+    max,
+    totalSimulations: simulationResults.length,
+    allSimulationResults: simulationResults, 
   };
+
 }
 
 async function initInvestments(scenarioId) {
