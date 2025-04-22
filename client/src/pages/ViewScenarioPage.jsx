@@ -101,7 +101,7 @@ export const ViewScenarioPage = () => {
         </button>
       </div>
 
-      <DisplaySimulationResults />
+      {simulationResults && <DisplaySimulationResults simulationResults={simulationResults} /> }
       <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>
@@ -326,7 +326,44 @@ export const ViewSingleScenario = ({
   );
 };
 
-export const DisplaySimulationResults = () => {
-  //placeholder need to implmement this
-  return <h2>Simulation Results</h2>;
+export const DisplaySimulationResults = ({ simulationResults }) => {
+  console.log("Simulation Results:", simulationResults); // Log the simulation results
+
+  if (!simulationResults || simulationResults.length === 0) {
+    return <p>No simulation results available.</p>;
+  }
+
+  const { median, mean, min, max, totalSimulations, allSimulationResults } = simulationResults;
+
+  return (
+    <div>
+      <h2>Simulation Results</h2>
+      <div className="summary">
+        <p><strong>Total Simulations:</strong> {totalSimulations}</p>
+        <p><strong>Median:</strong> ${median.toFixed(2)}</p>
+        <p><strong>Mean:</strong> ${mean.toFixed(2)}</p>
+        <p><strong>Min:</strong> ${min.toFixed(2)}</p>
+        <p><strong>Max:</strong> ${max.toFixed(2)}</p>
+      </div>
+
+      <div className="simulation-details">
+        {allSimulationResults.map((simulation, simIndex) => (
+          <div key={simIndex} className="simulation">
+            <h3>Simulation {simIndex + 1}</h3>
+            {simulation.map((yearlyResult, yearIndex) => (
+              <div key={yearIndex} className="item">
+                <h4>Year: {yearlyResult.year}</h4>
+                <p><strong>Cash Investment:</strong> ${yearlyResult.cashInvestment.toFixed(2)}</p>
+                <p><strong>Current Year Income:</strong> ${yearlyResult.curYearIncome.toFixed(2)}</p>
+                <p><strong>Current Year Social Security:</strong> ${yearlyResult.curYearSS.toFixed(2)}</p>
+                <p><strong>Current Year Gains:</strong> ${yearlyResult.curYearGains.toFixed(2)}</p>
+                <p><strong>Current Year Early Withdrawals:</strong> ${yearlyResult.curYearEarlyWithdrawals.toFixed(2)}</p>
+                <p><strong>Purchase Prices:</strong> {JSON.stringify(yearlyResult.purchasePrices)}</p>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
