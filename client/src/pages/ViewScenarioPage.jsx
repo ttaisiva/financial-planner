@@ -6,7 +6,7 @@ import { loadAnimation } from "../utils";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml from "js-yaml";
-import { LineChart, calculateSuccessProbability } from "../utilsPlots";
+import { LineChart, ShadedLineChart, calculateSuccessProbability } from "../utilsPlots";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -334,6 +334,8 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
     return <p>No simulation results available.</p>;
   }
 
+  const [selectedOption, setSelectedOption] = useState("");
+
   const { median, mean, min, max, financialGoal, totalSimulations, allSimulationResults } = simulationResults;
   const successProbabilities = calculateSuccessProbability(allSimulationResults, Number(financialGoal));
   console.log("Success Probabilities:", successProbabilities); 
@@ -374,6 +376,26 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         <h3>Success Probability Over Time</h3>
         <LineChart successProbabilities={successProbabilities} />
       </div>
+      <div className="shaded-line-chart-container">
+        <h3>Shaded Success Probability Over Time</h3>
+        <p> Select a quantity to view as a shaded line chart</p>
+
+        <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)} >
+          <option value="cashInvestment">Cash Investment</option>
+          <option value="curYearIncome">Current Year Income</option>
+          <option value="curYearSS">Current Year Social Security</option>
+          <option value="curYearGains">Current Year Gains</option>
+          <option value="curYearEarlyWithdrawals">Current Year Early Withdrawals</option>
+        </select>
+
+        <ShadedLineChart
+          label={selectedOption}
+          allSimulationResults={allSimulationResults}
+          financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
+        />
+
+      </div>
+
 
     </div>
   );
