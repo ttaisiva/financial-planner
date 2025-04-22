@@ -223,7 +223,7 @@ router.post("/run-simulation", async (req, res) => {
     );
 
     // Send the results back to the client
-    console.log("Final simulation results: ", results)
+ 
     res.json(results);
   } catch (error) {
     console.error("Error running simulation:", error);

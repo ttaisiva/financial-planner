@@ -6,6 +6,7 @@ import { loadAnimation } from "../utils";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml from "js-yaml";
+import { LineChart, calculateSuccessProbability } from "../utilsPlots";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -333,7 +334,9 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
     return <p>No simulation results available.</p>;
   }
 
-  const { median, mean, min, max, totalSimulations, allSimulationResults } = simulationResults;
+  const { median, mean, min, max, financialGoal, totalSimulations, allSimulationResults } = simulationResults;
+  const successProbabilities = calculateSuccessProbability(allSimulationResults, Number(financialGoal));
+  console.log("Success Probabilities:", successProbabilities); 
 
   return (
     <div>
@@ -344,6 +347,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         <p><strong>Mean:</strong> ${mean.toFixed(2)}</p>
         <p><strong>Min:</strong> ${min.toFixed(2)}</p>
         <p><strong>Max:</strong> ${max.toFixed(2)}</p>
+        <p><strong>Financial Goal: </strong> ${Number(financialGoal).toFixed(2)}</p>
       </div>
 
       <div className="simulation-details">
@@ -364,6 +368,13 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
           </div>
         ))}
       </div>
+
+      {/* 4.1 Charts */}
+      <div className="line-chart-container">
+        <h3>Success Probability Over Time</h3>
+        <LineChart successProbabilities={successProbabilities} />
+      </div>
+
     </div>
   );
 };

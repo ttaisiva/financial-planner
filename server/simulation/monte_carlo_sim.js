@@ -33,6 +33,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   const totalYears = await getTotalYears(date, scenarioId, connection);
 
   const simulationResults = [];
+  const financialGoal = await getFinancialGoal(scenarioId);
 
   for (let sim = 0; sim < numSimulations; sim++) {
     await ensureConnection();
@@ -47,6 +48,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     let cashInvestment = await getCashInvest(scenarioId);
     let testCash = 2000;
+
+    
 
     let purchasePrices = await getPurchasePrices(scenarioId);
     // console.log("purchase prices:", purchasePrices);
@@ -276,7 +279,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   }
   logs.evtlog.end(); // close the event log file
 
-  const stats = calculateStats(simulationResults); // Calculate median, mean, and other statistics
+  const stats = calculateStats(simulationResults, financialGoal); // Calculate median, mean, and other statistics
   console.log("Returning stats: ", stats);
   return stats; 
 }
@@ -306,7 +309,7 @@ export async function getTotalYears(date, scenarioId) {
 /**
  * Placeholder for calculating statistics from the simulation results.
  */
-export function calculateStats(simulationResults) {
+export function calculateStats(simulationResults, financialGoal) {
   console.log("Calculating statistics from simulation results", simulationResults);
   
   
@@ -345,6 +348,7 @@ export function calculateStats(simulationResults) {
     mean,
     min,
     max,
+    financialGoal: financialGoal,
     totalSimulations: simulationResults.length,
     allSimulationResults: simulationResults, 
   };
@@ -605,3 +609,30 @@ const getTaxData = async (scenarioID, year) => {
   };
   return taxData;
 };
+
+/**
+ * Fetches the financial goal for a given scenario.
+ * @param {number} scenarioId - The ID of the scenario.
+ * @returns {number|null} The financial goal amount or null if not found.
+ */
+async function getFinancialGoal(scenarioId) {
+  await ensureConnection();
+  try {
+    const [rows] = await connection.execute(
+      `SELECT financial_goal FROM scenarios WHERE id = ?`,
+      [scenarioId]
+    );
+
+    if (rows.length === 0) {
+      console.log(`No financial goal found for scenario ID: ${scenarioId}`);
+      return null; // Return null if no financial goal is found
+    }
+
+    const financialGoal = rows[0].financial_goal;
+    console.log(`Financial goal for scenario ID ${scenarioId}: $${financialGoal}`);
+    return financialGoal;
+  } catch (error) {
+    console.error("Error fetching financial goal:", error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+}
