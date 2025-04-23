@@ -1,9 +1,10 @@
 import React from "react";
-import { Line } from "react-chartjs-2";
+import { Line, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   LineElement,
   CategoryScale,
+  BarElement,
   LinearScale,
   PointElement,
   Title,
@@ -13,7 +14,7 @@ import {
 } from "chart.js";
 
 // Register required Chart.js components
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
 
 /**
  * Line chart to display success probabilities over time.
@@ -64,12 +65,7 @@ export function LineChart({ successProbabilities }) {
   return <Line data={data} options={options} />;
 }
 
-/**
- * Calculates the probability of success for each year based on simulation results.
- * @param {Array} allSimulationResults - Array of simulations, where each simulation is an array of yearly results.
- * @param {number} financialGoal - The financial goal to be satisfied.
- * @returns {Array} An array of objects, each containing the year and the success probability for that year.
- */
+
 export function calculateSuccessProbability(allSimulationResults, financialGoal) {
   const yearlySuccess = {};
 
@@ -101,7 +97,6 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
     successProbability: (successCount / totalCount) * 100, // Convert to percentage
   }));
 }
-
 
 export function ShadedLineChart({ label, allSimulationResults, financialGoal }) {
     // Helper function to process simulationResults and generate dataByYear
@@ -264,5 +259,180 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
 
 
     return <Line data={data} options={options} />;
-  }
+}
+
+export function StackedBarChart({ allSimulationResults, breakdownType, aggregationThreshold, useMedian }) {
+  // Helper function to calculate median or average
+  const calculateValue = (values, useMedian) => {
+    values.sort((a, b) => a - b);
+    if (useMedian) {
+      return values[Math.floor(values.length * 0.5)]; // Median
+    }
+    return values.reduce((sum, val) => sum + val, 0) / values.length; // Average
+  };
+
+  // Helper function to process simulation results
+  const processData = (simulationResults, breakdownType, useMedian) => {
+    const yearlyData = {};
+    
+
+    simulationResults.forEach((simulation) => {
+      simulation.forEach((yearlyResult) => {
+        const year = yearlyResult.year;
+
+        if (!yearlyData[year]) {
+          yearlyData[year] = {};
+        }
+
+        // Process data based on breakdown type
+        if (breakdownType === "investments") {
+          Object.entries(yearlyResult.investments).forEach(([investment, value]) => {
+            if (!yearlyData[year][investment]) {
+              yearlyData[year][investment] = [];
+            }
+            yearlyData[year][investment].push(value);
+          });
+        } else if (breakdownType === "income") {
+          Object.entries(yearlyResult.income).forEach(([eventSeries, value]) => {
+            if (!yearlyData[year][eventSeries]) {
+              yearlyData[year][eventSeries] = [];
+            }
+            yearlyData[year][eventSeries].push(value);
+          });
+        } else if (breakdownType === "expenses") {
+          Object.entries(yearlyResult.expenses).forEach(([eventSeries, value]) => {
+            if (!yearlyData[year][eventSeries]) {
+              yearlyData[year][eventSeries] = [];
+            }
+            yearlyData[year][eventSeries].push(value);
+          });
+
+          // Add taxes as a separate category
+          if (!yearlyData[year]["Taxes"]) {
+            yearlyData[year]["Taxes"] = [];
+          }
+          yearlyData[year]["Taxes"].push(yearlyResult.taxes);
+        }
+      });
+    });
+    console.log("yearly data: ", yearlyData);
+
+    // Aggregate data and calculate median/average
+    const processedData = {};
+    Object.entries(yearlyData).forEach(([year, categories]) => {
+      processedData[year] = {};
+      Object.entries(categories).forEach(([category, values]) => {
+        processedData[year][category] = calculateValue(values, useMedian);
+      });
+    });
+
+    return processedData;
+  };
+
+  
+
+  // Process the simulation results
+  const processedData = processData(allSimulationResults, breakdownType, useMedian);
+
+  console.log("processed data: ", processData);
+  
+  // Aggregate categories below the threshold
+  const aggregatedData = {};
+  const allCategories = new Set();
+  Object.values(processedData).forEach((categories) => {
+    Object.keys(categories).forEach((category) => {
+      allCategories.add(category);
+    });
+  });
+
+  allCategories.forEach((category) => {
+    let isBelowThreshold = true;
+
+    Object.values(processedData).forEach((categories) => {
+      if (categories[category] && categories[category] >= aggregationThreshold) {
+        isBelowThreshold = false;
+      }
+    });
+
+    if (isBelowThreshold) {
+      allCategories.delete(category);
+      allCategories.add("Other");
+    }
+  });
+
+  Object.entries(processedData).forEach(([year, categories]) => {
+    aggregatedData[year] = {};
+    Object.entries(categories).forEach(([category, value]) => {
+      if (allCategories.has(category)) {
+        if (!aggregatedData[year][category]) {
+          aggregatedData[year][category] = 0;
+        }
+        aggregatedData[year][category] += value;
+      } else {
+        if (!aggregatedData[year]["Other"]) {
+          aggregatedData[year]["Other"] = 0;
+        }
+        aggregatedData[year]["Other"] += value;
+      }
+    });
+  });
+
+  // Prepare data for the chart
+  const labels = Object.keys(aggregatedData).map((year) => Number(year));
+  const datasets = Array.from(allCategories).map((category) => ({
+    label: category,
+    data: labels.map((year) => aggregatedData[year][category] || 0),
+    backgroundColor: getRandomColor(), // Assign random colors for each category
+  }));
+
+  const data = {
+    labels,
+    datasets,
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (tooltipItem) => {
+            const dataset = tooltipItem.dataset;
+            const value = dataset.data[tooltipItem.dataIndex];
+            return `${dataset.label}: ${value}`;
+          },
+        },
+      },
+      legend: {
+        display: true,
+        position: "top",
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        title: {
+          display: true,
+          text: "Year",
+        },
+      },
+      y: {
+        stacked: true,
+        title: {
+          display: true,
+          text: breakdownType,
+        },
+      },
+    },
+  };
+
+  return <Bar data={data} options={options} />;
+}
+
+// Helper function to generate random colors
+const getRandomColor = () => {
+  const r = Math.floor(Math.random() * 255);
+  const g = Math.floor(Math.random() * 255);
+  const b = Math.floor(Math.random() * 255);
+  return `rgba(${r}, ${g}, ${b}, 0.7)`;
+};
 

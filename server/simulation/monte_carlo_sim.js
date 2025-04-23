@@ -26,7 +26,7 @@ import {
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
 export async function simulation(date, numSimulations, userId, scenarioId) {
-  console.log("RUNNING Monte Carlo simulation...");
+  console.log("RUNNING Monte Carlo simulation.");
   const logs = await initLogs(userId); // open log files for writing
 
   await ensureConnection();

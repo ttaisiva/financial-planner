@@ -6,7 +6,7 @@ import { loadAnimation } from "../utils";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml from "js-yaml";
-import { LineChart, ShadedLineChart, calculateSuccessProbability } from "../utilsPlots";
+import { LineChart, ShadedLineChart, StackedBarChart, calculateSuccessProbability } from "../utilsPlots";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -334,7 +334,11 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
     return <p>No simulation results available.</p>;
   }
 
-  const [selectedOption, setSelectedOption] = useState("");
+  const [selectedOption, setSelectedOption] = useState("cashInvestment");
+  const [breakdownType, setBreakdownType] = useState("investments"); // Default to "investments"
+  const [aggregationThreshold, setAggregationThreshold] = useState(1000); // Default threshold
+  const [useMedian, setUseMedian] = useState(true); // Default to median
+
 
   const { median, mean, min, max, financialGoal, totalSimulations, allSimulationResults } = simulationResults;
   const successProbabilities = calculateSuccessProbability(allSimulationResults, Number(financialGoal));
@@ -371,7 +375,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         ))}
       </div>
 
-      {/* 4.1 Charts */}
+      {/* Charts */}
       <div className="line-chart-container">
         <h3>Success Probability Over Time</h3>
         <LineChart successProbabilities={successProbabilities} />
@@ -393,6 +397,39 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
           allSimulationResults={allSimulationResults}
           financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
         />
+
+
+        <div>
+          <h3>Stacked Bar Chart</h3>
+          <select value={breakdownType} onChange={(e) => setBreakdownType(e.target.value)} >
+            <option value="investments">Investments</option>
+            <option value="income">Income</option>
+            <option value="expenses">Expenses</option>
+          </select>
+
+          <label>Aggregation Threshold:</label>
+          <input
+              type="number"
+              id="aggregationThreshold"
+              value={aggregationThreshold}
+              onChange={(e) => setAggregationThreshold(Number(e.target.value))}
+              min="0"
+            />
+          <label htmlFor="useMedian">Use Median:</label>
+          <input
+              type="checkbox"
+              id="useMedian"
+              checked={useMedian}
+              onChange={(e) => setUseMedian(e.target.checked)}
+          />
+          <StackedBarChart
+            allSimulationResults={allSimulationResults}
+            breakdownType="investments" // "investments", "income", or "expenses"
+            aggregationThreshold={1000} // Threshold for aggregation
+            useMedian={true} // true for median, false for average
+          />
+
+        </div>
 
       </div>
 
