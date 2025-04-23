@@ -9,10 +9,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 
 // Register required Chart.js components
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend);
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
 
 /**
  * Line chart to display success probabilities over time.
@@ -100,3 +101,168 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
     successProbability: (successCount / totalCount) * 100, // Convert to percentage
   }));
 }
+
+
+export function ShadedLineChart({ label, allSimulationResults, financialGoal }) {
+    // Helper function to process simulationResults and generate dataByYear
+    const generateDataByYear = (simulationResults, selectedOption) => {
+      const yearlyData = {};
+  
+      // Iterate through all simulations
+      simulationResults.forEach((simulation) => {
+        simulation.forEach((yearlyResult) => {
+          const year = yearlyResult.year;
+          const value = yearlyResult[selectedOption]; // e.g., cashInvestment, curYearIncome, etc.
+  
+          if (!yearlyData[year]) {
+            yearlyData[year] = [];
+          }
+  
+          yearlyData[year].push(value);
+        });
+      });
+
+      console.log("yearlyData: ", yearlyData);
+  
+      // Calculate percentiles and median for each year
+      
+      return yearlyData;
+    };
+    
+    const yearlyData = generateDataByYear(allSimulationResults, label);
+   
+ 
+
+ 
+
+    const median = [];
+    const p10 = [], p90 = [];
+    const p20 = [], p80 = [];
+    const p30 = [], p70 = [];
+    const p40 = [], p60 = [];
+    const labels = Object.keys(yearlyData).map((year) => Number(year));
+    
+    labels.forEach((year) => {
+        const values = yearlyData[year];
+        values.sort((a, b) => a - b);
+      
+        const n = values.length;
+      
+        // Median (50th percentile)
+        median.push(values[Math.floor(n * 0.5)]);
+      
+        // 10–90% range
+        p10.push(values[Math.floor(n * 0.1)]);
+        p90.push(values[Math.floor(n * 0.9)]);
+      
+        // 20–80% range
+        p20.push(values[Math.floor(n * 0.2)]);
+        p80.push(values[Math.floor(n * 0.8)]);
+      
+        // 30–70% range
+        p30.push(values[Math.floor(n * 0.3)]);
+        p70.push(values[Math.floor(n * 0.7)]);
+      
+        // 40–60% range
+        p40.push(values[Math.floor(n * 0.4)]);
+        p60.push(values[Math.floor(n * 0.6)]);
+    });
+
+    const data = {
+        labels: labels,
+        datasets: [
+          {
+            label: '10-90%',
+            data: p90,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            data: p10,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            label: '20–80%',
+            data: p80,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            data: p20,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            label: '30–70%',
+            data: p70,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.2)',
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            data: p30,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            label: '40–60%',
+            data: p60,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.3)',
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            data: p40,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            label: 'Median',
+            data: median,
+            borderColor: 'red',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+          }
+        ]
+      };
+      
+      const options = {
+        responsive: true,
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: label
+            },
+            beginAtZero: false
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Year'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      };
+
+
+    return <Line data={data} options={options} />;
+  }
+
