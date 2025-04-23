@@ -359,11 +359,11 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
             {simulation.map((yearlyResult, yearIndex) => (
               <div key={yearIndex} className="item">
                 <h4>Year: {yearlyResult.year}</h4>
-                <p><strong>Cash Investment:</strong> ${yearlyResult.cashInvestment.toFixed(2)}</p>
-                <p><strong>Current Year Income:</strong> ${yearlyResult.curYearIncome.toFixed(2)}</p>
-                <p><strong>Current Year Social Security:</strong> ${yearlyResult.curYearSS.toFixed(2)}</p>
-                <p><strong>Current Year Gains:</strong> ${yearlyResult.curYearGains.toFixed(2)}</p>
-                <p><strong>Current Year Early Withdrawals:</strong> ${yearlyResult.curYearEarlyWithdrawals.toFixed(2)}</p>
+                <p><strong>Cash Investment:</strong> ${Number(yearlyResult.cashInvestment).toFixed(2)}</p>
+                <p><strong>Current Year Income:</strong> ${Number(yearlyResult.curYearIncome).toFixed(2)}</p>
+                <p><strong>Current Year Social Security:</strong> ${Number(yearlyResult.curYearSS).toFixed(2)}</p>
+                <p><strong>Current Year Gains:</strong> ${Number(yearlyResult.curYearGains).toFixed(2)}</p>
+                <p><strong>Current Year Early Withdrawals:</strong> ${Number(yearlyResult.curYearEarlyWithdrawals).toFixed(2)}</p>
                 <p><strong>Purchase Prices:</strong> {JSON.stringify(yearlyResult.purchasePrices)}</p>
               </div>
             ))}

@@ -9,10 +9,11 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 
 // Register required Chart.js components
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend);
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
 
 /**
  * Line chart to display success probabilities over time.
@@ -124,135 +125,144 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
       console.log("yearlyData: ", yearlyData);
   
       // Calculate percentiles and median for each year
-      return Object.entries(yearlyData).map(([year, values]) => {
-        values.sort((a, b) => a - b); // Sort values to calculate percentiles
-        const p10 = values[Math.floor(values.length * 0.1)];
-        const p90 = values[Math.floor(values.length * 0.9)];
-        const p20 = values[Math.floor(values.length * 0.2)];
-        const p80 = values[Math.floor(values.length * 0.8)];
-        const p30 = values[Math.floor(values.length * 0.3)];
-        const p70 = values[Math.floor(values.length * 0.7)];
-        const p40 = values[Math.floor(values.length * 0.4)];
-        const p60 = values[Math.floor(values.length * 0.6)];
-        const median = values[Math.floor(values.length * 0.5)];
-  
-        return {
-          year: Number(year),
-          median,
-          p10,
-          p90,
-          p20,
-          p80,
-          p30,
-          p70,
-          p40,
-          p60,
-        };
-      });
+      
+      return yearlyData;
     };
-
-
-  
-    // Generate dataByYear from allSimulationResults and the selected label
-    const dataByYear = generateDataByYear(allSimulationResults, label);
-  
-    // Extract data for the chart
-    const labels = dataByYear.map((entry) => entry.year); // X-axis labels (years)
-    const median = dataByYear.map((entry) => entry.median);
-    const range10_90 = dataByYear.map((entry) => [entry.p10, entry.p90]);
-    const range20_80 = dataByYear.map((entry) => [entry.p20, entry.p80]);
-    const range30_70 = dataByYear.map((entry) => [entry.p30, entry.p70]);
-    const range40_60 = dataByYear.map((entry) => [entry.p40, entry.p60]);
-  
-    console.log("median: ", median);
-    console.log("range10_90: ", range10_90);    
-    console.log("range20_80: ", range20_80);
-    console.log("range30_70: ", range30_70);
-    console.log("range40_60: ", range40_60);
     
+    const yearlyData = generateDataByYear(allSimulationResults, label);
+   
+ 
+
+ 
+
+    const median = [];
+    const p10 = [], p90 = [];
+    const p20 = [], p80 = [];
+    const p30 = [], p70 = [];
+    const p40 = [], p60 = [];
+    const labels = Object.keys(yearlyData).map((year) => Number(year));
+    
+    labels.forEach((year) => {
+        const values = yearlyData[year];
+        values.sort((a, b) => a - b);
+      
+        const n = values.length;
+      
+        // Median (50th percentile)
+        median.push(values[Math.floor(n * 0.5)]);
+      
+        // 10–90% range
+        p10.push(values[Math.floor(n * 0.1)]);
+        p90.push(values[Math.floor(n * 0.9)]);
+      
+        // 20–80% range
+        p20.push(values[Math.floor(n * 0.2)]);
+        p80.push(values[Math.floor(n * 0.8)]);
+      
+        // 30–70% range
+        p30.push(values[Math.floor(n * 0.3)]);
+        p70.push(values[Math.floor(n * 0.7)]);
+      
+        // 40–60% range
+        p40.push(values[Math.floor(n * 0.4)]);
+        p60.push(values[Math.floor(n * 0.6)]);
+    });
+
     const data = {
-      labels,
-      datasets: [
-        {
-          label: `${label} (Median)`,
-          data: median,
-          borderColor: "rgba(75, 192, 192, 1)",
-          backgroundColor: "rgba(75, 192, 192, 0.2)",
-          fill: false,
-          tension: 0.4,
-        },
-        {
-          label: "10%-90% Range",
-          data: range10_90.map(([low, high]) => (low + high) / 2),
-          borderColor: "rgba(135, 206, 250, 0.5)",
-          backgroundColor: "rgba(135, 206, 250, 0.2)",
-          fill: true,
-          tension: 0.4,
-        },
-        {
-          label: "20%-80% Range",
-          data: range20_80.map(([low, high]) => (low + high) / 2),
-          borderColor: "rgba(100, 149, 237, 0.5)",
-          backgroundColor: "rgba(100, 149, 237, 0.2)",
-          fill: true,
-          tension: 0.4,
-        },
-        {
-          label: "30%-70% Range",
-          data: range30_70.map(([low, high]) => (low + high) / 2),
-          borderColor: "rgba(70, 130, 180, 0.5)",
-          backgroundColor: "rgba(70, 130, 180, 0.2)",
-          fill: true,
-          tension: 0.4,
-        },
-        {
-          label: "40%-60% Range",
-          data: range40_60.map(([low, high]) => (low + high) / 2),
-          borderColor: "rgba(30, 144, 255, 0.5)",
-          backgroundColor: "rgba(30, 144, 255, 0.2)",
-          fill: true,
-          tension: 0.4,
-        },
-        ...(label === "cashInvestment" && financialGoal
-          ? [
-            
-              {
-                label: "Financial Goal",
-                data: Array(labels.length).fill(financialGoal),
-                borderColor: "rgba(255, 99, 132, 1)",
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0,
-              },
-            ]
-          : []),
-      ],
-    };
-  
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: {
-          display: true,
-          position: "top",
-        },
-      },
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: "Year",
+        labels: labels,
+        datasets: [
+          {
+            label: '10-90%',
+            data: p90,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+            borderWidth: 0,
+            pointRadius: 0,
           },
-        },
-        y: {
-          title: {
-            display: true,
-            text: label,
+          {
+            data: p10,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
           },
+          {
+            label: '20–80%',
+            data: p80,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.1)',
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            data: p20,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            label: '30–70%',
+            data: p70,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.2)',
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            data: p30,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            label: '40–60%',
+            data: p60,
+            fill: '-1',
+            backgroundColor: 'rgba(0, 0, 255, 0.3)',
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            data: p40,
+            fill: false,
+            borderWidth: 0,
+            pointRadius: 0,
+          },
+          {
+            label: 'Median',
+            data: median,
+            borderColor: 'red',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+          }
+        ]
+      };
+      
+      const options = {
+        responsive: true,
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: label
+            },
+            beginAtZero: false
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Year'
+            }
+          }
         },
-      },
-    };
-  
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      };
+
+
     return <Line data={data} options={options} />;
   }
 
