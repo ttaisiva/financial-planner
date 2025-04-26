@@ -18,10 +18,7 @@ import { initLogs } from "../logging.js";
 import { logResults } from "../logging.js";
 import { ensureConnection, connection } from "../server.js";
 import { generateNormalRandom, generateUniformRandom } from "../utils.js";
-import {
-  getRebalanceEvents,
-  runRebalanceEvents,
-} from "./run_rebalance_events.js";
+import {getRebalanceEvents, runRebalanceEvents, } from "./run_rebalance_events.js";
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
@@ -60,6 +57,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     // add to runningTotals: curYearExpenses (including taxes) and
     // percentage of total discretionary expenses incurred
 
+    let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+
     const runningTotals = {
       cashInvestment: cashInvestment,
       curYearIncome: 0,
@@ -67,6 +66,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearGains: 0,
       curYearEarlyWithdrawals: 0,
       purchasePrices: purchasePrices,
+      investments: investments,
     };
 
     const incomeEvents = await getIncomeEvents(scenarioId, []);
@@ -79,7 +79,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
     console.log("Initializing simulation investments.");
-    let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+    
 
     let investEventYears = await getInvestEvents(scenarioId);
 
@@ -89,7 +89,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     // log investments before any changes
     if (sim == 0)
-      logResults(logs.csvlog, logs.csvStream, investments, date - 1);
+      logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
 
     //Step 0: run preliminaries
     await ensureConnection();
@@ -145,7 +145,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         scenarioId,
         currentSimulationYear,
         runningTotals,
-        investments,
         logs.evtlog
       );
       console.log(
@@ -166,11 +165,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           scenarioId,
           rothStrategy,
           incomeEvents,
-          investments,
           currentSimulationYear,
-          logs.evtlog
+          logs.evtlog,
+          runningTotals,
         );
-        investments = rothResult.investments;
+        investments = rothResult.resInvestments;
         rothStrategy = rothResult.rothStrategy;
       } else {
         console.log(
@@ -179,7 +178,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       }
 
       // Step 4: Update investments
-      await updateInvestments(scenarioId, runningTotals, investments);
+      await updateInvestments(scenarioId, runningTotals);
       console.log(
         "Current year income after update investments: ",
         runningTotals.curYearIncome
@@ -194,7 +193,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         runningTotals,
         scenarioId,
         incomeEvents,
-        investments,
+        runningTotals,
         taxData
       );
       await payNonDiscExpenses(
@@ -203,7 +202,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         currentSimulationYear,
         inflationRate,
         date,
-        investments,
         taxes
       );
 
@@ -218,7 +216,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         currentSimulationYear,
         inflationRate,
         date,
-        investments
+        
       );
       console.log(
         "Cash investment after paying discretionary expenses: ",
@@ -231,7 +229,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         scenarioId,
         investEventYears,
         runningTotals,
-        investments,
         inflationRate,
         afterTaxContributionLimit,
         date
@@ -249,7 +246,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       await runRebalanceEvents(
         currentSimulationYear,
         rebalanceEvents,
-        investments,
         runningTotals
       );
       console.log("investments after rebalance: event", investments);
@@ -263,7 +259,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           curYearSS: runningTotals.curYearSS,
           curYearGains: runningTotals.curYearGains,
           curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
-          purchasePrices: runningTotals.purchasePrices
+          purchasePrices: runningTotals.purchasePrices,
+          investments: runningTotals.investments
         });
       if (sim == 0)
         logResults(

@@ -13,7 +13,6 @@ import {
  * @param {number} currentSimulationYear - The current simulation year.
  * @param {number} inflationRate - The inflation rate for the current year.
  * @param {number} date - The current date.
- * @param {Array} investments - The list of investments.
  * @param {number} taxes - The amount owed from federal, state, and capital gains tax
  * @returns {Object} Updated financial data.
  *
@@ -25,7 +24,6 @@ export async function payNonDiscExpenses(
   currentSimulationYear,
   inflationRate,
   date,
-  investments,
   taxes
 ) {
   console.log(
@@ -101,9 +99,9 @@ export async function payNonDiscExpenses(
         "Expense withdrawal strategy fetched:",
         expenseWithdrawalStrategy
       );
-      console.log("investments", investments);
+      console.log("investments", runningTotals.investments);
 
-      let strategyInvestments = investments.filter((investment) =>
+      let strategyInvestments = runningTotals.investments.filter((investment) =>
         expenseWithdrawalStrategy.some(
           (strategy) => strategy.investmentId === investment.id
         )

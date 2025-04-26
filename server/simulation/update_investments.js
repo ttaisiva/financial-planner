@@ -23,7 +23,6 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
 export async function updateInvestments(
   scenarioId,
   runningTotals,
-  investments
 ) {
   console.log(`Starting updateInvestments for scenario ID: ${scenarioId}`);
 
@@ -32,7 +31,7 @@ export async function updateInvestments(
   const investmentTypes = await getAllInvestmentTypes(scenarioId);
 
   console.log(
-    `Fetched ${investments.length} investments for scenario ID: ${scenarioId}`
+    `Fetched ${runningTotals.investments.length} investments for scenario ID: ${scenarioId}`
   );
   //   console.log("investments", investments);
   console.log(
@@ -41,7 +40,7 @@ export async function updateInvestments(
     } investment types for scenario ID: ${scenarioId}`
   );
 
-  for (const investment of investments) {
+  for (const investment of runningTotals.investments) {
     // console.log(
     //   `Processing investment ID: ${investment.id}, type: ${investment.type}, value: ${investment.value}`
     // );

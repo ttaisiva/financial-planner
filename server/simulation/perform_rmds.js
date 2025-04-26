@@ -34,12 +34,13 @@ export async function performRMDs(
   scenarioId,
   currentSimulationYear,
   runningTotals,
-  investments,
   evtlog
 ) {
   console.log(
     `Starting RMD process for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
   );
+
+  
 
   // Step a: Get the user's birth year and calculate their age
   const userBirthYear = await getUserBirthYear(scenarioId, connection);
@@ -55,8 +56,8 @@ export async function performRMDs(
   console.log(`User is eligible for RMD. Fetching pre-tax investments...`);
 
   // Step b: Fetch pre-tax investments
-  console.log("My investments", investments);
-  const preTaxInvestments = await getPreTaxInvestments(investments);
+  console.log("My investments", runningTotals.investments);
+  const preTaxInvestments = await getPreTaxInvestments(runningTotals.investments);
 
   console.log(`Found ${preTaxInvestments.length} pre-tax investments.`);
 
@@ -108,7 +109,7 @@ export async function performRMDs(
     );
 
     // Check if a non-retirement investment with the same type exists
-    let targetInvestment = investments.find(
+    let targetInvestment = runningTotals.investments.find(
       (investment) =>
         investment.type === inv.type &&
         investment.taxStatus === "non-retirement"
@@ -126,7 +127,7 @@ export async function performRMDs(
         taxStatus: "non-retirement",
         value: 0,
       };
-      investments.push(targetInvestment); // Add the new investment to the investments array
+      runningTotals.investments.push(targetInvestment); // Add the new investment to the investments array
     }
 
     //update investment
