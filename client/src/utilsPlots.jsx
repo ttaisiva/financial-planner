@@ -264,80 +264,134 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
 export function StackedBarChart({ allSimulationResults, breakdownType, aggregationThreshold, useMedian }) {
   //Helper function to calculate median or average
 
+  // helper function to Calcualte the median or average of the simulation results for each investment type
   const calculateValue = (values, useMedian) => {
-    //console.log("values: ", values);
     values.sort((a, b) => a - b);
     if (useMedian) {
-      let median = values[Math.floor(values.length * 0.5)];
-      console.log("median: ", median);
-      return median;
-      
+      return values[Math.floor(values.length * 0.5)];
     }
-    let avg = values.reduce((sum, val) => sum + val, 0) / values.length;
-    console.log("avg: ", avg);
-    return avg; // Return the average value
+    return values.reduce((sum, val) => sum + val, 0) / values.length;
   };
 
-  // Helper function to process simulation results
+  
   const processData = (simulationResults, breakdownType, useMedian) => {
     const yearlyData = {};
-    
 
     simulationResults.forEach((simulation) => {
       simulation.forEach((yearlyResult) => {
         const year = yearlyResult.year;
 
-
-        // Process data based on breakdown type
-        if (breakdownType === "investments") {
-          yearlyResult.investments.forEach(({ value }) => {
-            if (!yearlyData[year]) {
-              yearlyData[year] = []; // Initialize yearlyData[year] as an array
-            }
-            
-            yearlyData[year].push(value); // Now you can safely use .push() on the array
-          });
-
-            
-            
-         
+        if (!yearlyData[year]) {
+          yearlyData[year] = {};
         }
-        
+
+        if (breakdownType === "investments") {
+          yearlyResult.investments.forEach(({ name, taxStatus, value }) => {
+            const key = `${name} (${taxStatus})`;
+            if (!yearlyData[year][key]) {
+              yearlyData[year][key] = [];
+            }
+            yearlyData[year][key].push(value);
+          });
+        } else if (breakdownType === "income") {
+          yearlyResult.income.forEach(({ series, value }) => {
+            if (!yearlyData[year][series]) {
+              yearlyData[year][series] = [];
+            }
+            yearlyData[year][series].push(value);
+          });
+        } else if (breakdownType === "expenses") {
+          yearlyResult.expenses.forEach(({ series, value }) => {
+            if (!yearlyData[year][series]) {
+              yearlyData[year][series] = [];
+            }
+            yearlyData[year][series].push(value);
+          });
+          if (!yearlyData[year]["Taxes"]) {
+            yearlyData[year]["Taxes"] = [];
+          }
+          yearlyData[year]["Taxes"].push(yearlyResult.taxes);
+        }
       });
     });
+
+    // determine median/avg
     const processed = {};
-    Object.entries(yearlyData).forEach(([year, values]) => {
-       processed[year] = calculateValue(values, useMedian);
+    Object.entries(yearlyData).forEach(([year, categories]) => {
+      processed[year] = {};
+      Object.entries(categories).forEach(([category, values]) => {
+        processed[year][category] = calculateValue(values, useMedian);
+      });
     });
 
     return processed;
-   
   };
 
-  
-  // Process the simulation results
+  // 1.) group the data by year and category: handle the different breakdown tyeps, apply median/avg
   const processedData = processData(allSimulationResults, breakdownType, useMedian);
 
-  console.log("processed data: ", processedData);
-  
-  
 
-  // Prepare data for the chart
-  const labels = Object.keys(processedData).map((year) => Number(year));
+  // 2.) Apply aggregation thershold and move investments below aggregation threshold into category "other"
+  const aggregatedData = {};
+  const allCategories = new Set();
 
+  Object.values(processedData).forEach((categories) => {
+    Object.keys(categories).forEach((category) => {
+      allCategories.add(category);
+    });
+  });
 
-  const datasets = Object.entries(processedData).map(([year, values]) => ({
-    label: year,
-    data: [values],  // The data array for this key
+  Object.entries(processedData).forEach(([year, categories]) => {
+    aggregatedData[year] = {};
+    Object.entries(categories).forEach(([category, value]) => {
+      if (value >= aggregationThreshold) {
+        aggregatedData[year][category] = value;
+      } else {
+        if (!aggregatedData[year]["Other"]) {
+          aggregatedData[year]["Other"] = 0;
+        }
+        aggregatedData[year]["Other"] += value;
+      }
+    });
+  });
+
+  // 3.) Preprocess data for plot: I need my data to look like this:
+  { /* 
+  datasets = [
+    {
+      label: 'investment 1',
+      data: [20000, 22000, 25000],
+      backgroundColor: 'lightblue'
+    },
+    {
+      label: 'investment 2',
+      data: [10000, 11000, 12000],
+      backgroundColor: 'lightgreen'
+    },
+    {
+      label: 'investment 3',
+      data: [5000, 6000, 7000], // this needs to be the value either the median or avg of all the simulations results of investment 3 for each year 
+      backgroundColor: 'pink'
+    }
+  ];
+  */ }
+  const labels = Object.keys(aggregatedData).map((year) => Number(year));
+  const datasets = Array.from(allCategories).map((category) => ({
+    label: category,
+    data: labels.map((year) => aggregatedData[year]?.[category] || 0),
+    backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(
+      Math.random() * 255
+    )}, 0.5)`, // Random color for each category
   }));
 
-  console.log("datasets: ", datasets);
-
+  console.log("Datasets: ", datasets)
   const data = {
     labels,
     datasets,
-  };
+  }
 
+  console.log("Data: ", data)
+  // 4.) Plot the data using chart.js
 
   const options = {
     responsive: true,
@@ -375,8 +429,5 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
   };
 
   return <Bar data={data} options={options} />;
+
 }
-
-
-
-
