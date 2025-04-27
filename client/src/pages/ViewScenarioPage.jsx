@@ -44,6 +44,7 @@ export const ViewScenarioPage = () => {
     } catch (error) {
       console.error("Error running simulation:", error);
     } finally {
+      console.log("Simulation completed");
       setIsRunning(false);
     }
   };
@@ -344,6 +345,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
   const successProbabilities = calculateSuccessProbability(allSimulationResults, Number(financialGoal));
   console.log("Success Probabilities:", successProbabilities); 
 
+
   return (
     <div>
       <h2>Simulation Results</h2>
@@ -375,11 +377,14 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         ))}
       </div>
 
-      {/* Charts */}
+      {/* Charts 4.1*/}
+      
       <div className="line-chart-container">
         <h3>Success Probability Over Time</h3>
         <LineChart successProbabilities={successProbabilities} />
       </div>
+      
+      {/* Charts 4.2*/}
       <div className="shaded-line-chart-container">
         <h3>Shaded Success Probability Over Time</h3>
         <p> Select a quantity to view as a shaded line chart</p>
@@ -397,6 +402,9 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
           allSimulationResults={allSimulationResults}
           financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
         />
+
+
+        {/* Charts 4.3*/}
 
 
         <div>
@@ -430,8 +438,10 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
           />
 
         </div>
+     
 
-      </div>
+      </div> 
+
 
 
     </div>

@@ -262,13 +262,20 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
 }
 
 export function StackedBarChart({ allSimulationResults, breakdownType, aggregationThreshold, useMedian }) {
-  // Helper function to calculate median or average
+  //Helper function to calculate median or average
+
   const calculateValue = (values, useMedian) => {
+    //console.log("values: ", values);
     values.sort((a, b) => a - b);
     if (useMedian) {
-      return values[Math.floor(values.length * 0.5)]; // Median
+      let median = values[Math.floor(values.length * 0.5)];
+      console.log("median: ", median);
+      return median;
+      
     }
-    return values.reduce((sum, val) => sum + val, 0) / values.length; // Average
+    let avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+    console.log("avg: ", avg);
+    return avg; // Return the average value
   };
 
   // Helper function to process simulation results
@@ -280,115 +287,57 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
       simulation.forEach((yearlyResult) => {
         const year = yearlyResult.year;
 
-        if (!yearlyData[year]) {
-          yearlyData[year] = {};
-        }
 
         // Process data based on breakdown type
         if (breakdownType === "investments") {
-          Object.entries(yearlyResult.investments).forEach(([investment, value]) => {
-            if (!yearlyData[year][investment]) {
-              yearlyData[year][investment] = [];
+          yearlyResult.investments.forEach(({ value }) => {
+            if (!yearlyData[year]) {
+              yearlyData[year] = []; // Initialize yearlyData[year] as an array
             }
-            yearlyData[year][investment].push(value);
-          });
-        } else if (breakdownType === "income") {
-          Object.entries(yearlyResult.income).forEach(([eventSeries, value]) => {
-            if (!yearlyData[year][eventSeries]) {
-              yearlyData[year][eventSeries] = [];
-            }
-            yearlyData[year][eventSeries].push(value);
-          });
-        } else if (breakdownType === "expenses") {
-          Object.entries(yearlyResult.expenses).forEach(([eventSeries, value]) => {
-            if (!yearlyData[year][eventSeries]) {
-              yearlyData[year][eventSeries] = [];
-            }
-            yearlyData[year][eventSeries].push(value);
+            
+            yearlyData[year].push(value); // Now you can safely use .push() on the array
           });
 
-          // Add taxes as a separate category
-          if (!yearlyData[year]["Taxes"]) {
-            yearlyData[year]["Taxes"] = [];
-          }
-          yearlyData[year]["Taxes"].push(yearlyResult.taxes);
+            
+            
+         
         }
+        
       });
     });
-    console.log("yearly data: ", yearlyData);
-
-    // Aggregate data and calculate median/average
-    const processedData = {};
-    Object.entries(yearlyData).forEach(([year, categories]) => {
-      processedData[year] = {};
-      Object.entries(categories).forEach(([category, values]) => {
-        processedData[year][category] = calculateValue(values, useMedian);
-      });
+    const processed = {};
+    Object.entries(yearlyData).forEach(([year, values]) => {
+       processed[year] = calculateValue(values, useMedian);
     });
 
-    return processedData;
+    return processed;
+   
   };
 
   
-
   // Process the simulation results
   const processedData = processData(allSimulationResults, breakdownType, useMedian);
 
-  console.log("processed data: ", processData);
+  console.log("processed data: ", processedData);
   
-  // Aggregate categories below the threshold
-  const aggregatedData = {};
-  const allCategories = new Set();
-  Object.values(processedData).forEach((categories) => {
-    Object.keys(categories).forEach((category) => {
-      allCategories.add(category);
-    });
-  });
-
-  allCategories.forEach((category) => {
-    let isBelowThreshold = true;
-
-    Object.values(processedData).forEach((categories) => {
-      if (categories[category] && categories[category] >= aggregationThreshold) {
-        isBelowThreshold = false;
-      }
-    });
-
-    if (isBelowThreshold) {
-      allCategories.delete(category);
-      allCategories.add("Other");
-    }
-  });
-
-  Object.entries(processedData).forEach(([year, categories]) => {
-    aggregatedData[year] = {};
-    Object.entries(categories).forEach(([category, value]) => {
-      if (allCategories.has(category)) {
-        if (!aggregatedData[year][category]) {
-          aggregatedData[year][category] = 0;
-        }
-        aggregatedData[year][category] += value;
-      } else {
-        if (!aggregatedData[year]["Other"]) {
-          aggregatedData[year]["Other"] = 0;
-        }
-        aggregatedData[year]["Other"] += value;
-      }
-    });
-  });
+  
 
   // Prepare data for the chart
-  const labels = Object.keys(aggregatedData).map((year) => Number(year));
-  const datasets = Array.from(allCategories).map((category) => ({
-    label: category,
-    data: labels.map((year) => aggregatedData[year][category] || 0),
-    backgroundColor: getRandomColor(), // Assign random colors for each category
+  const labels = Object.keys(processedData).map((year) => Number(year));
+
+
+  const datasets = Object.entries(processedData).map(([year, values]) => ({
+    label: year,
+    data: [values],  // The data array for this key
   }));
+
+  console.log("datasets: ", datasets);
 
   const data = {
     labels,
     datasets,
   };
+
 
   const options = {
     responsive: true,
@@ -428,11 +377,6 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
   return <Bar data={data} options={options} />;
 }
 
-// Helper function to generate random colors
-const getRandomColor = () => {
-  const r = Math.floor(Math.random() * 255);
-  const g = Math.floor(Math.random() * 255);
-  const b = Math.floor(Math.random() * 255);
-  return `rgba(${r}, ${g}, ${b}, 0.7)`;
-};
+
+
 

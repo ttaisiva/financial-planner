@@ -239,19 +239,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       );
       console.log("purchase prices after invest event:", purchasePrices);
 
-      console.log("updated investments after invest event:", investments);
+      
 
       // Step 10: Rebalance investments
-      console.log("investments before rebalance: event", investments);
       await runRebalanceEvents(
         currentSimulationYear,
         rebalanceEvents,
         runningTotals
       );
-      console.log("investments after rebalance: event", investments);
 
  
-      
+        
         yearlyResults.push({
           year: currentSimulationYear,
           cashInvestment: runningTotals.cashInvestment,
@@ -262,11 +260,13 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           purchasePrices: runningTotals.purchasePrices,
           investments: runningTotals.investments
         });
+
+      
       if (sim == 0)
         logResults(
           logs.csvlog,
           logs.csvStream,
-          investments,
+          runningTotals.investments,
           currentSimulationYear
         );
     }
