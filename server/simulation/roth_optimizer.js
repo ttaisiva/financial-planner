@@ -7,9 +7,9 @@ export async function runRothOptimizer(
   scenarioId,
   rothStrategy,
   incomeEvents,
-  investments,
   year,
   evtlog,
+  runningTotals,
 ) {
   console.log(`Running Roth optimizer for scenario ID: ${scenarioId}`);
   // step 1: determine user tax bracket and conversion amount:
@@ -20,7 +20,7 @@ export async function runRothOptimizer(
     if (conversionAmt === 0) break;
 
     // Copilot prompt: find the object in array "investments" whose id matches rothStrategy[i].id
-    let pretax = investments.find(
+    let pretax = runningTotals.investments.find(
       (investment) => investment.id === rothStrategy[i].investment_id
     );
 
@@ -36,7 +36,7 @@ export async function runRothOptimizer(
     } else {
       // check if after tax equivalent exists
       // Copilot prompt: use investments.find to look for an element with .type that is the same as pretax.type
-      let aftertax = investments.find(
+      let aftertax = runningTotals.investments.find(
         (investment) =>
           investment.type === pretax.type &&
           investment.taxStatus === "after-tax"
@@ -54,7 +54,7 @@ export async function runRothOptimizer(
           taxStatus: "after-tax",
           value: conversionAmt,
         };
-        investments.push(newInvestment);
+        runningTotals.investments.push(newInvestment);
 
         logRothConversion(evtlog, year, pretax, pretax, conversionAmt);
       }
@@ -62,7 +62,8 @@ export async function runRothOptimizer(
     }
   }
 
-  return { investments, rothStrategy };
+  let resInvestment = runningTotals.investments;
+  return { resInvestment, rothStrategy };
 }
 
 async function getMaxConversionAmt(scenarioId, incomeEvents) {

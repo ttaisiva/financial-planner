@@ -1,9 +1,10 @@
 import React from "react";
-import { Line } from "react-chartjs-2";
+import { Line, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   LineElement,
   CategoryScale,
+  BarElement,
   LinearScale,
   PointElement,
   Title,
@@ -13,7 +14,7 @@ import {
 } from "chart.js";
 
 // Register required Chart.js components
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
 
 /**
  * Line chart to display success probabilities over time.
@@ -64,12 +65,7 @@ export function LineChart({ successProbabilities }) {
   return <Line data={data} options={options} />;
 }
 
-/**
- * Calculates the probability of success for each year based on simulation results.
- * @param {Array} allSimulationResults - Array of simulations, where each simulation is an array of yearly results.
- * @param {number} financialGoal - The financial goal to be satisfied.
- * @returns {Array} An array of objects, each containing the year and the success probability for that year.
- */
+
 export function calculateSuccessProbability(allSimulationResults, financialGoal) {
   const yearlySuccess = {};
 
@@ -101,7 +97,6 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
     successProbability: (successCount / totalCount) * 100, // Convert to percentage
   }));
 }
-
 
 export function ShadedLineChart({ label, allSimulationResults, financialGoal }) {
     // Helper function to process simulationResults and generate dataByYear
@@ -264,5 +259,175 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
 
 
     return <Line data={data} options={options} />;
+}
+
+export function StackedBarChart({ allSimulationResults, breakdownType, aggregationThreshold, useMedian }) {
+  //Helper function to calculate median or average
+
+  // helper function to Calcualte the median or average of the simulation results for each investment type
+  const calculateValue = (values, useMedian) => {
+    values.sort((a, b) => a - b);
+    if (useMedian) {
+      return values[Math.floor(values.length * 0.5)];
+    }
+    return values.reduce((sum, val) => sum + val, 0) / values.length;
+  };
+
+  
+  const processData = (simulationResults, breakdownType, useMedian) => {
+    const yearlyData = {};
+
+    simulationResults.forEach((simulation) => {
+      simulation.forEach((yearlyResult) => {
+        const year = yearlyResult.year;
+
+        if (!yearlyData[year]) {
+          yearlyData[year] = {};
+        }
+
+        if (breakdownType === "investments") {
+          yearlyResult.investments.forEach(({ name, taxStatus, value }) => {
+            const key = `${name} (${taxStatus})`;
+            if (!yearlyData[year][key]) {
+              yearlyData[year][key] = [];
+            }
+            yearlyData[year][key].push(value);
+          });
+        } else if (breakdownType === "income") {
+          yearlyResult.income.forEach(({ series, value }) => {
+            if (!yearlyData[year][series]) {
+              yearlyData[year][series] = [];
+            }
+            yearlyData[year][series].push(value);
+          });
+        } else if (breakdownType === "expenses") {
+          yearlyResult.expenses.forEach(({ series, value }) => {
+            if (!yearlyData[year][series]) {
+              yearlyData[year][series] = [];
+            }
+            yearlyData[year][series].push(value);
+          });
+          if (!yearlyData[year]["Taxes"]) {
+            yearlyData[year]["Taxes"] = [];
+          }
+          yearlyData[year]["Taxes"].push(yearlyResult.taxes);
+        }
+      });
+    });
+
+    // determine median/avg
+    const processed = {};
+    Object.entries(yearlyData).forEach(([year, categories]) => {
+      processed[year] = {};
+      Object.entries(categories).forEach(([category, values]) => {
+        processed[year][category] = calculateValue(values, useMedian);
+      });
+    });
+
+    return processed;
+  };
+
+  // 1.) group the data by year and category: handle the different breakdown tyeps, apply median/avg
+  const processedData = processData(allSimulationResults, breakdownType, useMedian);
+
+
+  // 2.) Apply aggregation thershold and move investments below aggregation threshold into category "other"
+  const aggregatedData = {};
+  const allCategories = new Set();
+
+  Object.values(processedData).forEach((categories) => {
+    Object.keys(categories).forEach((category) => {
+      allCategories.add(category);
+    });
+  });
+
+  Object.entries(processedData).forEach(([year, categories]) => {
+    aggregatedData[year] = {};
+    Object.entries(categories).forEach(([category, value]) => {
+      if (value >= aggregationThreshold) {
+        aggregatedData[year][category] = value;
+      } else {
+        if (!aggregatedData[year]["Other"]) {
+          aggregatedData[year]["Other"] = 0;
+        }
+        aggregatedData[year]["Other"] += value;
+      }
+    });
+  });
+
+  // 3.) Preprocess data for plot: I need my data to look like this:
+  { /* 
+  datasets = [
+    {
+      label: 'investment 1',
+      data: [20000, 22000, 25000],
+      backgroundColor: 'lightblue'
+    },
+    {
+      label: 'investment 2',
+      data: [10000, 11000, 12000],
+      backgroundColor: 'lightgreen'
+    },
+    {
+      label: 'investment 3',
+      data: [5000, 6000, 7000], // this needs to be the value either the median or avg of all the simulations results of investment 3 for each year 
+      backgroundColor: 'pink'
+    }
+  ];
+  */ }
+  const labels = Object.keys(aggregatedData).map((year) => Number(year));
+  const datasets = Array.from(allCategories).map((category) => ({
+    label: category,
+    data: labels.map((year) => aggregatedData[year]?.[category] || 0),
+    backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(
+      Math.random() * 255
+    )}, 0.5)`, // Random color for each category
+  }));
+
+  console.log("Datasets: ", datasets)
+  const data = {
+    labels,
+    datasets,
   }
 
+  console.log("Data: ", data)
+  // 4.) Plot the data using chart.js
+
+  const options = {
+    responsive: true,
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (tooltipItem) => {
+            const dataset = tooltipItem.dataset;
+            const value = dataset.data[tooltipItem.dataIndex];
+            return `${dataset.label}: ${value}`;
+          },
+        },
+      },
+      legend: {
+        display: true,
+        position: "top",
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        title: {
+          display: true,
+          text: "Year",
+        },
+      },
+      y: {
+        stacked: true,
+        title: {
+          display: true,
+          text: breakdownType,
+        },
+      },
+    },
+  };
+
+  return <Bar data={data} options={options} />;
+
+}
