@@ -286,12 +286,12 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
         }
 
         if (breakdownType === "investments") {
-          yearlyResult.investments.forEach(({ name, taxStatus, value }) => {
-            const key = `${name} (${taxStatus})`;
-            if (!yearlyData[year][key]) {
-              yearlyData[year][key] = [];
+          yearlyResult.investments.forEach(({ id, value }) => {
+           
+            if (!yearlyData[year][id]) {
+              yearlyData[year][id] = [];
             }
-            yearlyData[year][key].push(value);
+            yearlyData[year][id].push(value);
           });
         } else if (breakdownType === "income") {
           yearlyResult.income.forEach(({ series, value }) => {
@@ -345,15 +345,28 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     aggregatedData[year] = {};
     Object.entries(categories).forEach(([category, value]) => {
       if (value >= aggregationThreshold) {
+        console.log("value is over threshold ", value);
         aggregatedData[year][category] = value;
       } else {
+        console.log("VALUE LESS THAN THRESHOLD:", value);
         if (!aggregatedData[year]["Other"]) {
+          console.log("creating new category other for year:", year)
           aggregatedData[year]["Other"] = 0;
+          allCategories.add("Other");
         }
+        
         aggregatedData[year]["Other"] += value;
+        console.log("Added value to other category: ", aggregatedData[year]["Other"]  )
       }
     });
   });
+
+  console.log("All Categories:");
+  allCategories.forEach((category) => {
+    console.log(category);
+  });
+
+  
 
   // 3.) Preprocess data for plot: I need my data to look like this:
   { /* 
