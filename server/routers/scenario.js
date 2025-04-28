@@ -214,7 +214,7 @@ router.post("/run-simulation", async (req, res) => {
     );
 
     // Call the Monte Carlo simulation function
-    const results = simulation(
+    const results =  await simulation(
       currentYear,
       numSimulations,
       userId,
@@ -223,6 +223,7 @@ router.post("/run-simulation", async (req, res) => {
     );
 
     // Send the results back to the client
+ 
     res.json(results);
   } catch (error) {
     console.error("Error running simulation:", error);

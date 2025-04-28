@@ -23,7 +23,6 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
 export async function updateInvestments(
   scenarioId,
   runningTotals,
-  investments
 ) {
   console.log(`Starting updateInvestments for scenario ID: ${scenarioId}`);
 
@@ -32,7 +31,7 @@ export async function updateInvestments(
   const investmentTypes = await getAllInvestmentTypes(scenarioId);
 
   console.log(
-    `Fetched ${investments.length} investments for scenario ID: ${scenarioId}`
+    `Fetched ${runningTotals.investments.length} investments for scenario ID: ${scenarioId}`
   );
   //   console.log("investments", investments);
   console.log(
@@ -41,16 +40,16 @@ export async function updateInvestments(
     } investment types for scenario ID: ${scenarioId}`
   );
 
-  for (const investment of investments) {
-    console.log(
-      `Processing investment ID: ${investment.id}, type: ${investment.type}, value: ${investment.value}`
-    );
-    console.log("investment", investment);
+  for (const investment of runningTotals.investments) {
+    // console.log(
+    //   `Processing investment ID: ${investment.id}, type: ${investment.type}, value: ${investment.value}`
+    // );
+    console.log("Processing investment:", investment.id);
 
     const investmentType = investmentTypes[investment.type];
 
     if (!investmentType) {
-      console.error(`Investment type ${investment.type} not found.`);
+      //console.error(`Investment type ${investment.type} not found.`);
       continue; // Skip this investment if its type is not found
     }
 
@@ -72,9 +71,10 @@ export async function updateInvestments(
       investment.taxStatus === "non-retirement" &&
       investmentType.taxability === "taxable"
     ) {
-      runningTotals.curYearIncome += generatedIncome;
+        runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(generatedIncome);
+      
       console.log(
-        `Added generated income to curYearIncome. Updated curYearIncome: ${runningTotals.curYearIncome}`
+        `Added generated income to curYearIncome. Updated curYearIncome: ${Number(runningTotals.curYearIncome)}`
       );
     }
 

@@ -41,7 +41,7 @@ export async function process_income_event(
     `Processing income events for scenario ID: ${scenarioId} with current simulation year: ${currentSimulationYear}`
   );
   console.log(
-    `Initial cash investment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}, curYearSS: ${runningTotals.curYearSS}`
+    `Initial cash investment: ${Number(runningTotals.cashInvestment)}, curYearIncome: ${Number(runningTotals.curYearIncome)}, curYearSS: ${Number(runningTotals.curYearSS)}`
   );
 
   // Get all income events and calculate current amounts
@@ -57,7 +57,7 @@ export async function process_income_event(
     console.warn(
       `No income events found for scenario ID ${scenarioId}. Skipping income event processing.`
     );
-    return; //{curYearIncome, cashInvestment, curYearSS}; // Return early if no income events found
+    return; // Return early if no income events found
   }
 
   console.log(
@@ -142,7 +142,7 @@ export async function process_income_event(
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
 
     console.log(
-      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}`
+      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${Number(runningTotals.cashInvestment)}, curYearIncome: ${Number(runningTotals.curYearIncome)}`
     );
 
     if (event.isSocialSecurity) {
@@ -164,7 +164,7 @@ export async function process_income_event(
     `Finished processing income events for scenario ID ${scenarioId}.`
   );
   console.log(
-    `Final cashInvestment: ${runningTotals.cashInvestment}, curYearIncome: ${runningTotals.curYearIncome}, curYearSS: ${runningTotals.curYearSS}`
+    `Final cashInvestment: ${Number(runningTotals.cashInvestment)}, curYearIncome: ${Number(runningTotals.curYearIncome)}, curYearSS: ${Number(runningTotals.curYearSS)}`
   );
 }
 
