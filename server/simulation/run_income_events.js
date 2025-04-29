@@ -65,20 +65,13 @@ export async function process_income_event(
   );
 
   for (const event of incomeEvents) {
-    const startYear = incomeEventsStart[event.id];
-    console.log(
-      `Event start year: ${startYear}, Current simulation year: ${currentSimulationYear}`
-    );
-    if (startYear > currentSimulationYear) {
-      console.log(`Skipping event ID: ${event.id} as it starts in the future.`);
-      continue;
+
+    if (!isActiveIncomeEvent(event.id, currentSimulationYear, incomeEventsStart, incomeEventsDuration)) {
+      continue; // Skip inactive events
     }
-    const duration = incomeEventsDuration[event.id];
-    console.log("Event duration: ", duration);
-    if (startYear + duration <= currentSimulationYear) {
-      console.log(`Skipping event ID: ${event.id} as its duration is over.`);
-      continue;
-    }
+    // add to incomes in running totals
+    runningTotals.incomes.push(event);
+
 
     // Apply expected annual change for active income events
     let currentAmount = 0;
@@ -335,4 +328,35 @@ export function getEventDuration(event) {
     default:
       throw new Error(`Unsupported duration type: ${duration.type}`);
   }
+}
+
+/**
+ * Determines if an income event is active based on its start year, duration, and the current simulation year.
+ * @param {number} eventId - The ID of the income event.
+ * @param {number} currentSimulationYear - The current simulation year.
+ * @param {Object} incomeEventsStart - An object mapping event IDs to their start years.
+ * @param {Object} incomeEventsDuration - An object mapping event IDs to their durations.
+ * @returns {boolean} True if the event is active, false otherwise.
+ */
+function isActiveIncomeEvent(eventId, currentSimulationYear, incomeEventsStart, incomeEventsDuration) {
+  const startYear = incomeEventsStart[eventId];
+  const duration = incomeEventsDuration[eventId];
+
+  console.log(`Checking if event ID: ${eventId} is active.`);
+  console.log(`Start year: ${startYear}, Duration: ${duration}, Current simulation year: ${currentSimulationYear}`);
+
+  // Check if the event starts in the future
+  if (startYear > currentSimulationYear) {
+    console.log(`Event ID: ${eventId} starts in the future. Skipping.`);
+    return false;
+  }
+
+  // Check if the event's duration has ended
+  if (startYear + duration <= currentSimulationYear) {
+    console.log(`Event ID: ${eventId} has ended. Skipping.`);
+    return false;
+  }
+
+  console.log(`Event ID: ${eventId} is active.`);
+  return true;
 }

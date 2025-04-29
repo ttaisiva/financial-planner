@@ -432,7 +432,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
           />
           <StackedBarChart
             allSimulationResults={allSimulationResults}
-            breakdownType="investments" // "investments", "income", or "expenses"
+            breakdownType= {breakdownType} // "investments", "income", or "expenses"
             aggregationThreshold={1000} // Threshold for aggregation
             useMedian={true} // true for median, false for average
           />

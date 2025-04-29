@@ -67,14 +67,19 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearEarlyWithdrawals: 0,
       purchasePrices: purchasePrices,
       investments: investments,
+      expenses: [],
+      incomes: [],
+      taxes: []
     };
 
     const incomeEvents = await getIncomeEvents(scenarioId, []);
+
     await populateYearsAndDuration(
       incomeEvents,
       incomeEventsStart,
       incomeEventsDuration
     ); // Populate years and duration for income events
+    // need to do the same for expense events
     const rothYears = await getRothYears(scenarioId);
     let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
@@ -258,7 +263,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           curYearGains: runningTotals.curYearGains,
           curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
           purchasePrices: runningTotals.purchasePrices,
-          investments: runningTotals.investments
+          investments: runningTotals.investments,
+          expenses: runningTotals.expenses,
+          incomes: runningTotals.incomes
         });
 
       
