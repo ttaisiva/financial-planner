@@ -29,8 +29,6 @@ export async function payTaxes(totals, scenarioID, incomeEvents, runningTotals, 
     const stOwe = Number(await computeState(totals.curYearIncome, taxData));
     const cptOwe = Number(await computeCapital(totals.curYearGains, taxData));
     const amtOwed = Number(+fedOwe + +stOwe + +cptOwe);
-    console.log("federal", fedOwe, "state", stOwe, "deduction", taxData.deduction[0].standard_deduction);
-    console.log("amtOwed", amtOwed);
     return amtOwed;
 }
 
@@ -48,12 +46,10 @@ const computeFederal = async (income, ssIncome, taxData) => {
     const fedTaxBrackets = taxData.federal;
     let sum = 0;
     for (const bracket of fedTaxBrackets) {
-        console.log("bracket rate", bracket.tax_rate)
         if (dIncome > +bracket.income_max) { // Checks if we are in a bracket that is completely full
             sum += (+bracket.income_max * bracket.tax_rate);
         }
         else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
-            console.log("bracket rate", bracket.tax_rate);
             sum += ((dIncome - +bracket.income_min) * bracket.tax_rate);
             break;
         }
@@ -110,7 +106,6 @@ const computeCapital = async (gains, taxData) => {
             sum += (+bracket.income_max * bracket.cap_gains_tax_rate);
         }
         else { // Final bracket (meaning initial_amount is less than income_max); Tax applied to initial_amount - income_min
-            console.log("bracket rate", bracket.cap_gains_tax_rate);
             sum += ((gains - +bracket.income_min) * bracket.cap_gains_tax_rate);
             return sum;
         }

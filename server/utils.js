@@ -251,6 +251,5 @@ export const getEventYears = async (events) => {
     endYears[event.id] = endYear; // Store the end year of this event for future checks
   }
 
-  console.log("Event years (start and end) for all events:", eventYears);
   return eventYears;
 };

@@ -20,12 +20,10 @@ export async function runRebalanceEvents(
   runningTotals
 ) {
   const rebalanceEventYears = await getEventYears(rebalanceEvents);
-  console.log("rebalance event years: ", rebalanceEventYears);
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {
     const eventYears = rebalanceEventYears[rebalanceEvent.id];
-    // console.log("YEAR OF EVENT: ", eventYears);
     if (!eventYears) continue;
 
     const { startYear, endYear } = eventYears;
@@ -33,14 +31,11 @@ export async function runRebalanceEvents(
       continue;
 
     const assetAllocation = rebalanceEvent.asset_allocation;
-    // console.log("asset allocation: ", assetAllocation);
     if (!assetAllocation) continue;
 
     // Step 1: Calculate total value of relevant investments
     let totalPortfolioValue = 0;
     for (const investmentId in assetAllocation) {
-      // console.log("investment id:", investmentId);
-      // console.log("investments:", investments);
       totalPortfolioValue += Number(
         runningTotals.investments[investmentId]?.value || 0
       );
@@ -111,6 +106,5 @@ export const getRebalanceEvents = async (scenarioId) => {
     [scenarioId]
   );
 
-  // console.log("rows", rows);
   return rows;
 };
