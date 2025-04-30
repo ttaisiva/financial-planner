@@ -26,18 +26,19 @@ import {
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
 export async function simulation(date, numSimulations, userId, scenarioId) {
-  console.log("Running Monte Carlo simulation...");
+  console.log("RUNNING Monte Carlo simulation.");
   const logs = await initLogs(userId); // open log files for writing
 
   await ensureConnection();
   const totalYears = await getTotalYears(date, scenarioId, connection);
 
   const simulationResults = [];
+  const financialGoal = await getFinancialGoal(scenarioId);
 
   for (let sim = 0; sim < numSimulations; sim++) {
     await ensureConnection();
     console.log("Running simulation number: ", sim);
-    let yearlyResults = {};
+    let yearlyResults = [];
     let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
     let incomeEventsStart = {};
     let incomeEventsDuration = {};
@@ -52,7 +53,12 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     // console.log("purchase prices:", purchasePrices);
 
     let taxData = await getTaxData(scenarioId, date);
-    // console.log("tax", taxData);
+    console.log("tax", taxData);
+
+    // add to runningTotals: curYearExpenses (including taxes) and
+    // percentage of total discretionary expenses incurred
+
+    let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
 
     const runningTotals = {
       cashInvestment: cashInvestment,
@@ -61,6 +67,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearGains: 0,
       curYearEarlyWithdrawals: 0,
       purchasePrices: purchasePrices,
+      investments: investments,
     };
 
     const incomeEvents = await getIncomeEvents(scenarioId, []);
@@ -73,7 +80,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
     console.log("Initializing simulation investments.");
-    let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
 
     let investEventYears = await getInvestEvents(scenarioId);
 
@@ -83,7 +89,12 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     // log investments before any changes
     if (sim == 0)
-      logResults(logs.csvlog, logs.csvStream, investments, date - 1);
+      logResults(
+        logs.csvlog,
+        logs.csvStream,
+        runningTotals.investments,
+        date - 1
+      );
 
     //Step 0: run preliminaries
     await ensureConnection();
@@ -111,8 +122,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         }
       }
 
-      // Prelims
-      // Adjusting tax brackets for inflation
+      // Prelims Adjusting tax brackets for inflation
 
       // Step 1: Run income events
 
@@ -140,7 +150,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         scenarioId,
         currentSimulationYear,
         runningTotals,
-        investments,
         logs.evtlog
       );
       console.log(
@@ -161,11 +170,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           scenarioId,
           rothStrategy,
           incomeEvents,
-          investments,
           currentSimulationYear,
-          logs.evtlog
+          logs.evtlog,
+          runningTotals
         );
-        investments = rothResult.investments;
+        investments = rothResult.resInvestments;
         rothStrategy = rothResult.rothStrategy;
       } else {
         console.log(
@@ -174,7 +183,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       }
 
       // Step 4: Update investments
-      await updateInvestments(scenarioId, runningTotals, investments);
+      await updateInvestments(scenarioId, runningTotals);
       console.log(
         "Current year income after update investments: ",
         runningTotals.curYearIncome
@@ -189,7 +198,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         runningTotals,
         scenarioId,
         incomeEvents,
-        investments,
+        runningTotals,
         taxData
       );
       await payNonDiscExpenses(
@@ -198,11 +207,10 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         currentSimulationYear,
         inflationRate,
         date,
-        investments,
         taxes
       );
 
-      // Pay discretionary expenses
+      //Pay discretionary expenses
       console.log(
         "Cash investment before paying discretionary expenses: ",
         runningTotals.cashInvestment
@@ -212,8 +220,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         runningTotals,
         currentSimulationYear,
         inflationRate,
-        date,
-        investments
+        date
       );
       console.log(
         "Cash investment after paying discretionary expenses: ",
@@ -226,38 +233,41 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         scenarioId,
         investEventYears,
         runningTotals,
-        investments,
         inflationRate,
         afterTaxContributionLimit,
         date
       );
-      // console.log(
-      //   "Cash Investment after running Invest Event:",
-      //   runningTotals.cashInvestment
-      // );
-      // console.log("purchase prices after invest event:", purchasePrices);
+      console.log(
+        "Cash Investment after running Invest Event:",
+        runningTotals.cashInvestment
+      );
+      console.log("purchase prices after invest event:", purchasePrices);
+
       // Step 10: Rebalance investments
       // console.log("REBALANCE EVENTS: ", rebalanceEvents);
       // console.log("investments before rebalance: event", investments);
       await runRebalanceEvents(
         currentSimulationYear,
         rebalanceEvents,
-        investments,
         runningTotals
       );
-      // console.log("investments after rebalance: event", investments);
 
-      // Collect yearly results -> need to impelemnt this
-      //   yearlyResults.push({
-      //     year: currentSimulationYear,
-      //     cash_flow: 0,
-      //     investments: 0,
-      //   });
+      yearlyResults.push({
+        year: currentSimulationYear,
+        cashInvestment: runningTotals.cashInvestment,
+        curYearIncome: runningTotals.curYearIncome,
+        curYearSS: runningTotals.curYearSS,
+        curYearGains: runningTotals.curYearGains,
+        curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
+        purchasePrices: runningTotals.purchasePrices,
+        investments: runningTotals.investments,
+      });
+
       if (sim == 0)
         logResults(
           logs.csvlog,
           logs.csvStream,
-          investments,
+          runningTotals.investments,
           currentSimulationYear
         );
     }
@@ -269,7 +279,10 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     console.log("Running Totals: ", runningTotals);
   }
   logs.evtlog.end(); // close the event log file
-  return calculateStats(simulationResults); // Calculate median, mean, and other statistics
+
+  const stats = calculateStats(simulationResults, financialGoal); // Calculate median, mean, and other statistics
+  console.log("Returning stats: ", stats);
+  return stats;
 }
 
 /**
@@ -297,12 +310,47 @@ export async function getTotalYears(date, scenarioId) {
 /**
  * Placeholder for calculating statistics from the simulation results.
  */
-export function calculateStats(simulationResults) {
-  console.log("Calculating statistics from simulation results");
+export function calculateStats(simulationResults, financialGoal) {
+  console.log(
+    "Calculating statistics from simulation results",
+    simulationResults
+  );
+
+  // Flatten the yearly results into a single array of cash investments
+  const allCashInvestments = simulationResults.flatMap((yearlyResults) =>
+    yearlyResults.map((result) => result.cashInvestment)
+  );
+  console.log("all Cash investments: ", allCashInvestments);
+
+  // Calculate mean
+  const total = allCashInvestments.reduce((sum, value) => sum + value, 0);
+  console.log("total: ", total);
+  const mean = total / allCashInvestments.length;
+  console.log("mean: ", mean);
+
+  // Calculate median
+  const sorted = [...allCashInvestments].sort((a, b) => a - b);
+  console.log("sorted: ", sorted);
+  const mid = Math.floor(sorted.length / 2);
+
+  const median =
+    sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+
+  // Calculate other statistics (e.g., min, max)
+  const min = Math.min(...allCashInvestments);
+  console.log("min: ", min);
+  const max = Math.max(...allCashInvestments);
+  console.log("max: ", max);
+
+  console.log("Simulation Results to return: ", simulationResults);
   return {
-    median: 0,
-    mean: 0,
-    otherInfo: {},
+    median,
+    mean,
+    min,
+    max,
+    financialGoal: financialGoal,
+    totalSimulations: simulationResults.length,
+    allSimulationResults: simulationResults,
   };
 }
 
@@ -560,3 +608,32 @@ const getTaxData = async (scenarioID, year) => {
   };
   return taxData;
 };
+
+/**
+ * Fetches the financial goal for a given scenario.
+ * @param {number} scenarioId - The ID of the scenario.
+ * @returns {number|null} The financial goal amount or null if not found.
+ */
+async function getFinancialGoal(scenarioId) {
+  await ensureConnection();
+  try {
+    const [rows] = await connection.execute(
+      `SELECT financial_goal FROM scenarios WHERE id = ?`,
+      [scenarioId]
+    );
+
+    if (rows.length === 0) {
+      console.log(`No financial goal found for scenario ID: ${scenarioId}`);
+      return null; // Return null if no financial goal is found
+    }
+
+    const financialGoal = rows[0].financial_goal;
+    console.log(
+      `Financial goal for scenario ID ${scenarioId}: $${financialGoal}`
+    );
+    return financialGoal;
+  } catch (error) {
+    console.error("Error fetching financial goal:", error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+}

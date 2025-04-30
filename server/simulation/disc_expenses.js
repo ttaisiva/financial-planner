@@ -20,7 +20,6 @@ export async function payDiscExpenses(
   currentSimulationYear,
   inflationRate,
   date,
-  investments
 ) {
   console.log(
     `Paying discretionary expenses for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
@@ -99,8 +98,8 @@ export async function payDiscExpenses(
         "Expense withdrawal strategy fetched:",
         expenseWithdrawalStrategy
       );
-      console.log("investments", investments);
-      let strategyInvestments = investments.filter((investment) =>
+      console.log("investments", runningTotals.investments);
+      let strategyInvestments = runningTotals.investments.filter((investment) =>
         expenseWithdrawalStrategy.some(
           (strategy) => strategy.investmentId === investment.id
         )

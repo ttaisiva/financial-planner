@@ -8,7 +8,6 @@ import { generateNormalRandom, generateUniformRandom } from "../utils.js";
  * @param {*} scenarioId
  * @param {*} investEventYears
  * @param {*} runningTotals
- * @param {*} investments
  * @param {*} inflationRate
  * @param {*} afterTaxContributionLimit
  * @param {*} date
@@ -18,7 +17,6 @@ export async function runInvestEvent(
   scenarioId,
   investEventYears,
   runningTotals,
-  investments,
   inflationRate,
   afterTaxContributionLimit,
   date
@@ -53,7 +51,6 @@ export async function runInvestEvent(
 
       if (event.glide_path === 1) {
         applyGlideAssetAllocation({
-          investments,
           allocations: allocations,
           amountToAllocate: excessCash,
           eventId: activeEventId,
@@ -66,7 +63,6 @@ export async function runInvestEvent(
         });
       } else {
         applyFixedAssetAllocation({
-          investments,
           allocations: allocations,
           amountToAllocate: excessCash,
           eventId: activeEventId,
@@ -351,12 +347,10 @@ export async function getAssetAllocations(eventId) {
  *    now can you allocate a percentage of the amountToAllocate according to the values in the allocation?
  *    for example, "S&P 500 after-tax" would get 40% of the amountToAllocate, and  "S&P 500 non-retirement" would get 60%"
  *
- * @param {*} investments
  * @param {*} allocation
  * @param {*} amountToAllocate
  */
 async function applyGlideAssetAllocation({
-  investments,
   allocations,
   amountToAllocate,
   eventId,
@@ -411,7 +405,7 @@ async function applyGlideAssetAllocation({
 
   // Step 3: First pass — apply capped allocations
   for (const [investmentId, percent] of Object.entries(computedAllocation)) {
-    const target = investments.find((inv) => inv.id === investmentId);
+    const target = runningTotals.investments.find((inv) => inv.id === investmentId);
     if (!target) {
       console.warn(`Investment with id "${investmentId}" not found.`);
       continue;
@@ -450,7 +444,7 @@ async function applyGlideAssetAllocation({
   for (const [investmentId, percent] of Object.entries(uncappedAllocations)) {
     if (percent === 0) continue;
 
-    const target = investments.find((inv) => inv.id === investmentId);
+    const target = runningTotals.investments.find((inv) => inv.id === investmentId);
     if (!target) continue;
 
     const currentValue = parseFloat(target.value) || 0;
@@ -479,7 +473,6 @@ async function applyGlideAssetAllocation({
  * @returns
  */
 async function applyFixedAssetAllocation({
-  investments,
   allocations,
   amountToAllocate,
   eventId,
@@ -512,7 +505,7 @@ async function applyFixedAssetAllocation({
 
   // Step 2: Apply allocations with after-tax cap enforcement
   for (const [investmentId, percent] of Object.entries(computedAllocation)) {
-    const target = investments.find((inv) => inv.id === investmentId);
+    const target = runningTotals.investments.find((inv) => inv.id === investmentId);
     if (!target) {
       console.warn(`Investment with id "${investmentId}" not found.`);
       continue;
@@ -551,7 +544,7 @@ async function applyFixedAssetAllocation({
   for (const [investmentId, percent] of Object.entries(uncappedAllocations)) {
     if (percent === 0 || totalUncappedWeight === 0) continue;
 
-    const target = investments.find((inv) => inv.id === investmentId);
+    const target = runningTotals.investments.find((inv) => inv.id === investmentId);
     if (!target) continue;
 
     const currentValue = parseFloat(target.value) || 0;

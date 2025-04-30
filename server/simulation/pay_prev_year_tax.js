@@ -18,10 +18,10 @@ import { ensureConnection, connection } from "../server.js";
  * @param totals cashinvestment, income, social security, gains, earlywithdrawals
  * @param scenarioID ID of given scenario
  * @param incomeEvents income events for the given scenario
- * @param investments list of investments
+ * @param runningTotals
  * @param taxData includes brackets and deduction for current year + filing status
  */
-export async function payTaxes(totals, scenarioID, incomeEvents, investments, taxData) {
+export async function payTaxes(totals, scenarioID, incomeEvents, runningTotals, taxData) {
     await ensureConnection();
 
     // Find the amount owed by taxing all sources of income federally and by state

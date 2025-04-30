@@ -34,12 +34,13 @@ export async function performRMDs(
   scenarioId,
   currentSimulationYear,
   runningTotals,
-  investments,
   evtlog
 ) {
   console.log(
     `Starting RMD process for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
   );
+
+  
 
   // Step a: Get the user's birth year and calculate their age
   const userBirthYear = await getUserBirthYear(scenarioId, connection);
@@ -55,8 +56,8 @@ export async function performRMDs(
   console.log(`User is eligible for RMD. Fetching pre-tax investments...`);
 
   // Step b: Fetch pre-tax investments
-  console.log("My investments", investments);
-  const preTaxInvestments = await getPreTaxInvestments(investments);
+  console.log("My investments", runningTotals.investments);
+  const preTaxInvestments = await getPreTaxInvestments(runningTotals.investments);
 
   console.log(`Found ${preTaxInvestments.length} pre-tax investments.`);
 
@@ -88,7 +89,7 @@ export async function performRMDs(
   console.log(`Calculated RMD: ${rmd}`);
 
   // Step f: Add RMD to curYearIncome
-  runningTotals.curYearIncome += Number(rmd);
+  runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(rmd);
   console.log(`Updated curYearIncome after adding RMD: ${runningTotals.curYearIncome}`);
 
   // Step g: Transfer investments in-kind to non-retirement accounts
@@ -108,7 +109,7 @@ export async function performRMDs(
     );
 
     // Check if a non-retirement investment with the same type exists
-    const targetInvestment = investments.find(
+    let targetInvestment = runningTotals.investments.find(
       (investment) =>
         investment.type === inv.type &&
         investment.taxStatus === "non-retirement"
@@ -121,12 +122,12 @@ export async function performRMDs(
       console.log("Target investment not found. Creating new one.");
       // Create a new non-retirement investment
       targetInvestment = {
-        id: `${inv.type} ${inv.taxStatus}`, 
+        id: `${inv.type} non-retirement`, 
         investment_type: inv.type,
         taxStatus: "non-retirement",
         value: 0,
       };
-      investments.push(targetInvestment); // Add the new investment to the investments array
+      runningTotals.investments.push(targetInvestment); // Add the new investment to the investments array
     }
 
     //update investment
