@@ -106,7 +106,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       }
 
       // Step 1: Run income events
-
       await process_income_event(
         scenarioId,
         previousYearAmounts,

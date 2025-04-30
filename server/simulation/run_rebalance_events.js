@@ -1,6 +1,9 @@
 import { ensureConnection, connection } from "../server.js";
-import { generateNormalRandom, generateUniformRandom } from "../utils.js";
-import { getInvestEventYears } from "./run_invest_event.js";
+import {
+  generateNormalRandom,
+  generateUniformRandom,
+  getEventYears,
+} from "../utils.js";
 
 /**
  *
@@ -16,7 +19,7 @@ export async function runRebalanceEvents(
   rebalanceEvents,
   runningTotals
 ) {
-  const rebalanceEventYears = await getInvestEventYears(rebalanceEvents);
+  const rebalanceEventYears = await getEventYears(rebalanceEvents);
   console.log("rebalance event years: ", rebalanceEventYears);
   const purchasePrices = runningTotals.purchasePrices;
 
@@ -38,7 +41,9 @@ export async function runRebalanceEvents(
     for (const investmentId in assetAllocation) {
       // console.log("investment id:", investmentId);
       // console.log("investments:", investments);
-      totalPortfolioValue += Number(investments[investmentId]?.value || 0);
+      totalPortfolioValue += Number(
+        runningTotals.investments[investmentId]?.value || 0
+      );
     }
 
     // Step 2: Calculate target values based on allocation
