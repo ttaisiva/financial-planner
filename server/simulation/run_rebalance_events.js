@@ -1,6 +1,6 @@
 import { ensureConnection, connection } from "../server.js";
 import { generateNormalRandom, generateUniformRandom } from "../utils.js";
-import { getInvestEvents } from "./run_invest_event.js";
+import { getInvestEventYears } from "./run_invest_event.js";
 
 /**
  *
@@ -18,11 +18,13 @@ export async function runRebalanceEvents(
   investments,
   runningTotals
 ) {
-  const rebalanceEventYears = await getInvestEvents(rebalanceEvents);
+  const rebalanceEventYears = await getInvestEventYears(rebalanceEvents);
+  console.log("rebalance event years: ", rebalanceEventYears);
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {
     const eventYears = rebalanceEventYears[rebalanceEvent.id];
+    // console.log("YEAR OF EVENT: ", eventYears);
     if (!eventYears) continue;
 
     const { startYear, endYear } = eventYears;
@@ -30,11 +32,14 @@ export async function runRebalanceEvents(
       continue;
 
     const assetAllocation = rebalanceEvent.asset_allocation;
+    // console.log("asset allocation: ", assetAllocation);
     if (!assetAllocation) continue;
 
     // Step 1: Calculate total value of relevant investments
     let totalPortfolioValue = 0;
     for (const investmentId in assetAllocation) {
+      // console.log("investment id:", investmentId);
+      // console.log("investments:", investments);
       totalPortfolioValue += Number(investments[investmentId]?.value || 0);
     }
 

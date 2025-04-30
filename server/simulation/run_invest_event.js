@@ -151,7 +151,7 @@ export const getInvestEvents = async (scenarioId) => {
  * @param {*} events
  * @returns Object {eventId: {startYear: int, endYear: int}}
  */
-const getInvestEventYears = async (events) => {
+export const getInvestEventYears = async (events) => {
   const investEventYears = {}; // Renamed from startYears
   const endYears = {}; // To keep track of the latest end year for each event.
 

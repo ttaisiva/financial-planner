@@ -46,13 +46,13 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let isSpouseAlive = true;
 
     let cashInvestment = await getCashInvest(scenarioId);
-    let testCash = 2000;
+    // let testCash = 2000;
 
     let purchasePrices = await getPurchasePrices(scenarioId);
     // console.log("purchase prices:", purchasePrices);
 
     let taxData = await getTaxData(scenarioId, date);
-    console.log("tax", taxData);
+    // console.log("tax", taxData);
 
     const runningTotals = {
       cashInvestment: cashInvestment,
@@ -231,23 +231,21 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         afterTaxContributionLimit,
         date
       );
-      console.log(
-        "Cash Investment after running Invest Event:",
-        runningTotals.cashInvestment
-      );
-      console.log("purchase prices after invest event:", purchasePrices);
-
-      //   console.log("updated investments after invest event:", investments);
-
+      // console.log(
+      //   "Cash Investment after running Invest Event:",
+      //   runningTotals.cashInvestment
+      // );
+      // console.log("purchase prices after invest event:", purchasePrices);
       // Step 10: Rebalance investments
-      console.log("investments before rebalance: event", investments);
+      // console.log("REBALANCE EVENTS: ", rebalanceEvents);
+      // console.log("investments before rebalance: event", investments);
       await runRebalanceEvents(
         currentSimulationYear,
         rebalanceEvents,
         investments,
         runningTotals
       );
-      console.log("investments after rebalance: event", investments);
+      // console.log("investments after rebalance: event", investments);
 
       // Collect yearly results -> need to impelemnt this
       //   yearlyResults.push({
@@ -266,6 +264,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     logs.csvlog.end(); // close the csv log file
 
     simulationResults.push(yearlyResults);
+    console.log("**** SIMULATION END*****");
+    console.log("Investments:", investments);
+    console.log("Running Totals: ", runningTotals);
   }
   logs.evtlog.end(); // close the event log file
   return calculateStats(simulationResults); // Calculate median, mean, and other statistics
