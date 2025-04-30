@@ -47,16 +47,10 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let isSpouseAlive = true;
 
     let cashInvestment = await getCashInvest(scenarioId);
-    // let testCash = 2000;
 
     let purchasePrices = await getPurchasePrices(scenarioId);
-    // console.log("purchase prices:", purchasePrices);
 
     let taxData = await getTaxData(scenarioId, date);
-    console.log("tax", taxData);
-
-    // add to runningTotals: curYearExpenses (including taxes) and
-    // percentage of total discretionary expenses incurred
 
     let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
 
@@ -121,8 +115,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           });
         }
       }
-
-      // Prelims Adjusting tax brackets for inflation
 
       // Step 1: Run income events
 
@@ -189,7 +181,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         runningTotals.curYearIncome
       );
 
-      // Pay non-discretionary expenses
+      // Step 5: Pay non-discretionary expenses and taxes
       console.log(
         "Paying non discretionary expenses with cash: ",
         runningTotals.cashInvestment
@@ -210,7 +202,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         taxes
       );
 
-      //Pay discretionary expenses
+      // Step 6: Pay discretionary expenses
       console.log(
         "Cash investment before paying discretionary expenses: ",
         runningTotals.cashInvestment
@@ -354,6 +346,11 @@ export function calculateStats(simulationResults, financialGoal) {
   };
 }
 
+/**
+ * Get investments from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
 async function initInvestments(scenarioId) {
   console.log("Fetching user-defined investments for the scenario.");
   await ensureConnection();
@@ -372,6 +369,11 @@ async function initInvestments(scenarioId) {
   return rows;
 }
 
+/**
+ * Get user birth year from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
 export async function getUserBirthYear(scenarioId) {
   if (connection) {
     const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
@@ -387,6 +389,11 @@ export async function getUserBirthYear(scenarioId) {
   return 0; // Return 0 if connection is not available
 }
 
+/**
+ * Get user life expectancy from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
 export async function getUserLifeExpectancy(scenarioId) {
   await ensureConnection();
   if (connection) {
@@ -405,6 +412,11 @@ export async function getUserLifeExpectancy(scenarioId) {
   return 0; // Return 0 if connection is not available
 }
 
+/**
+ * Get filing status from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
 export async function getFilingStatus(scenarioId) {
   console.log("Fetching filing status from the database...");
   await ensureConnection();
@@ -418,6 +430,11 @@ export async function getFilingStatus(scenarioId) {
   return rows[0].marital_status;
 }
 
+/**
+ * Get cash investment value from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
 async function getCashInvest(scenarioId) {
   await ensureConnection();
   const [rows] = await connection.execute(
@@ -428,6 +445,11 @@ async function getCashInvest(scenarioId) {
   return Number(rows[0].value);
 }
 
+/**
+ * Get after tax contribution limit from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
 async function getAfterTaxLimit(scenarioId) {
   await ensureConnection();
   const [rows] = await connection.execute(
@@ -441,7 +463,7 @@ async function getAfterTaxLimit(scenarioId) {
 }
 
 /**
- *
+ * Initialize purchase prices for investments from database
  * @param {*} scenarioId
  * @returns {investId: investValue, investId2: investValue2, ...}
  */
