@@ -79,23 +79,13 @@ export async function process_income_event(
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
-      console.log(
-        `Sampled percentage change for event ID: ${event.id}: ${percentageChange}`
-      );
       currentAmount = Number(previousYearAmounts[event.id]) + percentageChange;
-      console.log(
-        `Calculated currentAmount for event ID: ${event.id}: ${currentAmount}`
-      );
+      
     } else {
       const sampledChange = sample(event.changeDistribution);
-      console.log(
-        `Sampled fixed change for event ID: ${event.id}: ${sampledChange}`
-      );
       currentAmount =
         Number(previousYearAmounts[event.id]) + Number(sampledChange);
-      console.log(
-        `Calculated currentAmount for event ID: ${event.id}: ${currentAmount}`
-      );
+      
     }
 
     // Apply inflation adjustment

@@ -1,14 +1,14 @@
 import express from "express";
 import { ensureConnection, connection } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
-import { simulation } from "../simulation/monte_carlo_sim.js";
+//import { simulation } from "../simulation/monte_carlo_sim.js";
+import { managerSimulation } from "../simulation/sim_manager.js";
 import {
   keysToSnakeCase,
   removeIdsFromEvents,
   sanitizeToNull,
 } from "../utils.js";
 import { pool } from "../utils.js";
-// const { simulation } = require("./monte_carlo_sim");
 
 const router = express.Router();
 
@@ -203,18 +203,13 @@ router.post("/run-simulation", async (req, res) => {
   try {
     const { userId, scenarioId, numSimulations } = req.body;
 
-    // userId = req.session.user['id'];
-    // scenarioId = req.session.user['scenario_id'];
-    // console.log("user id", req.session.user['id']); //why are these undefined??
-    // console.log("scenario id", req.session.user['scenario_id']);
-
     const currentYear = new Date().getFullYear();
     console.log(
       `User #${userId} is requesting ${numSimulations} simulations for scenario #${scenarioId}.`
     );
 
-    // Call the Monte Carlo simulation function
-    const results =  await simulation(
+    // Call the Monte Carlo simulation worker manager function
+    const results =  await managerSimulation(
       currentYear,
       numSimulations,
       userId,
@@ -225,8 +220,9 @@ router.post("/run-simulation", async (req, res) => {
     // Send the results back to the client
  
     res.json(results);
+    
   } catch (error) {
-    console.error("Error running simulation:", error);
+    console.error("Error running parallel simulation:", error);
     res.status(500).send("Failed to run simulation");
   }
 });

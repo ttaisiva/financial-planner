@@ -26,15 +26,17 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   console.log("RUNNING Monte Carlo simulation.");
   const logs = await initLogs(userId); // open log files for writing
 
+  
+
   await ensureConnection();
   const totalYears = await getTotalYears(date, scenarioId, connection);
 
   const simulationResults = [];
   const financialGoal = await getFinancialGoal(scenarioId);
 
-  for (let sim = 0; sim < numSimulations; sim++) {
+  
     await ensureConnection();
-    console.log("Running simulation number: ", sim);
+    
     let yearlyResults = [];
     let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
     let incomeEventsStart = {};
@@ -93,8 +95,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let rebalanceEvents = await getRebalanceEvents(scenarioId);
 
     // log investments before any changes
-    if (sim == 0)
-      logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
+    logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
 
     //Step 0: run preliminaries
     await ensureConnection();
@@ -269,23 +270,23 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         });
 
       
-      if (sim == 0)
-        logResults(
+      
+      logResults(
           logs.csvlog,
           logs.csvStream,
           runningTotals.investments,
           currentSimulationYear
-        );
+      );
     }
     logs.csvlog.end(); // close the csv log file
 
     simulationResults.push(yearlyResults);
-  }
+  
   logs.evtlog.end(); // close the event log file
 
-  const stats = calculateStats(simulationResults, financialGoal); // Calculate median, mean, and other statistics
-  console.log("Returning stats: ", stats);
-  return stats; 
+  
+  console.log("Returning simulationResults: ", simulationResults);
+  return simulationResults; 
 }
 
 /**
@@ -316,8 +317,6 @@ export async function getTotalYears(date, scenarioId) {
 export function calculateStats(simulationResults, financialGoal) {
   console.log("Calculating statistics from simulation results", simulationResults);
   
-  
-
   // Flatten the yearly results into a single array of cash investments
   const allCashInvestments = simulationResults.flatMap((yearlyResults) =>
     yearlyResults.map((result) => result.cashInvestment)
