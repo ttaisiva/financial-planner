@@ -1,6 +1,9 @@
 import { ensureConnection, connection } from "../server.js";
-import { generateNormalRandom, generateUniformRandom } from "../utils.js";
-import { getInvestEvents } from "./run_invest_event.js";
+import {
+  generateNormalRandom,
+  generateUniformRandom,
+  getEventYears,
+} from "../utils.js";
 
 /**
  *
@@ -16,11 +19,13 @@ export async function runRebalanceEvents(
   rebalanceEvents,
   runningTotals
 ) {
-  const rebalanceEventYears = await getInvestEvents(rebalanceEvents);
+  const rebalanceEventYears = await getEventYears(rebalanceEvents);
+  console.log("rebalance event years: ", rebalanceEventYears);
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {
     const eventYears = rebalanceEventYears[rebalanceEvent.id];
+    // console.log("YEAR OF EVENT: ", eventYears);
     if (!eventYears) continue;
 
     const { startYear, endYear } = eventYears;
@@ -28,12 +33,17 @@ export async function runRebalanceEvents(
       continue;
 
     const assetAllocation = rebalanceEvent.asset_allocation;
+    // console.log("asset allocation: ", assetAllocation);
     if (!assetAllocation) continue;
 
     // Step 1: Calculate total value of relevant investments
     let totalPortfolioValue = 0;
     for (const investmentId in assetAllocation) {
-      totalPortfolioValue += Number(runningTotals.investments[investmentId]?.value || 0);
+      // console.log("investment id:", investmentId);
+      // console.log("investments:", investments);
+      totalPortfolioValue += Number(
+        runningTotals.investments[investmentId]?.value || 0
+      );
     }
 
     // Step 2: Calculate target values based on allocation
@@ -45,7 +55,9 @@ export async function runRebalanceEvents(
 
     // Step 3: Sell from over-allocated investments first
     for (const investmentId in targetValues) {
-      const currentValue = Number(runningTotals.investments[investmentId]?.value || 0);
+      const currentValue = Number(
+        runningTotals.investments[investmentId]?.value || 0
+      );
       const targetValue = targetValues[investmentId];
 
       if (currentValue > targetValue) {
@@ -74,7 +86,9 @@ export async function runRebalanceEvents(
 
     // Step 4: Buy into under-allocated investments using remaining value
     for (const investmentId in targetValues) {
-      const currentValue = Number(runningTotals.investments[investmentId]?.value || 0);
+      const currentValue = Number(
+        runningTotals.investments[investmentId]?.value || 0
+      );
       const targetValue = targetValues[investmentId];
 
       if (currentValue < targetValue) {
