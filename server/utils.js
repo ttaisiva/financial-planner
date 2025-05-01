@@ -4,11 +4,14 @@ dotenv.config();
 
 /**
  * How to use:
- *    const connection = await pool.query
+ *    await pool.query
  *    OR
- *    const connection = await pool.execute
+ *    await pool.execute
+ *    OR
+ *    const connection = await pool.getConnection()
  *
- * The pool handles acquiring a connection, running the query, and releasing the connection
+ * If using getConnection(), make sure to to release it after using it: connection.release()
+ * Otherwise, the pool handles releasing automatically
  *
  * TP: ChatGPT, prompt: "now i am getting this error: Failed to insert user scenario info: Error: Can't add new command when connection is in closed state"
  */
