@@ -1,4 +1,3 @@
-import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js"; // Assuming you have a sampling function for probability distributions
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { getEventDuration, getEventStartYear } from "./run_income_events.js";
@@ -6,6 +5,7 @@ import {
   calculateExpenseAmount,
   getExpenseWithdrawalStrategy,
 } from "./disc_expenses.js";
+import { pool } from "../utils.js";
 /**
  * Pays non-discretionary expenses based on available cash and investments.
  * @param {number} scenarioId - The ID of the scenario.
@@ -29,9 +29,6 @@ export async function payNonDiscExpenses(
   console.log(
     `Paying non-discretionary expenses for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
   );
-
-  // Ensure database connection
-  await ensureConnection();
 
   // Fetch non-discretionary expenses
   const nonDiscretionaryExpenses = await getNonDiscretionaryExpenses(
@@ -193,7 +190,7 @@ async function getNonDiscretionaryExpenses(scenarioId) {
   console.log(
     `Fetching non-discretionary expenses for scenario ID: ${scenarioId}`
   );
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             name,

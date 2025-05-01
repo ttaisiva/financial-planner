@@ -1,7 +1,7 @@
-import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js"; // Assuming you have a sampling function for probability distributions
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { getEventDuration, getEventStartYear } from "./run_income_events.js";
+import { pool } from "../utils.js";
 
 /**
  * Pays discretionary expenses based on the spending strategy and available cash.
@@ -19,14 +19,11 @@ export async function payDiscExpenses(
   runningTotals,
   currentSimulationYear,
   inflationRate,
-  date,
+  date
 ) {
   console.log(
     `Paying discretionary expenses for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
   );
-
-  // Ensure database connection
-  await ensureConnection();
 
   //pay prev year taxes here ...
 
@@ -187,7 +184,7 @@ export async function payDiscExpenses(
  */
 async function getDiscretionaryExpenses(scenarioId) {
   console.log(`Fetching discretionary expenses for scenario ID: ${scenarioId}`);
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             name,
@@ -216,7 +213,7 @@ async function getDiscretionaryExpenses(scenarioId) {
  */
 async function getSpendingStrategy(scenarioId) {
   console.log(`Fetching spending strategy for scenario ID: ${scenarioId}`);
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT expense_id, strategy_order
          FROM strategy
          WHERE scenario_id = ? AND strategy_type = 'spending'
@@ -302,7 +299,7 @@ export async function getExpenseWithdrawalStrategy(scenarioId) {
   );
 
   // Fetch the withdrawal strategy from the database
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT investment_id, strategy_order
          FROM strategy
          WHERE scenario_id = ? AND strategy_type = 'expense_withdrawal'

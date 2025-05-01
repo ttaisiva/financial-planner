@@ -36,33 +36,15 @@ app.use(
   })
 );
 
-let connection;
-async function connectToDatabase() {
-  //console.log("DB_HOST:", process.env.DB_HOST);
-  connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-  });
-  console.log("Database connection established.");
-  return connection;
-}
-
-export async function ensureConnection() {
-  if (!connection || connection.connection._closing) {
-    //If connection is gone or closing
-    console.log("Reconnecting to the database...");
-    await connectToDatabase();
-  }
-}
-
 startServer();
 
 async function startServer() {
   try {
-    await ensureConnection();
+    console.log("host: ", process.env.DB_HOST);
+    console.log("user: ", process.env.DB_USER);
+    console.log("password: ", process.env.DB_PASS);
+    console.log("database: ", process.env.DB_NAME);
+    console.log("port: ", process.env.DB_PORT);
 
     await createTablesIfNotExist();
     await scrapeData();
@@ -87,5 +69,3 @@ app.use("/api", scenarioRouter);
 
 import userRouter from "./routers/user.js";
 app.use("/user", userRouter);
-
-export { connectToDatabase, connection };

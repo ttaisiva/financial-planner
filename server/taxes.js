@@ -2,7 +2,7 @@ import mysql from "mysql2/promise";
 import * as cheerio from "cheerio";
 import yaml from "js-yaml";
 import fs from "fs";
-import { connectToDatabase } from "./server.js";
+import { pool } from "./utils.js";
 
 async function scrapeData() {
   scrapeTaxBrackets();
@@ -20,8 +20,8 @@ async function scrapeData() {
  * @returns
  * TP: ChatGPT, prompt: "how do i scrape specifically tax rates and brackets for single and marid jointly"
  */
-var taxBrackets = [];
-async function scrapeTaxBrackets() {
+export async function scrapeTaxBrackets() {
+  var taxBrackets = [];
   const $ = await cheerio.fromURL(
     "https://www.irs.gov/filing/federal-income-tax-rates-and-brackets"
   );
@@ -96,13 +96,10 @@ async function scrapeTaxBrackets() {
  */
 async function isTaxBracketYearInDB(year) {
   try {
-    const connection = await connectToDatabase();
     const sql = "SELECT year FROM tax_brackets WHERE year=?";
     const params = [year];
 
-    const [rows] = await connection.execute(sql, params);
-
-    await connection.end();
+    const [rows] = await pool.execute(sql, params);
 
     if (rows.length == 0) {
       console.log(
@@ -124,16 +121,13 @@ async function isTaxBracketYearInDB(year) {
  */
 async function insertTaxBrackets(taxBrackets) {
   try {
-    const connection = await connectToDatabase();
     const sql =
       "INSERT INTO `tax_brackets`(`year`, `filing_status`, `tax_rate`, `income_min`, `income_max`) VALUES (?, ?, ?, ?, ?)";
 
-    taxBrackets.forEach((element) => {
+    await taxBrackets.forEach((element) => {
       const values = Object.values(element);
-      connection.execute(sql, values);
+      pool.execute(sql, values);
     });
-
-    await connection.end();
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
@@ -147,8 +141,8 @@ async function insertTaxBrackets(taxBrackets) {
  *
  * @returns
  */
-var standardDeductions = [];
-async function scrapeStandardDeductions() {
+export async function scrapeStandardDeductions() {
+  var standardDeductions = [];
   const $ = await cheerio.fromURL("https://www.irs.gov/publications/p17");
 
   let isCorrectTable = false;
@@ -207,13 +201,10 @@ async function scrapeStandardDeductions() {
  */
 async function isStandardDeductYearInDB(year) {
   try {
-    const connection = await connectToDatabase();
     const sql = "SELECT year FROM standard_deductions WHERE year=?";
     const params = [year];
 
-    const [rows] = await connection.execute(sql, params);
-
-    await connection.end();
+    const [rows] = await pool.execute(sql, params);
 
     if (rows.length == 0) {
       console.log(
@@ -235,16 +226,13 @@ async function isStandardDeductYearInDB(year) {
  */
 async function insertStandardDeductions(standardDeductions) {
   try {
-    const connection = await connectToDatabase();
     const sql =
       "INSERT INTO `standard_deductions`(`year`, `filing_status`, `standard_deduction`) VALUES (?, ?, ?)";
 
-    standardDeductions.forEach((element) => {
+    await standardDeductions.forEach((element) => {
       const values = Object.values(element);
-      connection.execute(sql, values);
+      pool.execute(sql, values);
     });
-
-    await connection.end();
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
@@ -258,8 +246,8 @@ async function insertStandardDeductions(standardDeductions) {
  *
  * @returns
  */
-var capitalGainsTaxRates = [];
-async function scrapeCapitalGainsTax() {
+export async function scrapeCapitalGainsTax() {
+  var capitalGainsTaxRates = [];
   const $ = await cheerio.fromURL("https://www.irs.gov/taxtopics/tc409");
 
   let isCorrectList = false;
@@ -374,13 +362,10 @@ async function scrapeCapitalGainsTax() {
  */
 async function isCapitalGainsYearInDB(year) {
   try {
-    const connection = await connectToDatabase();
     const sql = "SELECT year FROM capital_gains_tax WHERE year=?";
     const params = [year];
 
-    const [rows] = await connection.execute(sql, params);
-
-    await connection.end();
+    const [rows] = await pool.execute(sql, params);
 
     if (rows.length == 0) {
       console.log(
@@ -402,16 +387,13 @@ async function isCapitalGainsYearInDB(year) {
  */
 async function insertCapitalGains(capitalGainsTaxRates) {
   try {
-    const connection = await connectToDatabase();
     const sql =
       "INSERT INTO `capital_gains_tax`(`year`, `filing_status`, `cap_gains_tax_rate`, `income_min`, `income_max`) VALUES (?, ?, ?, ?, ?)";
 
-    capitalGainsTaxRates.forEach((element) => {
+    await capitalGainsTaxRates.forEach((element) => {
       const values = Object.values(element);
-      connection.execute(sql, values);
+      pool.execute(sql, values);
     });
-
-    await connection.end();
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
@@ -499,13 +481,10 @@ async function scrapeRMD() {
  */
 async function isRMDYearInDB(year) {
   try {
-    const connection = await connectToDatabase();
     const sql = "SELECT year FROM rmds WHERE year=?";
     const params = [year];
 
-    const [rows] = await connection.execute(sql, params);
-
-    await connection.end();
+    const [rows] = await pool.execute(sql, params);
 
     if (rows.length == 0) {
       console.log(
@@ -527,16 +506,13 @@ async function isRMDYearInDB(year) {
  */
 async function insertRMDs(RMDs) {
   try {
-    const connection = await connectToDatabase();
     const sql =
       "INSERT INTO `rmds`(`year`, `age`, `distribution_period`) VALUES (?, ?, ?)";
 
-    RMDs.forEach((element) => {
+    await RMDs.forEach((element) => {
       const values = Object.values(element);
-      connection.execute(sql, values);
+      pool.execute(sql, values);
     });
-
-    await connection.end();
   } catch (err) {
     console.error("Database error:", err.message);
     throw err;
@@ -547,8 +523,7 @@ async function insertRMDs(RMDs) {
  * Inserts State Tax Brackets from the statetax.yaml file in the data folder if it is not already in DB
  */
 async function insertStateTaxBrackets() {
-  const connection = await connectToDatabase();
-  const [isAdded] = await connection.execute(
+  const [isAdded] = await pool.execute(
     `SELECT * FROM state_tax_brackets WHERE user_id IS NULL`
   ); // Indicates that the pre-written state tax brackets were added; All other tax brackets are uploaded by users
   if (isAdded.length == 0) {
@@ -569,7 +544,7 @@ async function insertStateTaxBrackets() {
           bracket.income_min,
           bracket.income_max,
         ];
-        await connection.execute(query, values);
+        await pool.execute(query, values);
       }
     }
   }
