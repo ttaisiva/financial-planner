@@ -27,8 +27,8 @@ import {
 export async function simulation(date, numSimulations, userId, scenarioId) {
   const logs = await initLogs(userId); // open log files for writing
 
-  await ensureConnection();
-  const totalYears = await getTotalYears(date, scenarioId, connection);
+  
+  const totalYears = await getTotalYears(date, scenarioId);
 
   const simulationResults = [];
   const financialGoal = await getFinancialGoal(scenarioId);
@@ -81,13 +81,13 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let rebalanceEvents = await getRebalanceEvents(scenarioId);
 
     // log investments before any changes
-    if (sim == 0)
-      logResults(
+  
+    logResults(
         logs.csvlog,
         logs.csvStream,
         runningTotals.investments,
         date - 1
-      );
+    );
 
     for (let year = 0; year < totalYears; year++) {
       //years in which the simulation is  being run
@@ -259,13 +259,23 @@ export function calculateStats(simulationResults, financialGoal) {
   );
 
   // Flatten the yearly results into a single array of cash investments
-  const allCashInvestments = simulationResults.flatMap((yearlyResults) =>
-    yearlyResults.map((result) => result.cashInvestment)
-  );
+
+  const allCashInvestments = simulationResults
+  .flat(2) // Flatten 3-level array to a flat list of yearly objects
+  .map((result, i) => {
+    const val = Number(result.cashInvestment);
+    if (isNaN(val)) {
+      console.warn(`Invalid cashInvestment at index ${i}:`, result.cashInvestment);
+    }
+    return val;
+  })
+  .filter((val) => !isNaN(val));
+
+
   console.log("all Cash investments: ", allCashInvestments);
 
   // Calculate mean
-  const total = allCashInvestments.reduce((sum, value) => sum + value, 0);
+  const total = allCashInvestments.reduce((sum, value) => Number(sum) + Number(value), 0);
   console.log("total: ", total);
   const mean = total / allCashInvestments.length;
   console.log("mean: ", mean);
@@ -567,7 +577,7 @@ const getTaxData = async (scenarioID, year) => {
  * @param {number} scenarioId - The ID of the scenario.
  * @returns {number|null} The financial goal amount or null if not found.
  */
-async function getFinancialGoal(scenarioId) {
+export async function getFinancialGoal(scenarioId) {
   try {
     const [rows] = await pool.execute(
       `SELECT financial_goal FROM scenarios WHERE id = ?`,

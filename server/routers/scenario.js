@@ -208,7 +208,7 @@ router.post("/run-simulation", async (req, res) => {
     );
 
     // Send the results back to the client
-
+    console.log("Running parallel simulations completed successfully.");
     res.json(results);
     
   } catch (error) {

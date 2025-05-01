@@ -1,7 +1,7 @@
 import { Worker } from "worker_threads";
 import { fileURLToPath } from "url";
 import path from "path";
-import { calculateStats } from "./monte_carlo_sim.js";
+import { calculateStats, getFinancialGoal } from "./monte_carlo_sim.js";
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -55,6 +55,8 @@ function processQueue() {
     } else {
       reject(new Error(message.error));
     }
+    // LOG THIS
+    console.log(`Worker ${workerIndex} completed a simulation, with results:`, message.result);
     processQueue(); // Process the next task in the queue
   });
 
@@ -92,12 +94,18 @@ export async function managerSimulation(date, numSimulations, userId, scenarioId
     };
 
     // Each of the promises/results are collected in task array
+    console.log(`Adding task ${i + 1} to the queue.`);
     tasks.push(addTaskToQueue(taskData));
   }
+  console.log(`Total tasks to run: ${tasks.length}`);
   // Once all individual tasks/simulations are resolved, Promise.all aggregates all results
   const allSimulationResults = await Promise.all(tasks);
+  console.log("All simulations completed. Number of results:", allSimulationResults.length);
+
+
   // Aggregate results and calculate statistics
   const financialGoal = await getFinancialGoal(scenarioId); // Fetch the financial goal
+  console.log("Financial goal fetched:", financialGoal);
   const stats = calculateStats(allSimulationResults, financialGoal);
   return stats;
 }

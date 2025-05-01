@@ -82,7 +82,7 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
 
       // Increment the total count for the year
       yearlySuccess[year].totalCount += 1;
-      console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
+      //console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
       if (cashInvestment >= financialGoal) { // compare with financial goal
         yearlySuccess[year].successCount += 1;
       }
