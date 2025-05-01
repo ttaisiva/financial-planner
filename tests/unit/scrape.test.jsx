@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import mysql from "mysql2/promise";
 import { scrapeData } from "../server/scraping.js";
 import { connectToDatabase } from "../server.js";
-import { startServer } from "../server/server.js";
+import { startServer } from "../../server/server.js";
 
 vi.mock("mysql2/promise");
 vi.mock("../server/server.js", () => ({
