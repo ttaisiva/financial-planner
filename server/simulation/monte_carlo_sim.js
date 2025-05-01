@@ -16,8 +16,7 @@ import { getRothStrategy } from "./roth_optimizer.js";
 import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
 import { initLogs } from "../logging.js";
 import { logResults } from "../logging.js";
-import { ensureConnection, connection } from "../server.js";
-import { generateNormalRandom, generateUniformRandom } from "../utils.js";
+import { generateNormalRandom, generateUniformRandom, pool } from "../utils.js";
 import {
   getRebalanceEvents,
   runRebalanceEvents,
@@ -28,14 +27,12 @@ import {
 export async function simulation(date, numSimulations, userId, scenarioId) {
   const logs = await initLogs(userId); // open log files for writing
 
-  await ensureConnection();
-  const totalYears = await getTotalYears(date, scenarioId, connection);
+  const totalYears = await getTotalYears(date, scenarioId);
 
   const simulationResults = [];
   const financialGoal = await getFinancialGoal(scenarioId);
 
   for (let sim = 0; sim < numSimulations; sim++) {
-    await ensureConnection();
     let yearlyResults = [];
     let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
     let incomeEventsStart = {};
@@ -90,7 +87,6 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       //years in which the simulation is  being run
 
       //Step 0: run preliminaries
-      await ensureConnection();
       const inflationRate = await run_preliminaries(scenarioId);
 
       const currentSimulationYear = date + year; //actual year being simulated
@@ -230,12 +226,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
  */
 export async function getTotalYears(date, scenarioId) {
   //   console.log("Date: ", date);
-  await ensureConnection();
-  const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
+  const userBirthYear = Number(await getUserBirthYear(scenarioId));
   //   console.log("User birth year: ", userBirthYear);
-  const userLifeExpectancy = Number(
-    await getUserLifeExpectancy(scenarioId, connection)
-  );
+  const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId));
   //   console.log("User life expectancy: ", userLifeExpectancy);
 
   const userLifespan = userBirthYear + userLifeExpectancy;
@@ -298,8 +291,7 @@ export function calculateStats(simulationResults, financialGoal) {
  */
 async function initInvestments(scenarioId) {
   console.log("Fetching user-defined investments for the scenario.");
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             investment_type as type,
@@ -320,18 +312,15 @@ async function initInvestments(scenarioId) {
  * @returns
  */
 export async function getUserBirthYear(scenarioId) {
-  if (connection) {
-    const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
-    try {
-      const [results] = await connection.execute(query, [scenarioId]);
-      console.log("results", [results]);
-      return results[0]?.birth_years[0] || 0; // Return the birth year or 0 if not found
-    } catch (error) {
-      console.error("Error fetching user birth year:", error);
-      throw error; // Re-throw the error for the caller to handle
-    }
+  const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
+  try {
+    const [results] = await pool.execute(query, [scenarioId]);
+    console.log("results", [results]);
+    return results[0]?.birth_years[0] || 0; // Return the birth year or 0 if not found
+  } catch (error) {
+    console.error("Error fetching user birth year:", error);
+    throw error; // Re-throw the error for the caller to handle
   }
-  return 0; // Return 0 if connection is not available
 }
 
 /**
@@ -340,21 +329,17 @@ export async function getUserBirthYear(scenarioId) {
  * @returns
  */
 export async function getUserLifeExpectancy(scenarioId) {
-  await ensureConnection();
-  if (connection) {
-    const query = `SELECT 
+  const query = `SELECT 
             life_expectancy
             FROM scenarios WHERE id = ?`;
-    try {
-      const [results] = await connection.execute(query, [scenarioId]);
-      console.log("results: ", results);
-      return sample(results[0].life_expectancy[0]);
-    } catch (error) {
-      console.error("Error fetching user life expectancy:", error);
-      throw error; // Re-throw the error for the caller to handle
-    }
+  try {
+    const [results] = await pool.execute(query, [scenarioId]);
+    console.log("results: ", results);
+    return sample(results[0].life_expectancy[0]);
+  } catch (error) {
+    console.error("Error fetching user life expectancy:", error);
+    throw error; // Re-throw the error for the caller to handle
   }
-  return 0; // Return 0 if connection is not available
 }
 
 /**
@@ -364,8 +349,7 @@ export async function getUserLifeExpectancy(scenarioId) {
  */
 export async function getFilingStatus(scenarioId) {
   console.log("Fetching filing status from the database...");
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
         marital_status
         FROM scenarios
@@ -381,8 +365,7 @@ export async function getFilingStatus(scenarioId) {
  * @returns
  */
 async function getCashInvest(scenarioId) {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     "SELECT * FROM investments WHERE scenario_id = ? AND investment_type = 'cash'",
     [scenarioId]
   );
@@ -396,8 +379,7 @@ async function getCashInvest(scenarioId) {
  * @returns
  */
 async function getAfterTaxLimit(scenarioId) {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     "SELECT after_tax_contribution_limit FROM scenarios WHERE id = ?",
     [scenarioId]
   );
@@ -413,8 +395,7 @@ async function getAfterTaxLimit(scenarioId) {
  * @returns {investId: investValue, investId2: investValue2, ...}
  */
 async function getPurchasePrices(scenarioId) {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     "SELECT id, value FROM investments WHERE scenario_id = ?",
     [scenarioId]
   );
@@ -475,14 +456,13 @@ export async function populateYearsAndDuration(
  * @returns All tax brackets in an Object
  */
 const getTaxData = async (scenarioID, year) => {
-  await ensureConnection();
   console.log("scneerairo", scenarioID, year);
   // Get scenario
   const scnQuery = `
     SELECT * FROM scenarios
     WHERE id = ?
   `;
-  const [scenario] = (await connection.execute(scnQuery, [scenarioID]))[0];
+  const [scenario] = (await pool.execute(scnQuery, [scenarioID]))[0];
   console.log(scenario.marital_status);
 
   // Get federal income tax brackets
@@ -490,17 +470,16 @@ const getTaxData = async (scenarioID, year) => {
     SELECT * FROM tax_brackets
     WHERE year = ? AND filing_status = ?
   `;
-  let [fedTaxBrackets] = await connection.execute(fedQuery, [
+  let [fedTaxBrackets] = await pool.execute(fedQuery, [
     year,
     scenario.marital_status,
   ]);
   if (fedTaxBrackets.length == 0) {
-    await ensureConnection();
     const query = `
       SELECT * from tax_brackets
       WHERE filing_status = ? AND year = (SELECT MAX(YEAR) FROM tax_brackets)
     `;
-    fedTaxBrackets = await connection.execute(query, [scenario.marital_status]);
+    fedTaxBrackets = await pool.execute(query, [scenario.marital_status]);
     fedTaxBrackets = fedTaxBrackets[0];
   }
 
@@ -509,18 +488,17 @@ const getTaxData = async (scenarioID, year) => {
     SELECT * FROM state_tax_brackets
     WHERE year = ? AND filing_status = ? AND state = ?
   `;
-  let [stateTaxBrackets] = await connection.execute(stateQuery, [
+  let [stateTaxBrackets] = await pool.execute(stateQuery, [
     year,
     scenario.marital_status,
     scenario.residence_state,
   ]);
   if (stateTaxBrackets.length == 0) {
-    await ensureConnection();
     const query = `
       SELECT * from state_tax_brackets
       WHERE filing_status = ? AND state = ? AND year = (SELECT MAX(YEAR) FROM state_tax_brackets)
     `;
-    stateTaxBrackets = await connection.execute(query, [
+    stateTaxBrackets = await pool.execute(query, [
       scenario.marital_status,
       scenario.residence_state,
     ]);
@@ -532,19 +510,16 @@ const getTaxData = async (scenarioID, year) => {
     SELECT * FROM capital_gains_tax
     WHERE year = ? AND filing_status = ?
   `;
-  let [capitalTaxBrackets] = await connection.execute(cptQuery, [
+  let [capitalTaxBrackets] = await pool.execute(cptQuery, [
     year,
     scenario.marital_status,
   ]);
   if (capitalTaxBrackets.length == 0) {
-    await ensureConnection();
     const query = `
       SELECT * FROM capital_gains_tax
       WHERE filing_status = ? AND year = (SELECT MAX(YEAR) FROM capital_gains_tax)
     `;
-    capitalTaxBrackets = await connection.execute(query, [
-      scenario.marital_status,
-    ]);
+    capitalTaxBrackets = await pool.execute(query, [scenario.marital_status]);
     capitalTaxBrackets = capitalTaxBrackets[0];
   }
 
@@ -553,17 +528,16 @@ const getTaxData = async (scenarioID, year) => {
     SELECT * FROM standard_deductions
     WHERE filing_status = ? AND year = ?
   `;
-  let [deductions] = await connection.execute(deductionQuery, [
+  let [deductions] = await pool.execute(deductionQuery, [
     scenario.marital_status,
     year,
   ]);
   if (deductions.length == 0) {
-    await ensureConnection();
     const query = `
       SELECT * FROM standard_deductions
       WHERE filing_status = ? and year = (SELECT MAX(YEAR) FROM standard_deductions)
     `;
-    deductions = await connection.execute(query, [scenario.marital_status]);
+    deductions = await pool.execute(query, [scenario.marital_status]);
     deductions = deductions[0];
   }
 
@@ -582,9 +556,8 @@ const getTaxData = async (scenarioID, year) => {
  * @returns {number|null} The financial goal amount or null if not found.
  */
 async function getFinancialGoal(scenarioId) {
-  await ensureConnection();
   try {
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       `SELECT financial_goal FROM scenarios WHERE id = ?`,
       [scenarioId]
     );

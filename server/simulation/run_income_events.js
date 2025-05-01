@@ -8,10 +8,10 @@
 // e. Update running total curYearIncome,
 // f. Update running total curYearSS of social security benefits, if income type = social security.
 
-import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js";
 import { getUserBirthYear, getUserLifeExpectancy } from "./monte_carlo_sim.js";
 import { logIncome } from "../logging.js";
+import { pool } from "../utils.js";
 
 /**
  * Processes an income event and updates financial data.
@@ -41,7 +41,11 @@ export async function process_income_event(
     `Processing income events for scenario ID: ${scenarioId} with current simulation year: ${currentSimulationYear}`
   );
   console.log(
-    `Initial cash investment: ${Number(runningTotals.cashInvestment)}, curYearIncome: ${Number(runningTotals.curYearIncome)}, curYearSS: ${Number(runningTotals.curYearSS)}`
+    `Initial cash investment: ${Number(
+      runningTotals.cashInvestment
+    )}, curYearIncome: ${Number(
+      runningTotals.curYearIncome
+    )}, curYearSS: ${Number(runningTotals.curYearSS)}`
   );
 
   // Get all income events and calculate current amounts
@@ -142,7 +146,9 @@ export async function process_income_event(
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
 
     console.log(
-      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${Number(runningTotals.cashInvestment)}, curYearIncome: ${Number(runningTotals.curYearIncome)}`
+      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${Number(
+        runningTotals.cashInvestment
+      )}, curYearIncome: ${Number(runningTotals.curYearIncome)}`
     );
 
     if (event.isSocialSecurity) {
@@ -164,7 +170,11 @@ export async function process_income_event(
     `Finished processing income events for scenario ID ${scenarioId}.`
   );
   console.log(
-    `Final cashInvestment: ${Number(runningTotals.cashInvestment)}, curYearIncome: ${Number(runningTotals.curYearIncome)}, curYearSS: ${Number(runningTotals.curYearSS)}`
+    `Final cashInvestment: ${Number(
+      runningTotals.cashInvestment
+    )}, curYearIncome: ${Number(
+      runningTotals.curYearIncome
+    )}, curYearSS: ${Number(runningTotals.curYearSS)}`
   );
 }
 
@@ -182,9 +192,8 @@ export async function getIncomeEvents(
   currentSimulationYear
 ) {
   //   console.log(`Fetching income events for scenario ID: ${scenarioId}`);
-  await ensureConnection();
 
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             scenario_id,
@@ -293,11 +302,9 @@ function getEventStartYearFromSeries(eventSeries) {
  */
 export async function getEventEndYearFromSeries(eventSeries) {
   console.warn(`Fetching end year for event series: ${eventSeries}`);
-  const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
+  const userBirthYear = Number(await getUserBirthYear(scenarioId));
   console.log("User birth year: ", userBirthYear);
-  const userLifeExpectancy = Number(
-    await getUserLifeExpectancy(scenarioId, connection)
-  );
+  const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId));
   console.log("User life expectancy: ", userLifeExpectancy);
 
   const userLifespan = userBirthYear + userLifeExpectancy;

@@ -1,13 +1,14 @@
 import mysql from "mysql2/promise";
+import dotenv from "dotenv";
+dotenv.config();
 
 /**
  * How to use:
- *    const connection = await pool.getConnection();
+ *    const connection = await pool.query
+ *    OR
+ *    const connection = await pool.execute
  *
- * How to close:
- *    connection.release();
- *
- * Always release() the connection after using.
+ * The pool handles acquiring a connection, running the query, and releasing the connection
  *
  * TP: ChatGPT, prompt: "now i am getting this error: Failed to insert user scenario info: Error: Can't add new command when connection is in closed state"
  */
@@ -16,7 +17,7 @@ export const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  // port: process.env.DB_PORT,
+  port: Number(process.env.DB_PORT),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

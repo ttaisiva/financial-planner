@@ -1,7 +1,6 @@
-import { connection } from "../server.js";
-import { ensureConnection } from "../server.js";
 import { getFilingStatus } from "./monte_carlo_sim.js";
 import { logRothConversion } from "../logging.js";
+import { pool } from "../utils.js";
 
 export async function runRothOptimizer(
   scenarioId,
@@ -9,7 +8,7 @@ export async function runRothOptimizer(
   incomeEvents,
   year,
   evtlog,
-  runningTotals,
+  runningTotals
 ) {
   console.log(`Running Roth optimizer for scenario ID: ${scenarioId}`);
   // step 1: determine user tax bracket and conversion amount:
@@ -97,11 +96,10 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
 }
 
 async function getTaxBrackets(filingStatus) {
-  if(filingStatus==='individual') filingStatus='single';
-  if(filingStatus==='couple') filingStatus='married';
+  if (filingStatus === "individual") filingStatus = "single";
+  if (filingStatus === "couple") filingStatus = "married";
 
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             income_max as incomeMax
          FROM tax_brackets
@@ -113,8 +111,7 @@ async function getTaxBrackets(filingStatus) {
 
 // select ordering only
 export async function getRothStrategy(scenarioId) {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             investment_id,
@@ -128,9 +125,8 @@ export async function getRothStrategy(scenarioId) {
 
 // select start and end year for the roth conversion strategy
 export async function getRothYears(scenarioId) {
-  await ensureConnection();
   // Copilot prompt: select only the first row where this constraint applies
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT
             start_year,
             end_year

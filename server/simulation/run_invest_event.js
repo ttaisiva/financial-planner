@@ -1,8 +1,8 @@
-import { ensureConnection, connection } from "../server.js";
 import {
   generateNormalRandom,
   generateUniformRandom,
   getEventYears,
+  pool,
 } from "../utils.js";
 
 /**
@@ -31,8 +31,7 @@ export async function runInvestEvent(
   );
   // If there is an invest event that is active on the currentSimulationYear
   if (activeEventId) {
-    await ensureConnection();
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       "SELECT max_cash FROM events WHERE id = ?",
       [activeEventId]
     );
@@ -78,9 +77,8 @@ export async function runInvestEvent(
 }
 
 const getEventById = async (eventId) => {
-  await ensureConnection();
   // console.log("in geteventbyid eventid:", eventId);
-  const [rows] = await connection.execute("SELECT * FROM events WHERE id = ?", [
+  const [rows] = await pool.execute("SELECT * FROM events WHERE id = ?", [
     eventId,
   ]);
 
@@ -120,15 +118,12 @@ const getActiveEventId = (year, eventYears) => {
  * @returns array of event ids
  */
 export const getInvestEvents = async (scenarioId) => {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     "SELECT * FROM events WHERE scenario_id = ? AND type = 'invest'",
     [scenarioId]
   );
 
   // console.log("rows", rows);
-
-  await connection.end();
 
   return getEventYears(rows);
 };
@@ -148,9 +143,7 @@ export const getInvestEvents = async (scenarioId) => {
  * @returns
  */
 export async function getAssetAllocations(eventId) {
-  await ensureConnection();
-
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     "SELECT asset_allocation, asset_allocation2, glide_path FROM events WHERE id = ?",
     [eventId]
   );

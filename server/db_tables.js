@@ -1,4 +1,4 @@
-import { connection } from "./server.js";
+import { pool } from "./utils.js";
 export async function createTablesIfNotExist() {
   const createTaxBracketsTable = `
     CREATE TABLE IF NOT EXISTS tax_brackets (
@@ -161,15 +161,15 @@ export async function createTablesIfNotExist() {
   `;
 
   // Create tables
-  await connection.execute(createTaxBracketsTable);
-  await connection.execute(createStateTaxBracketsTable);
-  await connection.execute(createStandardDeductionsTable);
-  await connection.execute(createCapitalGainsTaxTable);
-  await connection.execute(createRMDsTable);
-  await connection.execute(createUsersTable);
-  await connection.execute(createScenariosTable);
-  await connection.execute(createInvestmentsTable);
-  await connection.execute(createInvestmentTypesTable);
-  await connection.execute(createEventsTable);
-  await connection.execute(createStrategyTable);
+  await pool.execute(createTaxBracketsTable);
+  await pool.execute(createStateTaxBracketsTable);
+  await pool.execute(createStandardDeductionsTable);
+  await pool.execute(createCapitalGainsTaxTable);
+  await pool.execute(createRMDsTable);
+  await pool.execute(createUsersTable);
+  await pool.execute(createScenariosTable);
+  await pool.execute(createInvestmentsTable);
+  await pool.execute(createInvestmentTypesTable);
+  await pool.execute(createEventsTable);
+  await pool.execute(createStrategyTable);
 }
