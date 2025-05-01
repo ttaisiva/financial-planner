@@ -27,12 +27,13 @@ import {
 export async function simulation(date, numSimulations, userId, scenarioId) {
   const logs = await initLogs(userId); // open log files for writing
 
+  
   const totalYears = await getTotalYears(date, scenarioId);
 
   const simulationResults = [];
   const financialGoal = await getFinancialGoal(scenarioId);
 
-  for (let sim = 0; sim < numSimulations; sim++) {
+  
     let yearlyResults = [];
     let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
     let incomeEventsStart = {};
@@ -57,14 +58,19 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearEarlyWithdrawals: 0,
       purchasePrices: purchasePrices,
       investments: investments,
+      expenses: [],
+      incomes: [],
+      taxes: []
     };
 
     const incomeEvents = await getIncomeEvents(scenarioId, []);
+
     await populateYearsAndDuration(
       incomeEvents,
       incomeEventsStart,
       incomeEventsDuration
     ); // Populate years and duration for income events
+    // need to do the same for expense events
     const rothYears = await getRothYears(scenarioId);
     let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
@@ -75,13 +81,13 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     let rebalanceEvents = await getRebalanceEvents(scenarioId);
 
     // log investments before any changes
-    if (sim == 0)
-      logResults(
+  
+    logResults(
         logs.csvlog,
         logs.csvStream,
         runningTotals.investments,
         date - 1
-      );
+    );
 
     for (let year = 0; year < totalYears; year++) {
       //years in which the simulation is  being run
@@ -189,33 +195,39 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         runningTotals
       );
 
-      yearlyResults.push({
-        year: currentSimulationYear,
-        cashInvestment: runningTotals.cashInvestment,
-        curYearIncome: runningTotals.curYearIncome,
-        curYearSS: runningTotals.curYearSS,
-        curYearGains: runningTotals.curYearGains,
-        curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
-        purchasePrices: runningTotals.purchasePrices,
-        investments: runningTotals.investments,
-      });
+ 
+        
+        yearlyResults.push({
+          year: currentSimulationYear,
+          cashInvestment: runningTotals.cashInvestment,
+          curYearIncome: runningTotals.curYearIncome,
+          curYearSS: runningTotals.curYearSS,
+          curYearGains: runningTotals.curYearGains,
+          curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
+          purchasePrices: runningTotals.purchasePrices,
+          investments: runningTotals.investments,
+          expenses: runningTotals.expenses,
+          incomes: runningTotals.incomes
+        });
 
-      if (sim == 0)
-        logResults(
+      
+      
+      logResults(
           logs.csvlog,
           logs.csvStream,
           runningTotals.investments,
           currentSimulationYear
-        );
+      );
     }
     logs.csvlog.end(); // close the csv log file
 
     simulationResults.push(yearlyResults);
-  }
+  
   logs.evtlog.end(); // close the event log file
 
-  const stats = calculateStats(simulationResults, financialGoal); // Calculate median, mean, and other statistics
-  return stats;
+  
+  console.log("Returning simulationResults: ", simulationResults);
+  return simulationResults; 
 }
 
 /**
@@ -247,13 +259,23 @@ export function calculateStats(simulationResults, financialGoal) {
   );
 
   // Flatten the yearly results into a single array of cash investments
-  const allCashInvestments = simulationResults.flatMap((yearlyResults) =>
-    yearlyResults.map((result) => result.cashInvestment)
-  );
+
+  const allCashInvestments = simulationResults
+  .flat(2) // Flatten 3-level array to a flat list of yearly objects
+  .map((result, i) => {
+    const val = Number(result.cashInvestment);
+    if (isNaN(val)) {
+      console.warn(`Invalid cashInvestment at index ${i}:`, result.cashInvestment);
+    }
+    return val;
+  })
+  .filter((val) => !isNaN(val));
+
+
   console.log("all Cash investments: ", allCashInvestments);
 
   // Calculate mean
-  const total = allCashInvestments.reduce((sum, value) => sum + value, 0);
+  const total = allCashInvestments.reduce((sum, value) => Number(sum) + Number(value), 0);
   console.log("total: ", total);
   const mean = total / allCashInvestments.length;
   console.log("mean: ", mean);
@@ -555,7 +577,7 @@ const getTaxData = async (scenarioID, year) => {
  * @param {number} scenarioId - The ID of the scenario.
  * @returns {number|null} The financial goal amount or null if not found.
  */
-async function getFinancialGoal(scenarioId) {
+export async function getFinancialGoal(scenarioId) {
   try {
     const [rows] = await pool.execute(
       `SELECT financial_goal FROM scenarios WHERE id = ?`,

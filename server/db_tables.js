@@ -161,6 +161,7 @@ export async function createTablesIfNotExist() {
   `;
 
   // Create tables
+  
   await pool.execute(createTaxBracketsTable);
   await pool.execute(createStateTaxBracketsTable);
   await pool.execute(createStandardDeductionsTable);

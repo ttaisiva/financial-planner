@@ -82,7 +82,7 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
 
       // Increment the total count for the year
       yearlySuccess[year].totalCount += 1;
-      console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
+      //console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
       if (cashInvestment >= financialGoal) { // compare with financial goal
         yearlySuccess[year].successCount += 1;
       }
@@ -275,6 +275,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
 
   
   const processData = (simulationResults, breakdownType, useMedian) => {
+    
     const yearlyData = {};
 
     simulationResults.forEach((simulation) => {
@@ -294,18 +295,20 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
             yearlyData[year][id].push(value);
           });
         } else if (breakdownType === "income") {
-          yearlyResult.income.forEach(({ series, value }) => {
-            if (!yearlyData[year][series]) {
-              yearlyData[year][series] = [];
+          console.log("INCOME STACKED BAR CHART: ", yearlyResult.incomes)
+          yearlyResult.incomes.forEach(({ name, initialAmount }) => {
+            if (!yearlyData[year][name]) {
+              yearlyData[year][name] = [];
             }
-            yearlyData[year][series].push(value);
+            yearlyData[year][name].push(initialAmount);
           });
         } else if (breakdownType === "expenses") {
-          yearlyResult.expenses.forEach(({ series, value }) => {
-            if (!yearlyData[year][series]) {
-              yearlyData[year][series] = [];
+          console.log("EXPENSES STACKED BAR CHART: ", yearlyResult.expenses)
+          yearlyResult.expenses.forEach(({ name, initialAmount }) => {
+            if (!yearlyData[year][name]) {
+              yearlyData[year][name] = [];
             }
-            yearlyData[year][series].push(value);
+            yearlyData[year][name].push(initialAmount);
           });
           if (!yearlyData[year]["Taxes"]) {
             yearlyData[year]["Taxes"] = [];
@@ -361,7 +364,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     });
   });
 
-  console.log("All Categories:");
+  console.log("All Categories:"); //TODO: Some categories seem to be nonexistend
   allCategories.forEach((category) => {
     console.log(category);
   });
@@ -369,25 +372,6 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
   
 
   // 3.) Preprocess data for plot: I need my data to look like this:
-  { /* 
-  datasets = [
-    {
-      label: 'investment 1',
-      data: [20000, 22000, 25000],
-      backgroundColor: 'lightblue'
-    },
-    {
-      label: 'investment 2',
-      data: [10000, 11000, 12000],
-      backgroundColor: 'lightgreen'
-    },
-    {
-      label: 'investment 3',
-      data: [5000, 6000, 7000], // this needs to be the value either the median or avg of all the simulations results of investment 3 for each year 
-      backgroundColor: 'pink'
-    }
-  ];
-  */ }
   const labels = Object.keys(aggregatedData).map((year) => Number(year));
   const datasets = Array.from(allCategories).map((category) => ({
     label: category,
