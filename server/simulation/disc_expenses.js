@@ -34,6 +34,9 @@ export async function payDiscExpenses(
     currentSimulationYear
   );
   console.log("active events", activeEvents);
+  runningTotals.expenses.push(activeEvents);
+
+
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
     const expenseAmount = calculateExpenseAmount(
       expense,

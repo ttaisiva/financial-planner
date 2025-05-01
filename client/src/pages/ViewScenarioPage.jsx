@@ -342,7 +342,8 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
 
 
   const { median, mean, min, max, financialGoal, totalSimulations, allSimulationResults } = simulationResults;
-  const successProbabilities = calculateSuccessProbability(allSimulationResults, Number(financialGoal));
+  console.log("Now allSimulationResults:", allSimulationResults); // Log all simulation results
+  const successProbabilities = calculateSuccessProbability(allSimulationResults.flat(1), Number(financialGoal));
   console.log("Success Probabilities:", successProbabilities); 
 
 
@@ -359,7 +360,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
       </div>
 
       <div className="simulation-details">
-        {allSimulationResults.map((simulation, simIndex) => (
+        {allSimulationResults.flat(1).map((simulation, simIndex) => (
           <div key={simIndex} className="simulation">
             <h3>Simulation {simIndex + 1}</h3>
             {simulation.map((yearlyResult, yearIndex) => (
@@ -385,7 +386,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
       </div>
       
       {/* Charts 4.2*/}
-      <div className="shaded-line-chart-container">
+      <div className="shaded-line-chart-container"> 
         <h3>Shaded Success Probability Over Time</h3>
         <p> Select a quantity to view as a shaded line chart</p>
 
@@ -398,16 +399,14 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         </select>
 
         <ShadedLineChart
-          label={selectedOption}
-          allSimulationResults={allSimulationResults}
-          financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
-        />
+           label={selectedOption}
+           allSimulationResults={allSimulationResults.flat(1)}
+           financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
+         />
+      </div>  
 
-
-        {/* Charts 4.3*/}
-
-
-        <div>
+      {/* Charts 4.3*/}
+      <div>
           <h3>Stacked Bar Chart</h3>
           <select value={breakdownType} onChange={(e) => setBreakdownType(e.target.value)} >
             <option value="investments">Investments</option>
@@ -431,19 +430,16 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
               onChange={(e) => setUseMedian(e.target.checked)}
           />
           <StackedBarChart
-            allSimulationResults={allSimulationResults}
-            breakdownType="investments" // "investments", "income", or "expenses"
+            allSimulationResults={allSimulationResults.flat(1)}
+            breakdownType= {breakdownType} // "investments", "income", or "expenses"
             aggregationThreshold={1000} // Threshold for aggregation
             useMedian={true} // true for median, false for average
           />
 
-        </div>
+      </div>
      
 
-      </div> 
-
-
-
+    
     </div>
   );
 };
