@@ -57,7 +57,12 @@ export function logResults(csvlog, csvStream, investments, year) {
     csvlog.titleRow = titleRow; // Cache the title row in the write stream object
   }
   // Write the data row
-  const dataRow = [year, ...investments.map((investment) => investment.value)];
+  const dataRow = [
+    year,
+    ...investments.map((investment) =>
+      Math.round(investment.value * 100) / 100
+    ),
+  ];
   csvStream.write(dataRow);
 }
 
@@ -65,7 +70,7 @@ export async function logEvent(evtlog, event) {
   console.log("event amount in logEvent", event.amount);
   const eventString = `Year: ${event.year}
     Event: ${event.type}
-    $${event.amount}\n`;
+    $${event.amount.toFixed(2)}\n`;
   evtlog.write(eventString); // Write the event to the log file
 }
 
