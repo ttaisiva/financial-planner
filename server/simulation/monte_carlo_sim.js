@@ -28,243 +28,224 @@ import {
 export async function simulation(date, numSimulations, userId, scenarioId) {
   const logs = await initLogs(userId); // open log files for writing
 
-  
   const totalYears = await getTotalYears(date, scenarioId);
 
   const simulationResults = [];
   const financialGoal = await getFinancialGoal(scenarioId);
 
-  
-    let yearlyResults = [];
-    let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
-    let incomeEventsStart = {};
-    let incomeEventsDuration = {};
+  let yearlyResults = [];
+  let previousYearAmounts = {}; // Placeholder for previous year amounts for income events
+  let incomeEventsStart = {};
+  let incomeEventsDuration = {};
 
-    let isUserAlive = true;
-    let isSpouseAlive = true;
+  let isUserAlive = true;
+  let isSpouseAlive = true;
 
-    let cashInvestment = await getCashInvest(scenarioId);
+  let cashInvestment = await getCashInvest(scenarioId);
 
-    let purchasePrices = await getPurchasePrices(scenarioId);
+  let purchasePrices = await getPurchasePrices(scenarioId);
 
-    let taxData = await getTaxData(scenarioId, date);
+  let taxData = await getTaxData(scenarioId, date);
 
-    let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+  let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
 
-    const runningTotals = {
-      cashInvestment: cashInvestment,
-      curYearIncome: 0,
-      curYearSS: 0,
-      curYearGains: 0,
-      curYearEarlyWithdrawals: 0,
-      purchasePrices: purchasePrices,
-      investments: investments,
-      expenses: [],
-      incomes: [],
-      taxes: []
-    };
+  const runningTotals = {
+    cashInvestment: cashInvestment,
+    curYearIncome: 0,
+    curYearSS: 0,
+    curYearGains: 0,
+    curYearEarlyWithdrawals: 0,
+    purchasePrices: purchasePrices,
+    investments: investments,
+    expenses: [],
+    incomes: [],
+    taxes: [],
+  };
 
-    const incomeEvents = await getIncomeEvents(scenarioId, []);
+  const incomeEvents = await getIncomeEvents(scenarioId, []);
 
-    await populateYearsAndDuration(
-      incomeEvents,
+  await populateYearsAndDuration(
+    incomeEvents,
+    incomeEventsStart,
+    incomeEventsDuration
+  ); // Populate years and duration for income events
+  // need to do the same for expense events
+  const rothYears = await getRothYears(scenarioId);
+  let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
+
+  let investEventYears = await getInvestEvents(scenarioId);
+
+  let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
+
+  let rebalanceEvents = await getRebalanceEvents(scenarioId);
+
+  // log investments before any changes
+
+  logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
+
+  for (let year = 0; year < totalYears; year++) {
+    //years in which the simulation is  being run
+
+    //Step 0: run preliminaries
+    const inflationRate = await run_preliminaries(scenarioId);
+
+    const currentSimulationYear = date + year; //actual year being simulated
+
+    if (year === 0) {
+      // Populate the object with initial amounts based on event IDs
+      if (incomeEvents.length === 0) {
+      } else {
+        incomeEvents.forEach((event) => {
+          previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
+        });
+      }
+    }
+
+    // Step 1: Run income events
+    await process_income_event(
+      scenarioId,
+      previousYearAmounts,
+      inflationRate,
+      isUserAlive,
+      isSpouseAlive,
+      runningTotals,
+      currentSimulationYear,
       incomeEventsStart,
-      incomeEventsDuration
-    ); // Populate years and duration for income events
-    // need to do the same for expense events
-    const rothYears = await getRothYears(scenarioId);
-    let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
-
-    let investEventYears = await getInvestEvents(scenarioId);
-
-    let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
-
-    let rebalanceEvents = await getRebalanceEvents(scenarioId);
-
-    // log investments before any changes
-  
-    logResults(
-        logs.csvlog,
-        logs.csvStream,
-        runningTotals.investments,
-        date - 1
+      incomeEventsDuration,
+      logs.evtlog
     );
 
-    for (let year = 0; year < totalYears; year++) {
-      //years in which the simulation is  being run
+    // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
+    await performRMDs(
+      scenarioId,
+      currentSimulationYear,
+      runningTotals,
+      logs.evtlog
+    );
 
-      //Step 0: run preliminaries
-      const inflationRate = await run_preliminaries(scenarioId);
-
-      const currentSimulationYear = date + year; //actual year being simulated
-
-      if (year === 0) {
-        // Populate the object with initial amounts based on event IDs
-        if (incomeEvents.length === 0) {
-        } else {
-          incomeEvents.forEach((event) => {
-            previousYearAmounts[event.id] = event.initialAmount || 0; // Use initialAmount or default to 0
-          });
-        }
-      }
-
-      // Step 1: Run income events
-      await process_income_event(
+    //   Step 3: Optimize Roth conversions
+    if (
+      rothYears &&
+      currentSimulationYear >= rothYears.start_year &&
+      currentSimulationYear <= rothYears.end_year
+    ) {
+      const rothResult = await runRothOptimizer(
         scenarioId,
-        previousYearAmounts,
-        inflationRate,
-        isUserAlive,
-        isSpouseAlive,
-        runningTotals,
-        currentSimulationYear,
-        incomeEventsStart,
-        incomeEventsDuration,
-        logs.evtlog
-      );
-
-      // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-      await performRMDs(
-        scenarioId,
-        currentSimulationYear,
-        runningTotals,
-        logs.evtlog
-      );
-
-      //   Step 3: Optimize Roth conversions
-      if (
-        rothYears &&
-        currentSimulationYear >= rothYears.start_year &&
-        currentSimulationYear <= rothYears.end_year
-      ) {
-        const rothResult = await runRothOptimizer(
-          scenarioId,
-          rothStrategy,
-          incomeEvents,
-          currentSimulationYear,
-          logs.evtlog,
-          runningTotals
-        );
-        investments = rothResult.resInvestments;
-        rothStrategy = rothResult.rothStrategy;
-      } else {
-      }
-
-      // Step 4: Update investments
-  
-      await updateInvestments(scenarioId, runningTotals);
-
-
-      // Step 5: Pay non-discretionary expenses and taxes
-      const taxes = await payTaxes(
-        runningTotals,
-        scenarioId,
+        rothStrategy,
         incomeEvents,
-        runningTotals,
-        taxData
-      ); 
-      console.log("Taxes paid for the year:", taxes);
-      if (taxes) {
-        runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
-      }
-      
-      await payNonDiscExpenses(
-        scenarioId,
-        runningTotals,
         currentSimulationYear,
-        inflationRate,
-        date,
-        taxes
-      );
-
-      // Step 6: Pay discretionary expenses
-      await payDiscExpenses(
-        scenarioId,
-        runningTotals,
-        currentSimulationYear,
-        inflationRate,
-        date
-      );
-
-      // Step 7: Invest Events
-      await runInvestEvent(
-        currentSimulationYear,
-        scenarioId,
-        investEventYears,
-        runningTotals,
-        inflationRate,
-        afterTaxContributionLimit,
-        date
-      );
-  
-
-      // Step 8: Rebalance investments
-      await runRebalanceEvents(
-        currentSimulationYear,
-        rebalanceEvents,
+        logs.evtlog,
         runningTotals
       );
-      
- 
-        
-      yearlyResults.push({
-        year: currentSimulationYear,
-        cashInvestment: runningTotals.cashInvestment,
-        curYearIncome: runningTotals.curYearIncome,
-        curYearSS: runningTotals.curYearSS,
-        curYearGains: runningTotals.curYearGains,
-        curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
-        purchasePrices: JSON.parse(JSON.stringify(runningTotals.purchasePrices)), // Deep copy
-        investments: JSON.parse(JSON.stringify(runningTotals.investments)), // Deep copy
-        expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), // Deep copy
-        incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
-        taxes: JSON.parse(JSON.stringify(runningTotals.taxes)),
-      });
-
-
-      console.log("Logging yearlyResults for incomes, expenses, and taxes:");
-      yearlyResults.forEach((result) => {
-        console.log(`Year ${result.year}:`);
-        
-        // // Log incomes
-        // console.log("Incomes:");
-        // console.log(JSON.stringify(result.incomes, null, 2));
-      
-        // // Log expenses
-        // console.log("Expenses:");
-        // console.log(JSON.stringify(result.expenses, null, 2));
-      
-        // Log taxes
-        console.log("Taxes:");
-        console.log(JSON.stringify(result.taxes, null, 2));
-      });
-      
-
-
-      logResults(
-          logs.csvlog,
-          logs.csvStream,
-          runningTotals.investments,
-          currentSimulationYear
-      );
-
-
-      runningTotals.expenses = []; // Reset expenses for the next year
-      runningTotals.incomes = []; // Reset incomes for the next year
-      runningTotals.taxes = []; // Reset taxes for the next year
-      
- 
-
+      investments = rothResult.resInvestments;
+      rothStrategy = rothResult.rothStrategy;
+    } else {
     }
-    logs.csvlog.end(); // close the csv log file
 
-    simulationResults.push(yearlyResults);
-  
+    // Step 4: Update investments
+
+    await updateInvestments(scenarioId, runningTotals);
+
+    // Step 5: Pay non-discretionary expenses and taxes
+    const taxes = await payTaxes(
+      runningTotals,
+      scenarioId,
+      incomeEvents,
+      runningTotals,
+      taxData
+    );
+    console.log("Taxes paid for the year:", taxes);
+    if (taxes) {
+      runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
+    }
+
+    await payNonDiscExpenses(
+      scenarioId,
+      runningTotals,
+      currentSimulationYear,
+      inflationRate,
+      date,
+      taxes
+    );
+
+    // Step 6: Pay discretionary expenses
+    await payDiscExpenses(
+      scenarioId,
+      runningTotals,
+      currentSimulationYear,
+      inflationRate,
+      date
+    );
+
+    // Step 7: Invest Events
+    await runInvestEvent(
+      currentSimulationYear,
+      scenarioId,
+      investEventYears,
+      runningTotals,
+      inflationRate,
+      afterTaxContributionLimit,
+      date
+    );
+
+    // Step 8: Rebalance investments
+    await runRebalanceEvents(
+      currentSimulationYear,
+      rebalanceEvents,
+      runningTotals
+    );
+
+    yearlyResults.push({
+      year: currentSimulationYear,
+      cashInvestment: runningTotals.cashInvestment,
+      curYearIncome: runningTotals.curYearIncome,
+      curYearSS: runningTotals.curYearSS,
+      curYearGains: runningTotals.curYearGains,
+      curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
+      purchasePrices: JSON.parse(JSON.stringify(runningTotals.purchasePrices)), // Deep copy
+      investments: JSON.parse(JSON.stringify(runningTotals.investments)), // Deep copy
+      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), // Deep copy
+      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
+      taxes: JSON.parse(JSON.stringify(runningTotals.taxes)),
+    });
+
+    console.log("Logging yearlyResults for incomes, expenses, and taxes:");
+    yearlyResults.forEach((result) => {
+      console.log(`Year ${result.year}:`);
+
+      // // Log incomes
+      // console.log("Incomes:");
+      // console.log(JSON.stringify(result.incomes, null, 2));
+
+      // // Log expenses
+      // console.log("Expenses:");
+      // console.log(JSON.stringify(result.expenses, null, 2));
+
+      // Log taxes
+      console.log("Taxes:");
+      console.log(JSON.stringify(result.taxes, null, 2));
+    });
+
+    logResults(
+      logs.csvlog,
+      logs.csvStream,
+      runningTotals.investments,
+      currentSimulationYear
+    );
+
+    runningTotals.expenses = []; // Reset expenses for the next year
+    runningTotals.incomes = []; // Reset incomes for the next year
+    runningTotals.taxes = []; // Reset taxes for the next year
+  }
+  logs.csvlog.end(); // close the csv log file
+
+  simulationResults.push(yearlyResults);
+
   logs.evtlog.end(); // close the event log file
 
-  
   //console.log("Returning simulationResults: ", simulationResults);
-  
-  return simulationResults; 
+
+  return simulationResults;
 }
 
 /**
@@ -298,21 +279,26 @@ export function calculateStats(simulationResults, financialGoal) {
   // Flatten the yearly results into a single array of cash investments
 
   const allCashInvestments = simulationResults
-  .flat(2) // Flatten 3-level array to a flat list of yearly objects
-  .map((result, i) => {
-    const val = Number(result.cashInvestment);
-    if (isNaN(val)) {
-      console.warn(`Invalid cashInvestment at index ${i}:`, result.cashInvestment);
-    }
-    return val;
-  })
-  .filter((val) => !isNaN(val));
-
+    .flat(2) // Flatten 3-level array to a flat list of yearly objects
+    .map((result, i) => {
+      const val = Number(result.cashInvestment);
+      if (isNaN(val)) {
+        console.warn(
+          `Invalid cashInvestment at index ${i}:`,
+          result.cashInvestment
+        );
+      }
+      return val;
+    })
+    .filter((val) => !isNaN(val));
 
   //console.log("all Cash investments: ", allCashInvestments);
 
   // Calculate mean
-  const total = allCashInvestments.reduce((sum, value) => Number(sum) + Number(value), 0);
+  const total = allCashInvestments.reduce(
+    (sum, value) => Number(sum) + Number(value),
+    0
+  );
   console.log("total: ", total);
   const mean = total / allCashInvestments.length;
   console.log("mean: ", mean);
@@ -374,7 +360,7 @@ export async function getUserBirthYear(scenarioId) {
   const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
   try {
     const [results] = await pool.execute(query, [scenarioId]);
-    console.log("results", [results]);
+    console.log("results user birth year", [results]);
     return results[0]?.birth_years[0] || 0; // Return the birth year or 0 if not found
   } catch (error) {
     console.error("Error fetching user birth year:", error);
@@ -393,7 +379,7 @@ export async function getUserLifeExpectancy(scenarioId) {
             FROM scenarios WHERE id = ?`;
   try {
     const [results] = await pool.execute(query, [scenarioId]);
-    console.log("results: ", results);
+    console.log("results user life expectancy: ", results);
     return sample(results[0].life_expectancy[0]);
   } catch (error) {
     console.error("Error fetching user life expectancy:", error);
