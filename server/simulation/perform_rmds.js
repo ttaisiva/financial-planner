@@ -1,7 +1,27 @@
-import { connection, ensureConnection } from "../server.js";
+// Perform the RMD for the previous year, if the user’s age is at least 74 and at the end of the previous
+// year, there is at least one investment with tax status = “pre-tax” and with a positive value.
+// a. The first RMD is for the year in which the user turns 73, and is paid in the year in which the user
+// turns 74.
+// b. Distribution period d = result from lookup of the user’s age in the most recent available RMD table
+// (typically the current actual year’s RMD table).
+// c. s = sum of values of the investments with tax status = pre-tax, as of the end of the previous year.
+// (don’t look for “IRA” in the name of the investment type. employer-sponsored pre-tax retirement
+// accounts are not IRAs.)
+// d. rmd = s / d
+// e. curYearIncome += rmd
+// f. Iterate over the investments in the RMD strategy in the given order, transferring each of them in-
+// kind to an investment with the same investment type and with tax status = “non-retirement”, until
+// the total amount transferred equals rmd. The last investment to be transferred might be partially
+// transferred.
+// g. “Transferring in-kind” means reducing the value of the source investment by the transferred
+// amount, checking whether an investment with the same investment type and target tax status
+// already exists, and if so, adding the transferred amount to its value, otherwise creating an
+// investment with the same investment type, the target tax status, and value equal to the transferred amount.
+
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { transfer, getPreTaxInvestments } from "./preliminaries.js";
 import { logRMD } from "../logging.js";
+import { pool } from "../utils.js";
 
 /**
  * Performs the Required Minimum Distribution (RMD) for the previous year.
@@ -16,21 +36,25 @@ export async function performRMDs(
   runningTotals,
   evtlog
 ) {
-  const userBirthYear = await getUserBirthYear(scenarioId, connection);
+
+  // Step a: Get the user's birth year and calculate their age
+  const userBirthYear = await getUserBirthYear(scenarioId);
   const userAge = currentSimulationYear - userBirthYear;
 
   if (userAge < 73) {
-    return;
+    return; // No RMD required
   }
 
-  const preTaxInvestments = await getPreTaxInvestments(runningTotals.investments);
+  const preTaxInvestments = await getPreTaxInvestments(
+    runningTotals.investments
+  );
 
   if (preTaxInvestments.length === 0) {
     console.warn("No pre-tax investments found. Skipping RMD process.");
-    return;
+    return; // No pre-tax investments
   }
 
-  const rmdTable = await getRMDTable(connection);
+  const rmdTable = await getRMDTable();
   const distributionPeriod = rmdTable[userAge];
   if (!distributionPeriod) {
     console.error(`No distribution period found for age ${userAge}.`);
@@ -45,7 +69,9 @@ export async function performRMDs(
   let rmd = totalPreTaxValue / Number(distributionPeriod);
   rmd = Math.round(rmd * 100) / 100;
 
-  runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(rmd);
+  // Step f: Add RMD to curYearIncome
+  runningTotals.curYearIncome =
+    Number(runningTotals.curYearIncome) + Number(rmd);
 
   let remainingRMD = Number(rmd);
 
@@ -78,12 +104,12 @@ export async function performRMDs(
 
 /**
  * Fetches the RMD table from the database.
- * @param {Object} connection - The database connection object.
  * @returns {Object} An object where the keys are ages and the values are distribution periods.
  */
-export async function getRMDTable(connection) {
+export async function getRMDTable() {
   try {
-    const [rows] = await connection.execute(
+    // Query the RMD table
+    const [rows] = await pool.execute(
       `SELECT age, distribution_period FROM rmds ORDER BY age ASC`
     );
 

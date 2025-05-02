@@ -1,7 +1,17 @@
-import { connection, ensureConnection } from "../server.js";
+// 2. Run income events, adding the income to the cash investment.
+// a. The amount of this income event in the previous year needs to be stored and updated based on the
+// expected annual change in amount, because the expected annual change can be sampled from a
+// probability distribution, and the sampling is done each year.
+// b. If the inflation-adjustment flag is set, adjust the amount for inflation.
+// c. If user or their spouse is dead, omit their percentage of the amount.
+// d. Add the income to the cash investment.
+// e. Update running total curYearIncome,
+// f. Update running total curYearSS of social security benefits, if income type = social security.
+
 import { sample } from "./preliminaries.js";
 import { getUserBirthYear, getUserLifeExpectancy } from "./monte_carlo_sim.js";
 import { logIncome } from "../logging.js";
+import { pool } from "../utils.js";
 
 /**
  * Processes an income event and updates financial data.
@@ -42,25 +52,30 @@ export async function process_income_event(
     return;
   }
 
+  console.log(
+    `Found ${incomeEvents.length} income events for scenario ID ${scenarioId}.`
+  );
+
+  let activeIncomeEvents = [];
   for (const event of incomeEvents) {
-    const startYear = incomeEventsStart[event.id];
-    if (startYear > currentSimulationYear) {
-      continue;
+
+    if (!isActiveIncomeEvent(event.id, currentSimulationYear, incomeEventsStart, incomeEventsDuration)) {
+      continue; // Skip inactive events
     }
-    const duration = incomeEventsDuration[event.id];
-    if (startYear + duration <= currentSimulationYear) {
-      continue;
-    }
+
+
 
     let currentAmount = 0;
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
-      const percentageChange = (prevAmount * sampledChange) / 100;
+      const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
       currentAmount = Number(previousYearAmounts[event.id]) + percentageChange;
+      
     } else {
       const sampledChange = sample(event.changeDistribution);
       currentAmount =
         Number(previousYearAmounts[event.id]) + Number(sampledChange);
+      
     }
 
     if (event.inflationAdjusted) {
@@ -79,6 +94,7 @@ export async function process_income_event(
       currentAmount -= spousePortion;
     }
 
+    // Add to cash investment and income totals 
     runningTotals.cashInvestment = (
       Number(runningTotals.cashInvestment) + Number(currentAmount)
     ).toFixed(2);
@@ -86,6 +102,18 @@ export async function process_income_event(
       Number(runningTotals.curYearIncome) + Number(currentAmount)
     ).toFixed(2);
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
+      
+
+    activeIncomeEvents.push(event);
+
+    
+    
+
+    console.log(
+      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${Number(
+        runningTotals.cashInvestment
+      )}, curYearIncome: ${Number(runningTotals.curYearIncome)}`
+    );
 
     if (event.isSocialSecurity) {
       runningTotals.curYearSS =
@@ -93,7 +121,23 @@ export async function process_income_event(
     }
 
     previousYearAmounts[event.id] = currentAmount;
+    console.log(
+      `Updated previousYearAmounts for event ID ${event.id}: ${currentAmount}`
+    );
   }
+  
+  runningTotals.incomes = activeIncomeEvents; // Store active income events in running totals
+
+  console.log(
+    `Finished processing income events for scenario ID ${scenarioId}.`
+  );
+  console.log(
+    `Final cashInvestment: ${Number(
+      runningTotals.cashInvestment
+    )}, curYearIncome: ${Number(
+      runningTotals.curYearIncome
+    )}, curYearSS: ${Number(runningTotals.curYearSS)}`
+  );
 }
 
 /**
@@ -109,12 +153,13 @@ export async function getIncomeEvents(
   incomeEventsDuration,
   currentSimulationYear
 ) {
-  await ensureConnection();
+  //   console.log(`Fetching income events for scenario ID: ${scenarioId}`);
 
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             scenario_id,
+            name,
             start,
             duration,
             change_distribution,
@@ -139,6 +184,7 @@ export async function getIncomeEvents(
 
     return {
       id: event.id,
+      name: event.name,
       initialAmount: event.initial_amount,
       changeDistribution: event.change_distribution,
       inflationAdjusted: event.inflation_adjusted || false,
@@ -206,10 +252,11 @@ function getEventStartYearFromSeries(eventSeries) {
  * @returns {number} The end year of the referenced event series.
  */
 export async function getEventEndYearFromSeries(eventSeries) {
-  const userBirthYear = Number(await getUserBirthYear(scenarioId, connection));
-  const userLifeExpectancy = Number(
-    await getUserLifeExpectancy(scenarioId, connection)
-  );
+  console.warn(`Fetching end year for event series: ${eventSeries}`);
+  const userBirthYear = Number(await getUserBirthYear(scenarioId));
+  console.log("User birth year: ", userBirthYear);
+  const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId));
+  console.log("User life expectancy: ", userLifeExpectancy);
 
   const userLifespan = userBirthYear + userLifeExpectancy;
 
@@ -243,4 +290,35 @@ export function getEventDuration(event) {
     default:
       throw new Error(`Unsupported duration type: ${duration.type}`);
   }
+}
+
+/**
+ * Determines if an income event is active based on its start year, duration, and the current simulation year.
+ * @param {number} eventId - The ID of the income event.
+ * @param {number} currentSimulationYear - The current simulation year.
+ * @param {Object} incomeEventsStart - An object mapping event IDs to their start years.
+ * @param {Object} incomeEventsDuration - An object mapping event IDs to their durations.
+ * @returns {boolean} True if the event is active, false otherwise.
+ */
+function isActiveIncomeEvent(eventId, currentSimulationYear, incomeEventsStart, incomeEventsDuration) {
+  const startYear = incomeEventsStart[eventId];
+  const duration = incomeEventsDuration[eventId];
+
+  console.log(`Checking if event ID: ${eventId} is active.`);
+  console.log(`Start year: ${startYear}, Duration: ${duration}, Current simulation year: ${currentSimulationYear}`);
+
+  // Check if the event starts in the future
+  if (startYear > currentSimulationYear) {
+    console.log(`Event ID: ${eventId} starts in the future. Skipping.`);
+    return false;
+  }
+
+  // Check if the event's duration has ended
+  if (startYear + duration <= currentSimulationYear) {
+    console.log(`Event ID: ${eventId} has ended. Skipping.`);
+    return false;
+  }
+
+  console.log(`Event ID: ${eventId} is active.`);
+  return true;
 }

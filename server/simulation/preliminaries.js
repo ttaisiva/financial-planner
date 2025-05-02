@@ -1,4 +1,4 @@
-import { ensureConnection, connection } from "../server.js";
+import { pool } from "../utils.js";
 
 /**
  * Fetches necessary preliminary data from the database.
@@ -6,15 +6,11 @@ import { ensureConnection, connection } from "../server.js";
  * @returns {Object} The preliminary data, including inflation assumptions.
  */
 export async function get_preliminaries_data(scenarioId) {
-  await ensureConnection(); // Ensure the connection is established
-  if (
-    !connection ||
-    connection.state === "disconnected" ||
-    connection._closing
-  ) {
-    throw new Error("Database connection is not active.");
-  }
-  const [rows] = await connection.execute(
+  // Query the database to fetch inflation assumptions and other necessary data
+  // this would be different from guest
+
+  console.log("perform query to get preliminaries data");
+  const [rows] = await pool.execute(
     `SELECT 
             inflation_assumption
          FROM scenarios
@@ -46,8 +42,6 @@ export async function get_preliminaries_data(scenarioId) {
  */
 
 export async function run_preliminaries(scenarioId) {
-  await ensureConnection();
-  ensureConnection();
   const result = await get_preliminaries_data(scenarioId);
 
   const inflation_rate = sample(result.inflation_assumption);

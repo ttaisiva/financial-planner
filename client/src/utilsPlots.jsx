@@ -82,14 +82,14 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
 
       // Increment the total count for the year
       yearlySuccess[year].totalCount += 1;
-      console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
+      //console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
       if (cashInvestment >= financialGoal) { // compare with financial goal
         yearlySuccess[year].successCount += 1;
       }
     });
   });
 
-  console.log("yearlySuccess: ", yearlySuccess);
+  
 
   // Calculate success probability for each year
   return Object.entries(yearlySuccess).map(([year, { successCount, totalCount }]) => ({
@@ -117,7 +117,7 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
         });
       });
 
-      console.log("yearlyData: ", yearlyData);
+ 
   
       // Calculate percentiles and median for each year
       
@@ -265,18 +265,32 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
   //Helper function to calculate median or average
 
   // helper function to Calcualte the median or average of the simulation results for each investment type
-  const calculateValue = (values, useMedian) => {
-    values.sort((a, b) => a - b);
-    if (useMedian) {
-      return values[Math.floor(values.length * 0.5)];
-    }
-    return values.reduce((sum, val) => sum + val, 0) / values.length;
-  };
+  // const calculateValue = (values, useMedian) => {
+  //   values.sort((a, b) => a - b);
 
+  //   if (useMedian) {
+      
+  //     return values[Math.floor(values.length * 0.5)];
+  //   }
+    
+  //   return values.reduce((sum, val) => sum + val, 0) / values.length;
+  // };
+
+  const calculateValue = (values, useMedian) => {
+    const sorted = [...values].sort((a, b) => a - b);  // Make a shallow copy before sorting
+  
+    if (useMedian) {
+      return sorted[Math.floor(sorted.length * 0.5)];
+    }
+  
+    return sorted.reduce((sum, val) => sum + val, 0) / sorted.length;
+  };
   
   const processData = (simulationResults, breakdownType, useMedian) => {
+    
     const yearlyData = {};
 
+    console.log("Simulation Results before yearly: ", simulationResults); //they're already all the same here....
     simulationResults.forEach((simulation) => {
       simulation.forEach((yearlyResult) => {
         const year = yearlyResult.year;
@@ -284,7 +298,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
         if (!yearlyData[year]) {
           yearlyData[year] = {};
         }
-
+        console.log("Yearly Result: ", yearlyResult);
         if (breakdownType === "investments") {
           yearlyResult.investments.forEach(({ id, value }) => {
            
@@ -294,22 +308,25 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
             yearlyData[year][id].push(value);
           });
         } else if (breakdownType === "income") {
-          yearlyResult.income.forEach(({ series, value }) => {
-            if (!yearlyData[year][series]) {
-              yearlyData[year][series] = [];
+          console.log("INCOME STACKED BAR CHART: ", yearlyResult.incomes)
+          yearlyResult.incomes.forEach(({ name, initialAmount }) => {
+            if (!yearlyData[year][name]) {
+              yearlyData[year][name] = [];
             }
-            yearlyData[year][series].push(value);
+            yearlyData[year][name].push(initialAmount);
           });
         } else if (breakdownType === "expenses") {
-          yearlyResult.expenses.forEach(({ series, value }) => {
-            if (!yearlyData[year][series]) {
-              yearlyData[year][series] = [];
+          console.log("EXPENSES STACKED BAR CHART: ", yearlyResult.expenses)
+          yearlyResult.expenses.forEach(({ name, initialAmount }) => {
+            if (!yearlyData[year][name]) {
+              yearlyData[year][name] = [];
             }
-            yearlyData[year][series].push(value);
+            yearlyData[year][name].push(initialAmount);
           });
           if (!yearlyData[year]["Taxes"]) {
             yearlyData[year]["Taxes"] = [];
           }
+          console.log("Taxes: ", yearlyResult.taxes)
           yearlyData[year]["Taxes"].push(yearlyResult.taxes);
         }
       });
@@ -317,6 +334,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
 
     // determine median/avg
     const processed = {};
+    console.log("Plot yearlyData: ", yearlyData);
     Object.entries(yearlyData).forEach(([year, categories]) => {
       processed[year] = {};
       Object.entries(categories).forEach(([category, values]) => {
@@ -345,23 +363,22 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     aggregatedData[year] = {};
     Object.entries(categories).forEach(([category, value]) => {
       if (value >= aggregationThreshold) {
-        console.log("value is over threshold ", value);
-        aggregatedData[year][category] = value;
+        aggregatedData[year][category] = Number(value);
+
       } else {
-        console.log("VALUE LESS THAN THRESHOLD:", value);
+
+        console.log(`Category ${category} with value ${value} is below aggregation threshold of ${aggregationThreshold}. Moving to "Other".`);
+
         if (!aggregatedData[year]["Other"]) {
-          console.log("creating new category other for year:", year)
           aggregatedData[year]["Other"] = 0;
           allCategories.add("Other");
         }
-        
-        aggregatedData[year]["Other"] += value;
-        console.log("Added value to other category: ", aggregatedData[year]["Other"]  )
+        aggregatedData[year]["Other"] += Number(value);
       }
     });
   });
 
-  console.log("All Categories:");
+  console.log("All Categories:"); //TODO: Some categories seem to be nonexistend
   allCategories.forEach((category) => {
     console.log(category);
   });
@@ -369,25 +386,6 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
   
 
   // 3.) Preprocess data for plot: I need my data to look like this:
-  { /* 
-  datasets = [
-    {
-      label: 'investment 1',
-      data: [20000, 22000, 25000],
-      backgroundColor: 'lightblue'
-    },
-    {
-      label: 'investment 2',
-      data: [10000, 11000, 12000],
-      backgroundColor: 'lightgreen'
-    },
-    {
-      label: 'investment 3',
-      data: [5000, 6000, 7000], // this needs to be the value either the median or avg of all the simulations results of investment 3 for each year 
-      backgroundColor: 'pink'
-    }
-  ];
-  */ }
   const labels = Object.keys(aggregatedData).map((year) => Number(year));
   const datasets = Array.from(allCategories).map((category) => ({
     label: category,

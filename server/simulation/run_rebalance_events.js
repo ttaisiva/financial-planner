@@ -1,8 +1,8 @@
-import { ensureConnection, connection } from "../server.js";
 import {
   generateNormalRandom,
   generateUniformRandom,
   getEventYears,
+  pool,
 } from "../utils.js";
 
 /**
@@ -100,8 +100,7 @@ export async function runRebalanceEvents(
 }
 
 export const getRebalanceEvents = async (scenarioId) => {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     "SELECT * FROM events WHERE scenario_id = ? AND type = 'rebalance'",
     [scenarioId]
   );

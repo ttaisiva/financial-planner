@@ -1,4 +1,3 @@
-import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js"; // Assuming you have a sampling function for probability distributions
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { getEventDuration, getEventStartYear } from "./run_income_events.js";
@@ -6,7 +5,7 @@ import {
   calculateExpenseAmount,
   getExpenseWithdrawalStrategy,
 } from "./disc_expenses.js";
-
+import { pool } from "../utils.js";
 /**
  * Pays non-discretionary expenses based on available cash and investments.
  * @param {number} scenarioId - The ID of the scenario.
@@ -27,19 +26,19 @@ export async function payNonDiscExpenses(
   date,
   taxes
 ) {
-  // Ensure database connection
-  await ensureConnection();
 
   // Fetch non-discretionary expenses
   const nonDiscretionaryExpenses = await getNonDiscretionaryExpenses(
     scenarioId
   );
+ 
 
   // Filter active non-discretionary events
   const activeEvents = await filterActiveNonDiscretionaryEvents(
     nonDiscretionaryExpenses,
     currentSimulationYear
   );
+  runningTotals.expenses.push(...activeEvents);
 
   // Calculate total non-discretionary expenses
   const totalNonDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -51,6 +50,8 @@ export async function payNonDiscExpenses(
     return (sum + expenseAmount).toFixed(2);
   }, 0);
 
+
+  
   let remainingWithdrawal = totalNonDiscExpenses + taxes;
 
   // Iterate over non-discretionary expenses and pay them
@@ -139,10 +140,11 @@ export async function payNonDiscExpenses(
  * @returns {Array} List of non-discretionary expenses.
  */
 async function getNonDiscretionaryExpenses(scenarioId) {
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             name,
+            discretionary,
             initial_amount AS initialAmount,
             change_amt_or_pct AS changeAmtOrPct,
             change_distribution AS changeDistribution,

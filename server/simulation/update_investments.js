@@ -1,4 +1,17 @@
-import { ensureConnection, connection } from "../server.js";
+// a. Calculate the generated income, using the given fixed amount or percentage, or sampling from the
+// specified probability distribution.
+// b. Add the income to curYearIncome, if the investment’s tax status is ‘non-retirement’ and the
+// investment type’s taxability is ‘taxable’. (For investments in pre-tax retirement accounts, the income
+// is taxable in the year it is withdrawn from the account. For investments in after-tax retirement
+// accounts, the income is not taxable.)
+// c. Add the income to the value of the investment.
+// d. Calculate the change in value, using the given fixed amount or percentage, or sampling from the
+// specified probability distribution.
+// e. Calculate this year’s expenses, by multiplying the expense ratio and the average value of the
+// investment (i.e., the average of its value at the beginning and end of the year). Subtract the
+// expenses from the value.
+
+import { pool } from "../utils.js";
 import { sample } from "./preliminaries.js"; // Assuming you have a sampling function for probability distributions
 
 /**
@@ -7,10 +20,7 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
  * @param {number} curYearIncome - Current year's income to be updated.
  * @returns {Object} Updated investments and curYearIncome.
  */
-export async function updateInvestments(
-  scenarioId,
-  runningTotals,
-) {
+export async function updateInvestments(scenarioId, runningTotals) {
   const investmentTypes = await getAllInvestmentTypes(scenarioId);
 
   for (const investment of runningTotals.investments) {
@@ -34,7 +44,9 @@ export async function updateInvestments(
       investment.taxStatus === "non-retirement" &&
       investmentType.taxability === "taxable"
     ) {
-        runningTotals.curYearIncome = Number(runningTotals.curYearIncome) + Number(generatedIncome);
+      runningTotals.curYearIncome =
+        Number(runningTotals.curYearIncome) + Number(generatedIncome);
+
     }
 
     // d. Calculate the change in value
@@ -70,10 +82,8 @@ export async function updateInvestments(
  * @returns {Object} A map of investment types, where the keys are the investment type names and the values are their details.
  */
 export async function getAllInvestmentTypes(scenarioId) {
-  await ensureConnection(); // Ensure the database connection is active
-
   try {
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       `SELECT 
                 name,
                 description,

@@ -1,14 +1,13 @@
-import { connection, ensureConnection } from "../server.js";
 import { sample } from "./preliminaries.js"; // Assuming you have a sampling function for probability distributions
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { getEventDuration, getEventStartYear } from "./run_income_events.js";
+import { pool } from "../utils.js";
 
 /**
  * Pays discretionary expenses based on the spending strategy and available cash.
  * @param {number} scenarioId - The ID of the scenario.
  * @param {number} cashInvestment - The current cash available.
  * @param {number} curYearIncome - The current year's income.
- * @param {number} curYearSS - The current year's social security income.
  * @param {number} curYearGains - The current year's capital gains.
  * @param {number} curYearEarlyWithdrawals - The current year's early withdrawals.
  * @param {number} currentSimulationYear - The current simulation year.
@@ -19,16 +18,20 @@ export async function payDiscExpenses(
   runningTotals,
   currentSimulationYear,
   inflationRate,
-  date,
+  date
 ) {
-  // Ensure database connection
-  await ensureConnection();
+
+
+  //pay prev year taxes here ...
 
   const discretionaryExpenses = await getDiscretionaryExpenses(scenarioId);
   const activeEvents = await filterActiveDiscretionaryEvents(
     discretionaryExpenses,
     currentSimulationYear
   );
+  runningTotals.expenses.push(...activeEvents);
+
+
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
     const expenseAmount = calculateExpenseAmount(
       expense,
@@ -128,10 +131,11 @@ export async function payDiscExpenses(
  * @returns {Array} List of discretionary expenses.
  */
 async function getDiscretionaryExpenses(scenarioId) {
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             name,
+            discretionary AS discretionary,
             initial_amount AS initialAmount,
             change_amt_or_pct AS changeAmtOrPct,
             change_distribution AS changeDistribution,
@@ -155,7 +159,7 @@ async function getDiscretionaryExpenses(scenarioId) {
  * @returns {Array} Ordered list of discretionary expense names.
  */
 async function getSpendingStrategy(scenarioId) {
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT expense_id, strategy_order
          FROM strategy
          WHERE scenario_id = ? AND strategy_type = 'spending'
@@ -228,7 +232,7 @@ async function filterActiveDiscretionaryEvents(
  * @returns {Promise<Array>} Ordered list of investments for expense withdrawal.
  */
 export async function getExpenseWithdrawalStrategy(scenarioId) {
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT investment_id, strategy_order
          FROM strategy
          WHERE scenario_id = ? AND strategy_type = 'expense_withdrawal'
