@@ -21,6 +21,7 @@ import {
   getRebalanceEvents,
   runRebalanceEvents,
 } from "./run_rebalance_events.js";
+
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
@@ -122,81 +123,83 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       );
 
       // Step 2: Perform required minimum distributions (RMDs) -> round these to nearest hundredth
-      // await performRMDs(
-      //   scenarioId,
-      //   currentSimulationYear,
-      //   runningTotals,
-      //   logs.evtlog
-      // );
+      await performRMDs(
+        scenarioId,
+        currentSimulationYear,
+        runningTotals,
+        logs.evtlog
+      );
 
       //   Step 3: Optimize Roth conversions
-      // if (
-      //   rothYears &&
-      //   currentSimulationYear >= rothYears.start_year &&
-      //   currentSimulationYear <= rothYears.end_year
-      // ) {
-      //   const rothResult = await runRothOptimizer(
-      //     scenarioId,
-      //     rothStrategy,
-      //     incomeEvents,
-      //     currentSimulationYear,
-      //     logs.evtlog,
-      //     runningTotals
-      //   );
-      //   investments = rothResult.resInvestments;
-      //   rothStrategy = rothResult.rothStrategy;
-      // } else {
-      // }
+      if (
+        rothYears &&
+        currentSimulationYear >= rothYears.start_year &&
+        currentSimulationYear <= rothYears.end_year
+      ) {
+        const rothResult = await runRothOptimizer(
+          scenarioId,
+          rothStrategy,
+          incomeEvents,
+          currentSimulationYear,
+          logs.evtlog,
+          runningTotals
+        );
+        investments = rothResult.resInvestments;
+        rothStrategy = rothResult.rothStrategy;
+      } else {
+      }
 
       // Step 4: Update investments
   
-      //await updateInvestments(scenarioId, runningTotals);
+      await updateInvestments(scenarioId, runningTotals);
 
 
       // Step 5: Pay non-discretionary expenses and taxes
-      // const taxes = await payTaxes(
-      //   runningTotals,
-      //   scenarioId,
-      //   incomeEvents,
-      //   runningTotals,
-      //   taxData
-      // );
-      // await payNonDiscExpenses(
-      //   scenarioId,
-      //   runningTotals,
-      //   currentSimulationYear,
-      //   inflationRate,
-      //   date,
-      //   taxes
-      // );
+      const taxes = await payTaxes(
+        runningTotals,
+        scenarioId,
+        incomeEvents,
+        runningTotals,
+        taxData
+      ); //for some reason taxes here is undefined ask violet
+      console.log("Taxes paid for the year:", taxes);
+      runningTotals.taxes.push(taxes);
+      await payNonDiscExpenses(
+        scenarioId,
+        runningTotals,
+        currentSimulationYear,
+        inflationRate,
+        date,
+        taxes
+      );
 
       // Step 6: Pay discretionary expenses
-      // await payDiscExpenses(
-      //   scenarioId,
-      //   runningTotals,
-      //   currentSimulationYear,
-      //   inflationRate,
-      //   date
-      // );
+      await payDiscExpenses(
+        scenarioId,
+        runningTotals,
+        currentSimulationYear,
+        inflationRate,
+        date
+      );
 
       // Step 7: Invest Events
-      // await runInvestEvent(
-      //   currentSimulationYear,
-      //   scenarioId,
-      //   investEventYears,
-      //   runningTotals,
-      //   inflationRate,
-      //   afterTaxContributionLimit,
-      //   date
-      // );
+      await runInvestEvent(
+        currentSimulationYear,
+        scenarioId,
+        investEventYears,
+        runningTotals,
+        inflationRate,
+        afterTaxContributionLimit,
+        date
+      );
   
 
       // Step 8: Rebalance investments
-      // await runRebalanceEvents(
-      //   currentSimulationYear,
-      //   rebalanceEvents,
-      //   runningTotals
-      // );
+      await runRebalanceEvents(
+        currentSimulationYear,
+        rebalanceEvents,
+        runningTotals
+      );
       
  
         
@@ -213,18 +216,34 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
       });
 
-      console.log("Logging yearlyResults.incomes:");
-      yearlyResults.forEach((result, index) => {
-        console.log(`Year ${result.year} - Incomes:`);
-        console.log(JSON.stringify(result.incomes, null, 2));
+      console.log("Logging yearlyResults for incomes, expenses, and taxes:");
+      yearlyResults.forEach((result) => {
+        console.log(`Year ${result.year}:`);
+        
+        // // Log incomes
+        // console.log("Incomes:");
+        // console.log(JSON.stringify(result.incomes, null, 2));
+      
+        // // Log expenses
+        // console.log("Expenses:");
+        // console.log(JSON.stringify(result.expenses, null, 2));
+      
+        // Log taxes
+        console.log("Taxes:");
+        console.log(JSON.stringify(result.taxes, null, 2));
       });
       
+
       logResults(
           logs.csvlog,
           logs.csvStream,
           runningTotals.investments,
           currentSimulationYear
       );
+
+      runningTotals.expenses = []; // Reset expenses for the next year
+      runningTotals.incomes = []; // Reset incomes for the next year
+      runningTotals.taxes = []; // Reset taxes for the next year
  
 
     }

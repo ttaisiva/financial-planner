@@ -33,7 +33,7 @@ export async function payDiscExpenses(
     currentSimulationYear
   );
   console.log("active events", activeEvents);
-  runningTotals.expenses.push(activeEvents);
+  runningTotals.expenses.push(...activeEvents);
 
 
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -187,6 +187,7 @@ async function getDiscretionaryExpenses(scenarioId) {
     `SELECT 
             id,
             name,
+            discretionary AS discretionary,
             initial_amount AS initialAmount,
             change_amt_or_pct AS changeAmtOrPct,
             change_distribution AS changeDistribution,
