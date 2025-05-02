@@ -95,11 +95,30 @@ export function logIncome(evtlog, year, name, currentAmount) {
 export function logExpense(evtlog, year, name, amount, investment) {
   const event = {
     year: year,
-    type: `Expense "${name} deducted from ${investment}"`,
+    type: `Expense "${name}" deducted from investment "${investment}"`,
     amount: amount,
   };
   logEvent(evtlog, event);
 }
+// TODO: not called
+export function logInvest(evtlog, year, name, amount, investment) {
+  const event = {
+    year: year,
+    type: `Invest "${name}" into investment "${investment}"`,
+    amount: amount,
+  };
+  logEvent(evtlog, event);
+}
+
+export function logRebalance(evtlog, year, name, amount, investmentId) {
+  const event = {
+    year: year,
+    type: `Rebalance "${name}" applied to investment "${investmentId}"`,
+    amount: amount,
+  };
+  logEvent(evtlog, event);
+}
+
 
 export function logRMD(evtlog, year, inv, transferAmount) {
   const event = {

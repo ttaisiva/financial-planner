@@ -17,7 +17,8 @@ import {
 export async function runRebalanceEvents(
   currentSimulationYear,
   rebalanceEvents,
-  runningTotals
+  runningTotals,
+  evtlog
 ) {
   const rebalanceEventYears = await getEventYears(rebalanceEvents);
   const purchasePrices = runningTotals.purchasePrices;
@@ -76,6 +77,7 @@ export async function runRebalanceEvents(
 
         // Apply the sale
         runningTotals.investments[investmentId].value = targetValue.toFixed(2);
+        logRebalance(evtlog, currentSimulationYear, rebalanceEvent.name, targetValue, investmentId);
       }
     }
 
@@ -91,6 +93,7 @@ export async function runRebalanceEvents(
 
         // Update investment value and purchase price
         runningTotals.investments[investmentId].value = targetValue.toFixed(2);
+        logRebalance(evtlog, currentSimulationYear, rebalanceEvent.name, targetValue, investmentId);
 
         const prevPurchase = Number(purchasePrices[investmentId] || 0);
         purchasePrices[investmentId] = (prevPurchase + amountToBuy).toFixed(2);

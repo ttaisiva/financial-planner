@@ -153,7 +153,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       scenarioId,
       incomeEvents,
       runningTotals,
-      taxData
+      taxData,
     );
     console.log("Taxes paid for the year:", taxes);
     if (taxes) {
@@ -188,14 +188,16 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals,
       inflationRate,
       afterTaxContributionLimit,
-      date
+      date,
+      logs.evtlog
     );
 
     // Step 8: Rebalance investments
     await runRebalanceEvents(
       currentSimulationYear,
       rebalanceEvents,
-      runningTotals
+      runningTotals,
+      logs.evtlog
     );
 
     yearlyResults.push({

@@ -4,6 +4,7 @@ import {
   getEventYears,
   pool,
 } from "../utils.js";
+import { logInvest } from "../logging.js";
 
 /**
  * Runs invest events for the durations they are active. Allocates excess cash to investements based on asset allocation info.
@@ -23,7 +24,8 @@ export async function runInvestEvent(
   runningTotals,
   inflationRate,
   afterTaxContributionLimit,
-  date
+  date,
+  evtlog
 ) {
   const activeEventId = getActiveEventId(
     currentSimulationYear,
