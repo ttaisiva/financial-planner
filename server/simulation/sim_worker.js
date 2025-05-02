@@ -9,10 +9,16 @@ parentPort.on("message", async (data) => {
     // Run the monte carlo simulation simulation
     const result = await simulation(date, numSimulations, userId, scenarioId);
 
+    console.log("worker computed result: ", result);
+
     // Send the result back to the main thread
     parentPort.postMessage({ success: true, result });
   } catch (error) {
     // Send the error back to the main thread
-    parentPort.postMessage({ success: false, error: error.message });
+    console.error("❌ Worker simulation failed:", error);
+    parentPort.postMessage({
+      success: false,
+      error: error.stack || error.message,
+    });
   }
 });
