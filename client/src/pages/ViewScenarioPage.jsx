@@ -393,9 +393,9 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)} >
           <option value="cashInvestment">Cash Investment</option>
           <option value="curYearIncome">Current Year Income</option>
-          <option value="curYearSS">Current Year Social Security</option>
-          <option value="curYearGains">Current Year Gains</option>
           <option value="curYearEarlyWithdrawals">Current Year Early Withdrawals</option>
+          <option value="expenses">Expenses (including tax)</option>
+          <option value="discExpenses">% of Total Discretionary Expenses</option>
         </select>
 
         <ShadedLineChart
