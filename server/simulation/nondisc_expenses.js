@@ -43,7 +43,7 @@ export async function payNonDiscExpenses(
     currentSimulationYear
   );
   console.log("Active non-discretionary events:", activeEvents);
-  runningTotals.expenses.push(activeEvents);
+  runningTotals.expenses.push(...activeEvents);
 
   // Calculate total non-discretionary expenses
   const totalNonDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -60,7 +60,7 @@ export async function payNonDiscExpenses(
   );
 
   console.log("nondisc taxes", taxes);
-  runningTotals.taxes.push(taxes);
+
   
   let remainingWithdrawal = totalNonDiscExpenses + taxes;
   console.log("Remaining withdrawal:", remainingWithdrawal);
@@ -194,6 +194,7 @@ async function getNonDiscretionaryExpenses(scenarioId) {
     `SELECT 
             id,
             name,
+            discretionary,
             initial_amount AS initialAmount,
             change_amt_or_pct AS changeAmtOrPct,
             change_distribution AS changeDistribution,

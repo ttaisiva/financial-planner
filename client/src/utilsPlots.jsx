@@ -89,7 +89,7 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
     });
   });
 
-  console.log("yearlySuccess: ", yearlySuccess);
+  
 
   // Calculate success probability for each year
   return Object.entries(yearlySuccess).map(([year, { successCount, totalCount }]) => ({
@@ -117,7 +117,7 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
         });
       });
 
-      console.log("yearlyData: ", yearlyData);
+ 
   
       // Calculate percentiles and median for each year
       
@@ -265,19 +265,32 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
   //Helper function to calculate median or average
 
   // helper function to Calcualte the median or average of the simulation results for each investment type
-  const calculateValue = (values, useMedian) => {
-    values.sort((a, b) => a - b);
-    if (useMedian) {
-      return values[Math.floor(values.length * 0.5)];
-    }
-    return values.reduce((sum, val) => sum + val, 0) / values.length;
-  };
+  // const calculateValue = (values, useMedian) => {
+  //   values.sort((a, b) => a - b);
 
+  //   if (useMedian) {
+      
+  //     return values[Math.floor(values.length * 0.5)];
+  //   }
+    
+  //   return values.reduce((sum, val) => sum + val, 0) / values.length;
+  // };
+
+  const calculateValue = (values, useMedian) => {
+    const sorted = [...values].sort((a, b) => a - b);  // Make a shallow copy before sorting
+  
+    if (useMedian) {
+      return sorted[Math.floor(sorted.length * 0.5)];
+    }
+  
+    return sorted.reduce((sum, val) => sum + val, 0) / sorted.length;
+  };
   
   const processData = (simulationResults, breakdownType, useMedian) => {
     
     const yearlyData = {};
 
+    console.log("Simulation Results before yearly: ", simulationResults); //they're already all the same here....
     simulationResults.forEach((simulation) => {
       simulation.forEach((yearlyResult) => {
         const year = yearlyResult.year;
@@ -285,7 +298,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
         if (!yearlyData[year]) {
           yearlyData[year] = {};
         }
-
+        console.log("Yearly Result: ", yearlyResult);
         if (breakdownType === "investments") {
           yearlyResult.investments.forEach(({ id, value }) => {
            
@@ -313,6 +326,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
           if (!yearlyData[year]["Taxes"]) {
             yearlyData[year]["Taxes"] = [];
           }
+          console.log("Taxes: ", yearlyResult.taxes)
           yearlyData[year]["Taxes"].push(yearlyResult.taxes);
         }
       });
@@ -320,6 +334,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
 
     // determine median/avg
     const processed = {};
+    console.log("Plot yearlyData: ", yearlyData);
     Object.entries(yearlyData).forEach(([year, categories]) => {
       processed[year] = {};
       Object.entries(categories).forEach(([category, values]) => {
@@ -348,18 +363,17 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     aggregatedData[year] = {};
     Object.entries(categories).forEach(([category, value]) => {
       if (value >= aggregationThreshold) {
-        console.log("value is over threshold ", value);
-        aggregatedData[year][category] = value;
+        aggregatedData[year][category] = Number(value);
+
       } else {
-        console.log("VALUE LESS THAN THRESHOLD:", value);
+
+        console.log(`Category ${category} with value ${value} is below aggregation threshold of ${aggregationThreshold}. Moving to "Other".`);
+
         if (!aggregatedData[year]["Other"]) {
-          console.log("creating new category other for year:", year)
           aggregatedData[year]["Other"] = 0;
           allCategories.add("Other");
         }
-        
-        aggregatedData[year]["Other"] += value;
-        console.log("Added value to other category: ", aggregatedData[year]["Other"]  )
+        aggregatedData[year]["Other"] += Number(value);
       }
     });
   });

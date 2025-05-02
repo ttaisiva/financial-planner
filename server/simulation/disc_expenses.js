@@ -8,7 +8,6 @@ import { pool } from "../utils.js";
  * @param {number} scenarioId - The ID of the scenario.
  * @param {number} cashInvestment - The current cash available.
  * @param {number} curYearIncome - The current year's income.
- * @param {number} curYearSS - The current year's social security income.
  * @param {number} curYearGains - The current year's capital gains.
  * @param {number} curYearEarlyWithdrawals - The current year's early withdrawals.
  * @param {number} currentSimulationYear - The current simulation year.
@@ -34,7 +33,7 @@ export async function payDiscExpenses(
     currentSimulationYear
   );
   console.log("active events", activeEvents);
-  runningTotals.expenses.push(activeEvents);
+  runningTotals.expenses.push(...activeEvents);
 
 
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -188,6 +187,7 @@ async function getDiscretionaryExpenses(scenarioId) {
     `SELECT 
             id,
             name,
+            discretionary AS discretionary,
             initial_amount AS initialAmount,
             change_amt_or_pct AS changeAmtOrPct,
             change_distribution AS changeDistribution,

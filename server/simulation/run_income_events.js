@@ -68,13 +68,13 @@ export async function process_income_event(
     `Found ${incomeEvents.length} income events for scenario ID ${scenarioId}.`
   );
 
+  let activeIncomeEvents = [];
   for (const event of incomeEvents) {
 
     if (!isActiveIncomeEvent(event.id, currentSimulationYear, incomeEventsStart, incomeEventsDuration)) {
       continue; // Skip inactive events
     }
-    // add to incomes in running totals
-    runningTotals.incomes.push(event);
+
 
 
     // Apply expected annual change for active income events
@@ -119,7 +119,7 @@ export async function process_income_event(
       );
     }
 
-    // Add to cash investment and income totals
+    // Add to cash investment and income totals 
     runningTotals.cashInvestment = (
       Number(runningTotals.cashInvestment) + Number(currentAmount)
     ).toFixed(2);
@@ -127,6 +127,12 @@ export async function process_income_event(
       Number(runningTotals.curYearIncome) + Number(currentAmount)
     ).toFixed(2);
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
+      
+
+    activeIncomeEvents.push(event);
+
+    
+    
 
     console.log(
       `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${Number(
@@ -148,6 +154,8 @@ export async function process_income_event(
       `Updated previousYearAmounts for event ID ${event.id}: ${currentAmount}`
     );
   }
+  
+  runningTotals.incomes = activeIncomeEvents; // Store active income events in running totals
 
   console.log(
     `Finished processing income events for scenario ID ${scenarioId}.`
@@ -180,6 +188,7 @@ export async function getIncomeEvents(
     `SELECT 
             id,
             scenario_id,
+            name,
             start,
             duration,
             change_distribution,
@@ -207,6 +216,7 @@ export async function getIncomeEvents(
 
     return {
       id: event.id,
+      name: event.name,
       initialAmount: event.initial_amount,
       changeDistribution: event.change_distribution,
       inflationAdjusted: event.inflation_adjusted || false,

@@ -21,6 +21,7 @@ import {
   getRebalanceEvents,
   runRebalanceEvents,
 } from "./run_rebalance_events.js";
+
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
@@ -142,6 +143,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     }
 
     // Step 4: Update investments
+
     await updateInvestments(scenarioId, runningTotals);
 
     // Step 5: Pay non-discretionary expenses and taxes
@@ -152,6 +154,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals,
       taxData
     );
+    console.log("Taxes paid for the year:", taxes);
+    if (taxes) {
+      runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
+    }
+
     await payNonDiscExpenses(
       scenarioId,
       runningTotals,
@@ -195,10 +202,28 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearSS: runningTotals.curYearSS,
       curYearGains: runningTotals.curYearGains,
       curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
-      purchasePrices: runningTotals.purchasePrices,
-      investments: runningTotals.investments,
-      expenses: runningTotals.expenses,
-      incomes: runningTotals.incomes,
+      purchasePrices: JSON.parse(JSON.stringify(runningTotals.purchasePrices)), // Deep copy
+      investments: JSON.parse(JSON.stringify(runningTotals.investments)), // Deep copy
+      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), // Deep copy
+      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
+      taxes: JSON.parse(JSON.stringify(runningTotals.taxes)),
+    });
+
+    console.log("Logging yearlyResults for incomes, expenses, and taxes:");
+    yearlyResults.forEach((result) => {
+      console.log(`Year ${result.year}:`);
+
+      // // Log incomes
+      // console.log("Incomes:");
+      // console.log(JSON.stringify(result.incomes, null, 2));
+
+      // // Log expenses
+      // console.log("Expenses:");
+      // console.log(JSON.stringify(result.expenses, null, 2));
+
+      // Log taxes
+      console.log("Taxes:");
+      console.log(JSON.stringify(result.taxes, null, 2));
     });
 
     logResults(
@@ -207,6 +232,10 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals.investments,
       currentSimulationYear
     );
+
+    runningTotals.expenses = []; // Reset expenses for the next year
+    runningTotals.incomes = []; // Reset incomes for the next year
+    runningTotals.taxes = []; // Reset taxes for the next year
   }
   logs.csvlog.end(); // close the csv log file
 
@@ -214,7 +243,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
   logs.evtlog.end(); // close the event log file
 
-  console.log("Returning simulationResults: ", simulationResults);
+  //console.log("Returning simulationResults: ", simulationResults);
+
   return simulationResults;
 }
 
@@ -262,7 +292,7 @@ export function calculateStats(simulationResults, financialGoal) {
     })
     .filter((val) => !isNaN(val));
 
-  console.log("all Cash investments: ", allCashInvestments);
+  //console.log("all Cash investments: ", allCashInvestments);
 
   // Calculate mean
   const total = allCashInvestments.reduce(
@@ -275,7 +305,7 @@ export function calculateStats(simulationResults, financialGoal) {
 
   // Calculate median
   const sorted = [...allCashInvestments].sort((a, b) => a - b);
-  console.log("sorted: ", sorted);
+  //console.log("sorted: ", sorted);
   const mid = Math.floor(sorted.length / 2);
 
   const median =
@@ -287,7 +317,7 @@ export function calculateStats(simulationResults, financialGoal) {
   const max = Math.max(...allCashInvestments);
   console.log("max: ", max);
 
-  console.log("Simulation Results to return: ", simulationResults);
+  //console.log("Simulation Results to return: ", simulationResults);
   return {
     median,
     mean,
