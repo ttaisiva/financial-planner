@@ -64,6 +64,7 @@ export async function payDiscExpenses(
   );
 
   // Step 3: Iterate over discretionary expenses and pay them if cash is available
+  let actualDiscExpensesAmt = 0;
   for (const expense of sortedExpenses) {
     const expenseAmount = calculateExpenseAmount(
       expense,
@@ -82,9 +83,10 @@ export async function payDiscExpenses(
       console.log(
         `Paid ${expense.name} using cash. Remaining cash: ${runningTotals.cashInvestment}`
       );
+      actualDiscExpensesAmt += Number(expenseAmount); //this is for tracking if we paid the full amount of the disc expense or we still have money leftover
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
-      remainingWithdrawal = expenseAmount - runningTotals.cashInvestment;
+      remainingWithdrawal = expenseAmount - Number(runningTotals.cashInvestment);
       console.log(
         `Insufficient cash for ${expense.name}. Remaining withdrawal needed: ${remainingWithdrawal}`
       );
@@ -109,7 +111,7 @@ export async function payDiscExpenses(
 
         const withdrawalAmount = Math.min(
           remainingWithdrawal,
-          investment.value
+          Number(investment.value)
         );
 
         // Calculate capital gain or loss
@@ -160,11 +162,17 @@ export async function payDiscExpenses(
         );
       }
 
-      if (remainingWithdrawal > 0) {
+      if (remainingWithdrawal > 0) { //meaning we could not pay the full expense
         console.warn(
           `Unable to fully pay ${expense.name}. Remaining unpaid: ${remainingWithdrawal}`
         );
+        actualDiscExpensesAmt +=
+        (Number(expenseAmount) - Number(remainingWithdrawal)); // Track the amount actually paid
         break; // Stop paying further expenses if this one cannot be fully paid
+
+      }
+      else{ //meaning with the money form strategy we could pay the full expense
+        actualDiscExpensesAmt += Number(expenseAmount); // Track the full amount paid
       }
 
       // Deduct the expense amount from cash
@@ -174,6 +182,10 @@ export async function payDiscExpenses(
       );
     }
   }
+  runningTotals.actualDiscExpenses = Number(actualDiscExpensesAmt); // Track the total discretionary expenses paid
+  console.log(
+    `Total discretionary expenses paid: ${Number(runningTotals.actualDiscExpenses)}`
+  );
 }
 
 /**
@@ -255,7 +267,7 @@ export function calculateExpenseAmount(
     console.log(`Applied inflation adjustment. New adjustedAmount: ${amount}`);
   }
 
-  return amount;
+  return Number(amount);
 }
 
 /**

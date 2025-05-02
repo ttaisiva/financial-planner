@@ -60,6 +60,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     expenses: [],
     incomes: [],
     taxes: [],
+    actualDiscExpenses: [], 
   };
 
   const incomeEvents = await getIncomeEvents(scenarioId, []);
@@ -203,10 +204,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearGains: runningTotals.curYearGains,
       curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
       purchasePrices: JSON.parse(JSON.stringify(runningTotals.purchasePrices)), // Deep copy
-      investments: JSON.parse(JSON.stringify(runningTotals.investments)), // Deep copy
-      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), // Deep copy
-      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
+      investments: JSON.parse(JSON.stringify(runningTotals.investments)), 
+      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), 
+      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), 
       taxes: JSON.parse(JSON.stringify(runningTotals.taxes)),
+      actualDiscExpenses: JSON.parse(JSON.stringify(runningTotals.actualDiscExpenses)), 
     });
 
     console.log("Logging yearlyResults for incomes, expenses, and taxes:");
