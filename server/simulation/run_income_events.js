@@ -128,7 +128,9 @@ export async function process_income_event(
     ).toFixed(2);
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
       
+
     activeIncomeEvents.push(event);
+
     
     
 

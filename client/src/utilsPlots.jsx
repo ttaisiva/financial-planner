@@ -366,7 +366,9 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
         aggregatedData[year][category] = Number(value);
 
       } else {
+
         console.log(`Category ${category} with value ${value} is below aggregation threshold of ${aggregationThreshold}. Moving to "Other".`);
+
         if (!aggregatedData[year]["Other"]) {
           aggregatedData[year]["Other"] = 0;
           allCategories.add("Other");
