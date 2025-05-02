@@ -31,7 +31,7 @@ describe("managerSimulation parallelism", () => {
       new Date(),
       numSimulations,
       "1", // test user ID is 1
-      "38"
+      "38" // scenario associated with test user
     );
 
     const durationSeconds = (Date.now() - start) / 1000;
