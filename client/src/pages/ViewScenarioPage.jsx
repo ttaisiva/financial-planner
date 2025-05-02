@@ -380,10 +380,10 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
 
       {/* Charts 4.1*/}
       
-      <div className="line-chart-container">
+      {/* <div className="line-chart-container">
         <h3>Success Probability Over Time</h3>
         <LineChart successProbabilities={successProbabilities} />
-      </div>
+      </div> */}
       
       {/* Charts 4.2*/}
       <div className="shaded-line-chart-container"> 
@@ -393,9 +393,9 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)} >
           <option value="cashInvestment">Cash Investment</option>
           <option value="curYearIncome">Current Year Income</option>
-          <option value="curYearSS">Current Year Social Security</option>
-          <option value="curYearGains">Current Year Gains</option>
           <option value="curYearEarlyWithdrawals">Current Year Early Withdrawals</option>
+          <option value="expenses">Expenses (including tax)</option>
+          <option value="discExpenses">% of Total Discretionary Expenses</option>
         </select>
 
         <ShadedLineChart
@@ -406,7 +406,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
       </div>  
 
       {/* Charts 4.3*/}
-      <div>
+      {/* <div>
           <h3>Stacked Bar Chart</h3>
           <select value={breakdownType} onChange={(e) => setBreakdownType(e.target.value)} >
             <option value="investments">Investments</option>
@@ -436,7 +436,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
             useMedian={useMedian} // true for median, false for average
           />
 
-      </div>
+      </div> */}
      
 
     
