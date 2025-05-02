@@ -60,7 +60,7 @@ export async function payNonDiscExpenses(
   );
 
   console.log("nondisc taxes", taxes);
-  runningTotals.taxes.push(taxes);
+
   
   let remainingWithdrawal = totalNonDiscExpenses + taxes;
   console.log("Remaining withdrawal:", remainingWithdrawal);

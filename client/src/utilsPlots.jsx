@@ -326,6 +326,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
           if (!yearlyData[year]["Taxes"]) {
             yearlyData[year]["Taxes"] = [];
           }
+          console.log("Taxes: ", yearlyResult.taxes)
           yearlyData[year]["Taxes"].push(yearlyResult.taxes);
         }
       });
