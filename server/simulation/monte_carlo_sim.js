@@ -216,6 +216,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
       });
 
+
       console.log("Logging yearlyResults for incomes, expenses, and taxes:");
       yearlyResults.forEach((result) => {
         console.log(`Year ${result.year}:`);
@@ -234,6 +235,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       });
       
 
+
       logResults(
           logs.csvlog,
           logs.csvStream,
@@ -241,10 +243,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
           currentSimulationYear
       );
 
+
       runningTotals.expenses = []; // Reset expenses for the next year
       runningTotals.incomes = []; // Reset incomes for the next year
       runningTotals.taxes = []; // Reset taxes for the next year
- 
+
 
     }
     logs.csvlog.end(); // close the csv log file
