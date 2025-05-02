@@ -21,6 +21,7 @@ import {
   getRebalanceEvents,
   runRebalanceEvents,
 } from "./run_rebalance_events.js";
+
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
@@ -160,7 +161,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         incomeEvents,
         runningTotals,
         taxData
-      );
+      ); //for some reason taxes here is undefined ask violet
+      console.log("Taxes paid for the year:", taxes);
+      runningTotals.taxes.push(taxes);
       await payNonDiscExpenses(
         scenarioId,
         runningTotals,
@@ -213,16 +216,38 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
       });
 
+
+      console.log("Logging yearlyResults for incomes, expenses, and taxes:");
+      yearlyResults.forEach((result) => {
+        console.log(`Year ${result.year}:`);
+        
+        // // Log incomes
+        // console.log("Incomes:");
+        // console.log(JSON.stringify(result.incomes, null, 2));
       
-        console.log(`Yearly Results after year ${currentSimulationYear}:`);
-        console.log(JSON.stringify(yearlyResults, null, 2));
+        // // Log expenses
+        // console.log("Expenses:");
+        // console.log(JSON.stringify(result.expenses, null, 2));
+      
+        // Log taxes
+        console.log("Taxes:");
+        console.log(JSON.stringify(result.taxes, null, 2));
+      });
+      
+
+
       logResults(
           logs.csvlog,
           logs.csvStream,
           runningTotals.investments,
           currentSimulationYear
       );
- 
+
+
+      runningTotals.expenses = []; // Reset expenses for the next year
+      runningTotals.incomes = []; // Reset incomes for the next year
+      runningTotals.taxes = []; // Reset taxes for the next year
+
 
     }
     logs.csvlog.end(); // close the csv log file
