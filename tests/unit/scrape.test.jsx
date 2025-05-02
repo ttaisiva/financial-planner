@@ -1,74 +1,122 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import mysql from "mysql2/promise";
-import { scrapeData } from "../server/scraping.js";
-// import { connectToDatabase } from "../server.js";
-import { startServer } from "../../server/server.js";
+import {
+  scrapeCapitalGainsTax,
+  scrapeRMD,
+  scrapeStandardDeductions,
+  scrapeTaxBrackets,
+} from "../../server/taxes";
+import { pool } from "../../server/utils";
+import { describe, test, expect, afterAll } from "vitest";
 
-vi.mock("mysql2/promise");
-vi.mock("../server/server.js", () => ({
-  // connectToDatabase: vi.fn(),
-}));
+/**
+ * TP: ChatGPT, prompt - "i have functions that scrape data about tax brackets, standard deductions,
+ * capital gains tax rates, and RMDs from the IRS website. How can I make a test that checks if the scraping works,
+ * and the data is present in the database?"
+ *
+ * "what if i can't use a test database?"
+ *
+ * "how should this change if i am using a pool of connections"
+ */
+describe("Scrape and store tax information from IRS website", () => {
+  test("Scrapes and stores tax bracket data, then rolls back", async () => {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
 
-describe("scrapeData function", () => {
-  let mockConnection;
-  let executeMock;
+      await connection.query("DELETE FROM tax_brackets");
 
-  beforeEach(() => {
-    executeMock = vi.fn();
+      // Optionally override the scraper to use this connection
+      const brackets = await scrapeTaxBrackets(connection);
 
-    mockConnection = {
-      execute: executeMock,
-      end: vi.fn(),
-    };
+      expect(brackets.length).toBeGreaterThan(0);
+      expect(brackets[0]).toHaveProperty("year");
+      expect(brackets[0]).toHaveProperty("filingStatus");
+      expect(brackets[0]).toHaveProperty("taxRate");
+      expect(brackets[0]).toHaveProperty("incomeMin");
+      expect(brackets[0]).toHaveProperty("incomeMax");
 
-    // connectToDatabase.mockResolvedValue(mockConnection);
+      const [rows] = await connection.query("SELECT * FROM tax_brackets");
+      expect(rows.length).toBe(brackets.length);
+
+      await connection.rollback(); // undo the inserts
+    } finally {
+      connection.release(); // return to the pool
+    }
   });
+  test("Scrapes and stores standard deductions data, then rolls back", async () => {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
 
-  afterEach(() => {
-    vi.clearAllMocks();
+      await connection.query("DELETE FROM standard_deductions");
+
+      // Optionally override the scraper to use this connection
+      const brackets = await scrapeStandardDeductions(connection);
+
+      expect(brackets.length).toBeGreaterThan(0);
+      expect(brackets[0]).toHaveProperty("year");
+      expect(brackets[0]).toHaveProperty("filingStatus");
+      expect(brackets[0]).toHaveProperty("standardDeduction");
+
+      const [rows] = await connection.query(
+        "SELECT * FROM standard_deductions"
+      );
+      expect(rows.length).toBe(brackets.length);
+
+      await connection.rollback(); // undo the inserts
+    } finally {
+      connection.release(); // return to the pool
+    }
   });
+  test("Scrapes and stores capital gains tax rate data, then rolls back", async () => {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
 
-  it("should insert scraped tax bracket data into the database", async () => {
-    executeMock.mockResolvedValueOnce([]); // Mock isTaxBracketYearInDB to return no existing data
+      await connection.query("DELETE FROM capital_gains_tax");
 
-    await scrapeData();
+      // Optionally override the scraper to use this connection
+      const brackets = await scrapeCapitalGainsTax(connection);
 
-    expect(executeMock).toHaveBeenCalledWith(
-      "INSERT INTO `tax_brackets`(`year`, `filing_status`, `tax_rate`, `income_min`, `income_max`) VALUES (?, ?, ?, ?, ?)",
-      expect.any(Array)
-    );
+      expect(brackets.length).toBeGreaterThan(0);
+      expect(brackets[0]).toHaveProperty("year");
+      expect(brackets[0]).toHaveProperty("filingStatus");
+      expect(brackets[0]).toHaveProperty("capitalGainsTaxRate");
+      expect(brackets[0]).toHaveProperty("incomeMin");
+      expect(brackets[0]).toHaveProperty("incomeMax");
+
+      const [rows] = await connection.query("SELECT * FROM capital_gains_tax");
+      expect(rows.length).toBe(brackets.length);
+
+      await connection.rollback(); // undo the inserts
+    } finally {
+      connection.release(); // return to the pool
+    }
   });
+  test("Scrapes and stores RMD data, then rolls back", async () => {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
 
-  it("should insert scraped standard deduction data into the database", async () => {
-    executeMock.mockResolvedValueOnce([]); // Mock isStandardDeductYearInDB to return no existing data
+      await connection.query("DELETE FROM rmds");
 
-    await scrapeData();
+      // Optionally override the scraper to use this connection
+      const brackets = await scrapeRMD(connection);
 
-    expect(executeMock).toHaveBeenCalledWith(
-      "INSERT INTO `standard_deductions`(`year`, `filing_status`, `standard_deduction`) VALUES (?, ?, ?)",
-      expect.any(Array)
-    );
+      expect(brackets.length).toBeGreaterThan(0);
+      expect(brackets[0]).toHaveProperty("year");
+      expect(brackets[0]).toHaveProperty("age");
+      expect(brackets[0]).toHaveProperty("distribution_period");
+
+      const [rows] = await connection.query("SELECT * FROM rmds");
+      expect(rows.length).toBe(brackets.length);
+
+      await connection.rollback(); // undo the inserts
+    } finally {
+      connection.release(); // return to the pool
+    }
   });
+});
 
-  it("should insert scraped capital gains tax data into the database", async () => {
-    executeMock.mockResolvedValueOnce([]); // Mock isCapitalGainsYearInDB to return no existing data
-
-    await scrapeData();
-
-    expect(executeMock).toHaveBeenCalledWith(
-      "INSERT INTO `capital_gains_tax`(`year`, `filing_status`, `cap_gains_tax_rate`, `income_min`, `income_max`) VALUES (?, ?, ?, ?, ?)",
-      expect.any(Array)
-    );
-  });
-
-  it("should not insert tax bracket data if it already exists in the database", async () => {
-    executeMock.mockResolvedValueOnce([{ year: 2024 }]); // Mock year already existing
-
-    await scrapeData();
-
-    expect(executeMock).not.toHaveBeenCalledWith(
-      "INSERT INTO `tax_brackets`(`year`, `filing_status`, `tax_rate`, `income_min`, `income_max`) VALUES (?, ?, ?, ?, ?)",
-      expect.any(Array)
-    );
-  });
+afterAll(async () => {
+  await pool.end();
 });
