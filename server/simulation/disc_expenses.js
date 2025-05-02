@@ -2,6 +2,7 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { getEventDuration, getEventStartYear } from "./run_income_events.js";
 import { pool } from "../utils.js";
+import { logExpense } from "../logging.js";
 
 /**
  * Pays discretionary expenses based on the spending strategy and available cash.
@@ -18,7 +19,8 @@ export async function payDiscExpenses(
   runningTotals,
   currentSimulationYear,
   inflationRate,
-  date
+  date,
+  evtlog
 ) {
 
 
@@ -62,6 +64,7 @@ export async function payDiscExpenses(
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
+      logExpense(evtlog, currentSimulationYear, expense.name, expenseAmount, "cash");
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
       remainingWithdrawal = expenseAmount - runningTotals.cashInvestment;
@@ -90,6 +93,8 @@ export async function payDiscExpenses(
             runningTotals.purchasePrices[String(investment.id)];
           const currentValueBeforeSale = investment.value;
           investment.value -= withdrawalAmount;
+          logExpense(evtlog, currentSimulationYear, expense.name, withdrawalAmount, investment.type);
+
           if (investment.value === 0) {
             capitalGain = withdrawalAmount - purchasePriceID;
           } else {

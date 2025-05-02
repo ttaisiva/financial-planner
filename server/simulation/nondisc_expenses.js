@@ -6,6 +6,7 @@ import {
   getExpenseWithdrawalStrategy,
 } from "./disc_expenses.js";
 import { pool } from "../utils.js";
+import { logExpense } from "../logging.js";
 /**
  * Pays non-discretionary expenses based on available cash and investments.
  * @param {number} scenarioId - The ID of the scenario.
@@ -24,7 +25,8 @@ export async function payNonDiscExpenses(
   currentSimulationYear,
   inflationRate,
   date,
-  taxes
+  taxes,
+  evtlog
 ) {
 
   // Fetch non-discretionary expenses
@@ -65,6 +67,7 @@ export async function payNonDiscExpenses(
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
+      logExpense(evtlog, currentSimulationYear, expense.name, expenseAmount, "cash");
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
       remainingWithdrawal =
@@ -96,6 +99,8 @@ export async function payNonDiscExpenses(
             runningTotals.purchasePrices[String(investment.id)];
           const currentValueBeforeSale = investment.value;
           investment.value -= withdrawalAmount;
+          logExpense(evtlog, currentSimulationYear, expense.name, withdrawalAmount, investment.type);
+          
           if (investment.value === 0) {
             capitalGain = withdrawalAmount - purchasePriceID;
           } else {

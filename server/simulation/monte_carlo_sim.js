@@ -166,7 +166,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       currentSimulationYear,
       inflationRate,
       date,
-      taxes
+      taxes,
+      logs.evtlog
     );
 
     // Step 6: Pay discretionary expenses
@@ -175,7 +176,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals,
       currentSimulationYear,
       inflationRate,
-      date
+      date,
+      logs.evtlog
     );
 
     // Step 7: Invest Events

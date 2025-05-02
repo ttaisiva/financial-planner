@@ -33,44 +33,51 @@ export async function initLogs(userId) {
   return { csvlog, evtlog, csvStream };
 }
 export function logResults(csvlog, csvStream, investments, year) {
-  // Copilot prompt: this function is called repeatedly so i
-  // want to make sure the title row doesn't get written multiple times,
-  // but that it does get modified if new investments are added
 
-  // Check if the title row needs to be updated or written
-  if (
-    !csvlog.titleRow ||
-    investments.some(
-      (investment) =>
-        !csvlog.titleRow.includes(
-          investment.type + " (" + investment.taxStatus + ")"
-        )
-    )
-  ) {
-    const titleRow = [
-      "Year",
-      ...investments.map(
-        (investment) => investment.type + " (" + investment.taxStatus + ")"
-      ),
-    ];
-    csvStream.write(titleRow);
-    csvlog.titleRow = titleRow; // Cache the title row in the write stream object
+  // Initialize allInvestments if not present
+  if (!csvlog.allInvestments) {
+    csvlog.allInvestments = [];
   }
-  // Write the data row
+
+  // Update allInvestments with any new ones
+  for (const inv of investments) {
+    const label = inv.type + " (" + inv.taxStatus + ")";
+    if (!csvlog.allInvestments.includes(label)) {
+      csvlog.allInvestments.push(label);
+    }
+  }
+
+  // Only write the title row once
+  if (!csvlog.headerWritten) {
+    const titleRow = ["Year", ...csvlog.allInvestments];
+    csvStream.write(titleRow);
+    csvlog.headerWritten = true;
+  }
+
+  // Create a map from label to value
+  const investmentMap = Object.fromEntries(
+    investments.map((inv) => [
+      inv.type + " (" + inv.taxStatus + ")",
+      Math.round(inv.value * 100) / 100,
+    ])
+  );
+
+  // Write data row with all known investments (fill in blanks if missing)
   const dataRow = [
     year,
-    ...investments.map((investment) =>
-      Math.round(investment.value * 100) / 100
+    ...csvlog.allInvestments.map((label) =>
+      investmentMap[label] !== undefined ? investmentMap[label] : ""
     ),
   ];
   csvStream.write(dataRow);
 }
 
+
 export async function logEvent(evtlog, event) {
   console.log("event amount in logEvent", event.amount);
   const eventString = `Year: ${event.year}
     Event: ${event.type}
-    $${event.amount.toFixed(2)}\n`;
+    $${event.amount.toFixed(2)}\n\n`;
   evtlog.write(eventString); // Write the event to the log file
 }
 
@@ -81,6 +88,15 @@ export function logIncome(evtlog, year, name, currentAmount) {
     year: year,
     type: `Income "${name}"`,
     amount: currentAmount,
+  };
+  logEvent(evtlog, event);
+}
+
+export function logExpense(evtlog, year, name, amount, investment) {
+  const event = {
+    year: year,
+    type: `Expense "${name} deducted from ${investment}"`,
+    amount: amount,
   };
   logEvent(evtlog, event);
 }
