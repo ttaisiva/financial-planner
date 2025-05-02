@@ -8,7 +8,6 @@ import { pool } from "../utils.js";
  * @param {number} scenarioId - The ID of the scenario.
  * @param {number} cashInvestment - The current cash available.
  * @param {number} curYearIncome - The current year's income.
- * @param {number} curYearSS - The current year's social security income.
  * @param {number} curYearGains - The current year's capital gains.
  * @param {number} curYearEarlyWithdrawals - The current year's early withdrawals.
  * @param {number} currentSimulationYear - The current simulation year.

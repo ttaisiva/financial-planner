@@ -337,7 +337,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
 
   const [selectedOption, setSelectedOption] = useState("cashInvestment");
   const [breakdownType, setBreakdownType] = useState("investments"); // Default to "investments"
-  const [aggregationThreshold, setAggregationThreshold] = useState(1000); // Default threshold
+  const [aggregationThreshold, setAggregationThreshold] = useState(0); // Default threshold
   const [useMedian, setUseMedian] = useState(true); // Default to median
 
 
@@ -432,8 +432,8 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
           <StackedBarChart
             allSimulationResults={allSimulationResults.flat(1)}
             breakdownType= {breakdownType} // "investments", "income", or "expenses"
-            aggregationThreshold={1000} // Threshold for aggregation
-            useMedian={true} // true for median, false for average
+            aggregationThreshold={aggregationThreshold} // Threshold for aggregation
+            useMedian={useMedian} // true for median, false for average
           />
 
       </div>

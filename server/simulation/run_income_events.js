@@ -73,8 +73,7 @@ export async function process_income_event(
     if (!isActiveIncomeEvent(event.id, currentSimulationYear, incomeEventsStart, incomeEventsDuration)) {
       continue; // Skip inactive events
     }
-    // add to incomes in running totals
-    runningTotals.incomes.push(event);
+
 
 
     // Apply expected annual change for active income events
@@ -119,7 +118,7 @@ export async function process_income_event(
       );
     }
 
-    // Add to cash investment and income totals
+    // Add to cash investment and income totals 
     runningTotals.cashInvestment = (
       Number(runningTotals.cashInvestment) + Number(currentAmount)
     ).toFixed(2);
@@ -127,6 +126,10 @@ export async function process_income_event(
       Number(runningTotals.curYearIncome) + Number(currentAmount)
     ).toFixed(2);
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
+      
+    runningTotals.incomes.push(event);
+    
+    
 
     console.log(
       `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${Number(

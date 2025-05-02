@@ -149,7 +149,9 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       }
 
       // Step 4: Update investments
+  
       await updateInvestments(scenarioId, runningTotals);
+
 
       // Step 5: Pay non-discretionary expenses and taxes
       const taxes = await payTaxes(
@@ -187,6 +189,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         afterTaxContributionLimit,
         date
       );
+  
 
       // Step 8: Rebalance investments
       await runRebalanceEvents(
@@ -194,30 +197,33 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         rebalanceEvents,
         runningTotals
       );
-
+      
  
         
-        yearlyResults.push({
-          year: currentSimulationYear,
-          cashInvestment: runningTotals.cashInvestment,
-          curYearIncome: runningTotals.curYearIncome,
-          curYearSS: runningTotals.curYearSS,
-          curYearGains: runningTotals.curYearGains,
-          curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
-          purchasePrices: runningTotals.purchasePrices,
-          investments: runningTotals.investments,
-          expenses: runningTotals.expenses,
-          incomes: runningTotals.incomes
-        });
+      yearlyResults.push({
+        year: currentSimulationYear,
+        cashInvestment: runningTotals.cashInvestment,
+        curYearIncome: runningTotals.curYearIncome,
+        curYearSS: runningTotals.curYearSS,
+        curYearGains: runningTotals.curYearGains,
+        curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
+        purchasePrices: JSON.parse(JSON.stringify(runningTotals.purchasePrices)), // Deep copy
+        investments: JSON.parse(JSON.stringify(runningTotals.investments)), // Deep copy
+        expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), // Deep copy
+        incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
+      });
 
       
-      
+        console.log(`Yearly Results after year ${currentSimulationYear}:`);
+        console.log(JSON.stringify(yearlyResults, null, 2));
       logResults(
           logs.csvlog,
           logs.csvStream,
           runningTotals.investments,
           currentSimulationYear
       );
+ 
+
     }
     logs.csvlog.end(); // close the csv log file
 
@@ -226,7 +232,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   logs.evtlog.end(); // close the event log file
 
   
-  console.log("Returning simulationResults: ", simulationResults);
+  //console.log("Returning simulationResults: ", simulationResults);
+  
   return simulationResults; 
 }
 
@@ -272,7 +279,7 @@ export function calculateStats(simulationResults, financialGoal) {
   .filter((val) => !isNaN(val));
 
 
-  console.log("all Cash investments: ", allCashInvestments);
+  //console.log("all Cash investments: ", allCashInvestments);
 
   // Calculate mean
   const total = allCashInvestments.reduce((sum, value) => Number(sum) + Number(value), 0);
@@ -282,7 +289,7 @@ export function calculateStats(simulationResults, financialGoal) {
 
   // Calculate median
   const sorted = [...allCashInvestments].sort((a, b) => a - b);
-  console.log("sorted: ", sorted);
+  //console.log("sorted: ", sorted);
   const mid = Math.floor(sorted.length / 2);
 
   const median =
@@ -294,7 +301,7 @@ export function calculateStats(simulationResults, financialGoal) {
   const max = Math.max(...allCashInvestments);
   console.log("max: ", max);
 
-  console.log("Simulation Results to return: ", simulationResults);
+  //console.log("Simulation Results to return: ", simulationResults);
   return {
     median,
     mean,
