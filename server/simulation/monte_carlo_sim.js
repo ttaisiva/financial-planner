@@ -161,9 +161,12 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         incomeEvents,
         runningTotals,
         taxData
-      ); //for some reason taxes here is undefined ask violet
+      ); 
       console.log("Taxes paid for the year:", taxes);
-      runningTotals.taxes.push(taxes);
+      if (taxes) {
+        runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
+      }
+      
       await payNonDiscExpenses(
         scenarioId,
         runningTotals,
@@ -214,6 +217,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
         investments: JSON.parse(JSON.stringify(runningTotals.investments)), // Deep copy
         expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), // Deep copy
         incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
+        taxes: JSON.parse(JSON.stringify(runningTotals.taxes)),
       });
 
 
@@ -247,7 +251,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals.expenses = []; // Reset expenses for the next year
       runningTotals.incomes = []; // Reset incomes for the next year
       runningTotals.taxes = []; // Reset taxes for the next year
-
+      
+ 
 
     }
     logs.csvlog.end(); // close the csv log file
