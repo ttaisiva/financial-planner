@@ -44,6 +44,29 @@ router.post("/events", (req, res) => {
   res.status(200).json(eventsData);
 });
 
+router.get("/event-names", async (req, res) => {
+  const { scenarioId } = req.query; // Get scenarioId from query parameters
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch event names for the given scenarioId
+    const [rows] = await pool.execute(
+      `SELECT DISTINCT name FROM events WHERE scenario_id = ? ORDER BY name ASC`,
+      [scenarioId]
+    );
+
+    const eventNames = rows.map((row) => row.name); // Extract event names
+    res.status(200).json(eventNames); // Send event names as JSON response
+  } catch (error) {
+    console.error("Error fetching event names:", error);
+    res.status(500).json({ error: "Failed to fetch event names" });
+  }
+});
+
+
 router.get("/discretionary-expenses", (req, res) => {
   console.log("Received request for locally stored discretionary expenses.");
   const filtered = eventsLocalStorage.filter(
