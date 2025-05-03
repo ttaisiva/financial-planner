@@ -1,4 +1,3 @@
-// tests/sim_manager.performance.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as monteCarlo from "../../server/simulation/monte_carlo_sim.js";
 import { managerSimulation } from "../../server/simulation/sim_manager.js";
