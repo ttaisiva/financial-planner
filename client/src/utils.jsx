@@ -1,5 +1,19 @@
 import yaml from "js-yaml";
 
+export const fetchInvest1d = async (scenarioId) => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/invest-events-1d?scenarioId=${scenarioId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch investment events");
+    }
+    const investEvents = await response.json();
+    return investEvents;
+  } catch (error) {
+    console.error("Error fetching investment events:", error);
+    return [];
+  }
+};
+
 export const fetchEventNames = async (scenarioId) => {
   try {
     const response = await fetch(`http://localhost:3000/api/event-names?scenarioId=${scenarioId}`);
@@ -10,6 +24,20 @@ export const fetchEventNames = async (scenarioId) => {
     return eventNames;
   } catch (error) {
     console.error("Error fetching event names:", error);
+    return [];
+  }
+};
+
+export const fetchEventTypes = async (scenarioId) => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/event-types?scenarioId=${scenarioId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch event types");
+    }
+    const eventTypes = await response.json();
+    return eventTypes;
+  } catch (error) {
+    console.error("Error fetching event types:", error);
     return [];
   }
 };

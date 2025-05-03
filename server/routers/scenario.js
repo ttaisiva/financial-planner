@@ -66,6 +66,59 @@ router.get("/event-names", async (req, res) => {
   }
 });
 
+router.get("/event-types", async (req, res) => {
+  const { scenarioId } = req.query; // Get scenarioId from query parameters
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch distinct event types for the given scenarioId
+    const [rows] = await pool.execute(
+      `SELECT DISTINCT type FROM events WHERE scenario_id = ? ORDER BY type ASC`,
+      [scenarioId]
+    );
+
+    const eventTypes = rows.map((row) => row.type); // Extract event types
+    res.status(200).json(eventTypes); // Send event types as JSON response
+  } catch (error) {
+    console.error("Error fetching event types:", error);
+    res.status(500).json({ error: "Failed to fetch event types" });
+  }
+});
+
+router.get("/invest-events-1d", async (req, res) => {
+  const { scenarioId } = req.query;
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch investment events with exactly two items in asset_allocation
+    const [rows] = await pool.execute(
+      `
+      SELECT id, name, asset_allocation AS assetAllocation
+      FROM events
+      WHERE scenario_id = ? AND type = 'invest' AND JSON_LENGTH(asset_allocation) = 2
+      `,
+      [scenarioId]
+    );
+
+    // Use asset_allocation directly as an object
+    const investEvents = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      allocations: row.assetAllocation, // Directly use the object
+    }));
+
+    res.status(200).json(investEvents);
+  } catch (error) {
+    console.error("Error fetching investment events:", error);
+    res.status(500).json({ error: "Failed to fetch investment events" });
+  }
+});
 
 router.get("/discretionary-expenses", (req, res) => {
   console.log("Received request for locally stored discretionary expenses.");
