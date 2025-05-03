@@ -605,6 +605,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
             investments={investments}
             setInvestments={setInvestments}
             setShowInvestmentForm={setShowInvestmentForm}
+            investmentTypes={investmentTypes}
           />
         )}
       </div>
