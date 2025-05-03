@@ -2,10 +2,12 @@ import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
-import { loadAnimation } from "../utils";
+import { loadAnimation, fetchEventNames } from "../utils";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml from "js-yaml";
+import { LineChart, ShadedLineChart, StackedBarChart, calculateSuccessProbability } from "../utilsPlots";
+import { Exploration1D } from "../components/Explorations";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -14,6 +16,7 @@ export const ViewScenarioPage = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [userId, setUserId] = useState(null); // State to store user ID
   const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
+  const [eventNames, setEventNames] = useState([]);
 
   const { id: scenarioIdFromUrl } = useParams(); // gets scenario id from url that took you to this page
   useEffect(() => {
@@ -21,6 +24,17 @@ export const ViewScenarioPage = () => {
       setScenarioId(scenarioIdFromUrl);
     }
   }, [scenarioIdFromUrl]);
+
+  useEffect(() => {
+    const loadEventNames = async () => {
+      if (scenarioId) {
+        const names = await fetchEventNames(scenarioId);
+        setEventNames(names);
+      }
+    };
+
+    loadEventNames();
+  }, [scenarioId]);
 
   const handleRunSimulation = async () => {
     setIsRunning(true);
@@ -43,6 +57,7 @@ export const ViewScenarioPage = () => {
     } catch (error) {
       console.error("Error running simulation:", error);
     } finally {
+      console.log("Simulation completed");
       setIsRunning(false);
     }
   };
@@ -101,7 +116,9 @@ export const ViewScenarioPage = () => {
         </button>
       </div>
 
-      <DisplaySimulationResults />
+      {simulationResults && <DisplaySimulationResults simulationResults={simulationResults} /> }
+      {simulationResults && <h2> Scenario Parameter Exploration</h2>}
+      {simulationResults && <Exploration1D eventNames={eventNames} />}
       <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>
@@ -326,7 +343,118 @@ export const ViewSingleScenario = ({
   );
 };
 
-export const DisplaySimulationResults = () => {
-  //placeholder need to implmement this
-  return <h2>Simulation Results</h2>;
+export const DisplaySimulationResults = ({ simulationResults }) => {
+  console.log("Simulation Results:", simulationResults); // Log the simulation results
+
+  if (!simulationResults || simulationResults.length === 0) {
+    return <p>No simulation results available.</p>;
+  }
+
+  const [selectedOption, setSelectedOption] = useState("cashInvestment");
+  const [breakdownType, setBreakdownType] = useState("investments"); // Default to "investments"
+  const [aggregationThreshold, setAggregationThreshold] = useState(0); // Default threshold
+  const [useMedian, setUseMedian] = useState(true); // Default to median
+
+
+  const { median, mean, min, max, financialGoal, totalSimulations, allSimulationResults } = simulationResults;
+  console.log("Now allSimulationResults:", allSimulationResults); // Log all simulation results
+  const successProbabilities = calculateSuccessProbability(allSimulationResults.flat(1), Number(financialGoal));
+  console.log("Success Probabilities:", successProbabilities); 
+
+
+  return (
+    <div>
+      <h2>Simulation Results</h2>
+      <div className="summary">
+        <p><strong>Total Simulations:</strong> {totalSimulations}</p>
+        <p><strong>Median:</strong> ${median.toFixed(2)}</p>
+        <p><strong>Mean:</strong> ${mean.toFixed(2)}</p>
+        <p><strong>Min:</strong> ${min.toFixed(2)}</p>
+        <p><strong>Max:</strong> ${max.toFixed(2)}</p>
+        <p><strong>Financial Goal: </strong> ${Number(financialGoal).toFixed(2)}</p>
+      </div>
+
+      <div className="simulation-details">
+        {allSimulationResults.flat(1).map((simulation, simIndex) => (
+          <div key={simIndex} className="simulation">
+            <h3>Simulation {simIndex + 1}</h3>
+            {simulation.map((yearlyResult, yearIndex) => (
+              <div key={yearIndex} className="item">
+                <h4>Year: {yearlyResult.year}</h4>
+                <p><strong>Cash Investment:</strong> ${Number(yearlyResult.cashInvestment).toFixed(2)}</p>
+                <p><strong>Current Year Income:</strong> ${Number(yearlyResult.curYearIncome).toFixed(2)}</p>
+                <p><strong>Current Year Social Security:</strong> ${Number(yearlyResult.curYearSS).toFixed(2)}</p>
+                <p><strong>Current Year Gains:</strong> ${Number(yearlyResult.curYearGains).toFixed(2)}</p>
+                <p><strong>Current Year Early Withdrawals:</strong> ${Number(yearlyResult.curYearEarlyWithdrawals).toFixed(2)}</p>
+                <p><strong>Purchase Prices:</strong> {JSON.stringify(yearlyResult.purchasePrices)}</p>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Charts 4.1*/}
+      
+      <div className="line-chart-container">
+        <h3>Success Probability Over Time</h3>
+        <LineChart successProbabilities={successProbabilities} />
+      </div>
+      
+      {/* Charts 4.2*/}
+      <div className="shaded-line-chart-container"> 
+        <h3>Shaded Success Probability Over Time</h3>
+        <p> Select a quantity to view as a shaded line chart</p>
+
+        <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)} >
+          <option value="cashInvestment">Cash Investment</option>
+          <option value="curYearIncome">Current Year Income</option>
+          <option value="curYearEarlyWithdrawals">Current Year Early Withdrawals</option>
+          <option value="expenses">Expenses (including tax)</option>
+          <option value="discExpenses">% of Total Discretionary Expenses</option>
+        </select>
+
+        <ShadedLineChart
+           label={selectedOption}
+           allSimulationResults={allSimulationResults.flat(1)}
+           financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
+         />
+      </div>  
+
+      {/* Charts 4.3*/}
+      <div>
+          <h3>Stacked Bar Chart</h3>
+          <select value={breakdownType} onChange={(e) => setBreakdownType(e.target.value)} >
+            <option value="investments">Investments</option>
+            <option value="income">Income</option>
+            <option value="expenses">Expenses</option>
+          </select>
+
+          <label>Aggregation Threshold:</label>
+          <input
+              type="number"
+              id="aggregationThreshold"
+              value={aggregationThreshold}
+              onChange={(e) => setAggregationThreshold(Number(e.target.value))}
+              min="0"
+            />
+          <label htmlFor="useMedian">Use Median:</label>
+          <input
+              type="checkbox"
+              id="useMedian"
+              checked={useMedian}
+              onChange={(e) => setUseMedian(e.target.checked)}
+          />
+          <StackedBarChart
+            allSimulationResults={allSimulationResults.flat(1)}
+            breakdownType= {breakdownType} // "investments", "income", or "expenses"
+            aggregationThreshold={aggregationThreshold} // Threshold for aggregation
+            useMedian={useMedian} // true for median, false for average
+          />
+
+      </div>
+     
+
+    
+    </div>
+  );
 };

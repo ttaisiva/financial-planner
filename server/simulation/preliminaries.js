@@ -1,4 +1,4 @@
-import { ensureConnection, connection } from "../server.js";
+import { pool } from "../utils.js";
 
 /**
  * Fetches necessary preliminary data from the database.
@@ -9,16 +9,8 @@ export async function get_preliminaries_data(scenarioId) {
   // Query the database to fetch inflation assumptions and other necessary data
   // this would be different from guest
 
-  await ensureConnection(); // Ensure the connection is established
   console.log("perform query to get preliminaries data");
-  if (
-    !connection ||
-    connection.state === "disconnected" ||
-    connection._closing
-  ) {
-    throw new Error("Database connection is not active.");
-  }
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             inflation_assumption
          FROM scenarios
@@ -51,14 +43,12 @@ export async function get_preliminaries_data(scenarioId) {
  */
 
 export async function run_preliminaries(scenarioId) {
-  await ensureConnection();
-  ensureConnection();
   const result = await get_preliminaries_data(scenarioId);
   console.log("Inflation assumption data:", result);
 
   const inflation_rate = sample(result.inflation_assumption);
 
-    // console.log("Sampled inflation rate for the current year:", inflation_rate);
+  // console.log("Sampled inflation rate for the current year:", inflation_rate);
 
   return inflation_rate;
 }
@@ -73,12 +63,12 @@ export async function run_preliminaries(scenarioId) {
 export function sample(item) {
   let result;
 
-    // console.log(`Sampling item: ${JSON.stringify(item)}, of type: ${item.type}`);
-    switch (item.type) {
-        case "fixed":
-            // Use the fixed inflation rate
-            result = Number(item.value);
-            break;
+  // console.log(`Sampling item: ${JSON.stringify(item)}, of type: ${item.type}`);
+  switch (item.type) {
+    case "fixed":
+      // Use the fixed inflation rate
+      result = Number(item.value);
+      break;
 
     case "normal":
       // Sample from a normal distribution
@@ -100,8 +90,8 @@ export function sample(item) {
       throw new Error("Invalid type");
   }
 
-    // console.log("Resulting value of sampling:", result);
-    return result;
+  // console.log("Resulting value of sampling:", result);
+  return result;
 }
 
 /**

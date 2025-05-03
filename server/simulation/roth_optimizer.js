@@ -1,15 +1,14 @@
-import { connection } from "../server.js";
-import { ensureConnection } from "../server.js";
 import { getFilingStatus } from "./monte_carlo_sim.js";
 import { logRothConversion } from "../logging.js";
+import { pool } from "../utils.js";
 
 export async function runRothOptimizer(
   scenarioId,
   rothStrategy,
   incomeEvents,
-  investments,
   year,
   evtlog,
+  runningTotals
 ) {
   console.log(`Running Roth optimizer for scenario ID: ${scenarioId}`);
   // step 1: determine user tax bracket and conversion amount:
@@ -20,7 +19,7 @@ export async function runRothOptimizer(
     if (conversionAmt === 0) break;
 
     // Copilot prompt: find the object in array "investments" whose id matches rothStrategy[i].id
-    let pretax = investments.find(
+    let pretax = runningTotals.investments.find(
       (investment) => investment.id === rothStrategy[i].investment_id
     );
 
@@ -36,14 +35,15 @@ export async function runRothOptimizer(
     } else {
       // check if after tax equivalent exists
       // Copilot prompt: use investments.find to look for an element with .type that is the same as pretax.type
-      let aftertax = investments.find(
+      let aftertax = runningTotals.investments.find(
         (investment) =>
           investment.type === pretax.type &&
-          investment.taxStatus === "After-Tax"
+          investment.taxStatus === "after-tax"
       );
       if (aftertax) {
         aftertax.value += conversionAmt;
         pretax.value -= conversionAmt;
+
         logRothConversion(evtlog, year, pretax, aftertax, conversionAmt);
       } else {
         // create new after tax investment to transfer to
@@ -53,14 +53,16 @@ export async function runRothOptimizer(
           taxStatus: "after-tax",
           value: conversionAmt,
         };
-        investments.push(newInvestment);
+        runningTotals.investments.push(newInvestment);
+
         logRothConversion(evtlog, year, pretax, pretax, conversionAmt);
       }
       conversionAmt = 0;
     }
   }
 
-  return { investments, rothStrategy };
+  let resInvestment = runningTotals.investments;
+  return { resInvestment, rothStrategy };
 }
 
 async function getMaxConversionAmt(scenarioId, incomeEvents) {
@@ -72,9 +74,14 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
   const filingStatus = await getFilingStatus(scenarioId);
   console.log(filingStatus);
   const taxBrackets = await getTaxBrackets(filingStatus);
-  console.log(taxBrackets);
 
-  let userMax = taxBrackets[0].incomeMax;
+  let userMax;
+  try {
+    userMax = taxBrackets[0].incomeMax;
+  } catch {
+    console.error("Couldn't extract income max from tax brackets.");
+    return 0;
+  }
   for (let i = 0; i < taxBrackets.length; i++) {
     if (totalIncome <= taxBrackets[i].incomeMax) {
       userMax = taxBrackets[i].incomeMax;
@@ -89,8 +96,10 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
 }
 
 async function getTaxBrackets(filingStatus) {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  if (filingStatus === "individual") filingStatus = "single";
+  if (filingStatus === "couple") filingStatus = "married";
+
+  const [rows] = await pool.execute(
     `SELECT 
             income_max as incomeMax
          FROM tax_brackets
@@ -102,8 +111,7 @@ async function getTaxBrackets(filingStatus) {
 
 // select ordering only
 export async function getRothStrategy(scenarioId) {
-  await ensureConnection();
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT 
             id,
             investment_id,
@@ -117,9 +125,8 @@ export async function getRothStrategy(scenarioId) {
 
 // select start and end year for the roth conversion strategy
 export async function getRothYears(scenarioId) {
-  await ensureConnection();
   // Copilot prompt: select only the first row where this constraint applies
-  const [rows] = await connection.execute(
+  const [rows] = await pool.execute(
     `SELECT
             start_year,
             end_year

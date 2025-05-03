@@ -11,7 +11,7 @@
 // investment (i.e., the average of its value at the beginning and end of the year). Subtract the
 // expenses from the value.
 
-import { ensureConnection, connection } from "../server.js";
+import { pool } from "../utils.js";
 import { sample } from "./preliminaries.js"; // Assuming you have a sampling function for probability distributions
 
 /**
@@ -20,11 +20,7 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
  * @param {number} curYearIncome - Current year's income to be updated.
  * @returns {Object} Updated investments and curYearIncome.
  */
-export async function updateInvestments(
-  scenarioId,
-  runningTotals,
-  investments
-) {
+export async function updateInvestments(scenarioId, runningTotals) {
   console.log(`Starting updateInvestments for scenario ID: ${scenarioId}`);
 
   // Fetch investments and investment types
@@ -32,7 +28,7 @@ export async function updateInvestments(
   const investmentTypes = await getAllInvestmentTypes(scenarioId);
 
   console.log(
-    `Fetched ${investments.length} investments for scenario ID: ${scenarioId}`
+    `Fetched ${runningTotals.investments.length} investments for scenario ID: ${scenarioId}`
   );
   //   console.log("investments", investments);
   console.log(
@@ -41,16 +37,16 @@ export async function updateInvestments(
     } investment types for scenario ID: ${scenarioId}`
   );
 
-  for (const investment of investments) {
-    console.log(
-      `Processing investment ID: ${investment.id}, type: ${investment.type}, value: ${investment.value}`
-    );
-    console.log("investment", investment);
+  for (const investment of runningTotals.investments) {
+    // console.log(
+    //   `Processing investment ID: ${investment.id}, type: ${investment.type}, value: ${investment.value}`
+    // );
+    console.log("Processing investment:", investment.id);
 
     const investmentType = investmentTypes[investment.type];
 
     if (!investmentType) {
-      console.error(`Investment type ${investment.type} not found.`);
+      //console.error(`Investment type ${investment.type} not found.`);
       continue; // Skip this investment if its type is not found
     }
 
@@ -72,9 +68,13 @@ export async function updateInvestments(
       investment.taxStatus === "non-retirement" &&
       investmentType.taxability === "taxable"
     ) {
-      runningTotals.curYearIncome += generatedIncome;
+      runningTotals.curYearIncome =
+        Number(runningTotals.curYearIncome) + Number(generatedIncome);
+
       console.log(
-        `Added generated income to curYearIncome. Updated curYearIncome: ${runningTotals.curYearIncome}`
+        `Added generated income to curYearIncome. Updated curYearIncome: ${Number(
+          runningTotals.curYearIncome
+        )}`
       );
     }
 
@@ -128,10 +128,8 @@ export async function updateInvestments(
  * @returns {Object} A map of investment types, where the keys are the investment type names and the values are their details.
  */
 export async function getAllInvestmentTypes(scenarioId) {
-  await ensureConnection(); // Ensure the database connection is active
-
   try {
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       `SELECT 
                 name,
                 description,
