@@ -2,11 +2,12 @@ import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
-import { loadAnimation } from "../utils";
+import { loadAnimation, fetchEventNames } from "../utils";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml from "js-yaml";
 import { LineChart, ShadedLineChart, StackedBarChart, calculateSuccessProbability } from "../utilsPlots";
+import { Exploration1D } from "../components/Explorations";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -15,6 +16,7 @@ export const ViewScenarioPage = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [userId, setUserId] = useState(null); // State to store user ID
   const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
+  const [eventNames, setEventNames] = useState([]);
 
   const { id: scenarioIdFromUrl } = useParams(); // gets scenario id from url that took you to this page
   useEffect(() => {
@@ -22,6 +24,17 @@ export const ViewScenarioPage = () => {
       setScenarioId(scenarioIdFromUrl);
     }
   }, [scenarioIdFromUrl]);
+
+  useEffect(() => {
+    const loadEventNames = async () => {
+      if (scenarioId) {
+        const names = await fetchEventNames(scenarioId);
+        setEventNames(names);
+      }
+    };
+
+    loadEventNames();
+  }, [scenarioId]);
 
   const handleRunSimulation = async () => {
     setIsRunning(true);
@@ -104,6 +117,8 @@ export const ViewScenarioPage = () => {
       </div>
 
       {simulationResults && <DisplaySimulationResults simulationResults={simulationResults} /> }
+      {simulationResults && <h2> Scenario Parameter Exploration</h2>}
+      {simulationResults && <Exploration1D eventNames={eventNames} />}
       <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>
@@ -393,9 +408,9 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)} >
           <option value="cashInvestment">Cash Investment</option>
           <option value="curYearIncome">Current Year Income</option>
-          <option value="curYearSS">Current Year Social Security</option>
-          <option value="curYearGains">Current Year Gains</option>
           <option value="curYearEarlyWithdrawals">Current Year Early Withdrawals</option>
+          <option value="expenses">Expenses (including tax)</option>
+          <option value="discExpenses">% of Total Discretionary Expenses</option>
         </select>
 
         <ShadedLineChart
