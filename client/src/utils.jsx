@@ -1,5 +1,19 @@
 import yaml from "js-yaml";
 
+export const fetchEventNames = async (scenarioId) => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/event-names?scenarioId=${scenarioId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch event names");
+    }
+    const eventNames = await response.json();
+    return eventNames;
+  } catch (error) {
+    console.error("Error fetching event names:", error);
+    return [];
+  }
+};
+
 export const handleFileUpload = (e) => {
   const file = e.target.files[0];
   if (file) {
