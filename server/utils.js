@@ -209,19 +209,21 @@ export const getEventYears = async (events) => {
         continue;
     }
 
-    // Ensure no overlapping of event durations
-    for (const [otherEventId, otherEventData] of Object.entries(eventYears)) {
-      if (
-        (startYear >= otherEventData.startYear &&
-          startYear <= otherEventData.endYear) || // Overlapping check
-        (startYear + 1 >= otherEventData.startYear &&
-          startYear + 1 <= otherEventData.endYear)
-      ) {
-        // If overlap, adjust startYear to be after the other event's endYear
-        startYear = otherEventData.endYear + 1;
-        console.log(
-          `Adjusted start year for event ${event.id} to avoid overlap.`
-        );
+    if (event.type === "invest") {
+      // Ensure no overlapping of event durations
+      for (const [otherEventId, otherEventData] of Object.entries(eventYears)) {
+        if (
+          (startYear >= otherEventData.startYear &&
+            startYear <= otherEventData.endYear) || // Overlapping check
+          (startYear + 1 >= otherEventData.startYear &&
+            startYear + 1 <= otherEventData.endYear)
+        ) {
+          // If overlap, adjust startYear to be after the other event's endYear
+          startYear = otherEventData.endYear + 1;
+          console.log(
+            `Adjusted start year for event ${event.id} to avoid overlap.`
+          );
+        }
       }
     }
 
