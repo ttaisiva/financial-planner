@@ -9,7 +9,7 @@ import yaml from "js-yaml";
 
 export const Dashboard = () => {
   const [username, setUsername] = useState("undefined");
-  const [showSharedScenarios, setShowSharedScenarios] = useState(false);
+  const [showSharedScenarios, setShowSharedScenarios] = useState(true);
 
   useEffect(() => {
     loadAnimation();
@@ -276,6 +276,7 @@ export const DisplayUserScenarios = ({ showSharedScenarios }) => {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log(data);
         setSharedScenarios(data);
       } else {
         console.error("Failed to fetch shared scenarios");
@@ -320,7 +321,7 @@ export const DisplayUserScenarios = ({ showSharedScenarios }) => {
           sharedScenarios.map((scenario, index) => (
             <div key={index} className="scenario-item">
               <h3>
-                <strong>Scenario Name: </strong>
+                <strong>Shared Scenario Name: </strong>
                 {scenario.name}
               </h3>
               <button onClick={() => handleScenarioClick(scenario.id)}>
