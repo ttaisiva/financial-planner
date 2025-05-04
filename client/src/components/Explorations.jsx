@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 
-export const Exploration1D = ({ runSimulations, eventNames }) => {
+export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEvents }) => {
+  const [selectedInvestEvent, setSelectedInvestEvent] = useState("");
   const [selectedEvent, setSelectedEvent] = useState("");
   const [parameter, setParameter] = useState("");
   const [lowerBound, setLowerBound] = useState(0);
@@ -77,6 +78,25 @@ export const Exploration1D = ({ runSimulations, eventNames }) => {
           </label>
         </>
       )}
+      <br />
+      
+      {/* Dropdown for selecting an investment event */}
+      <label>
+        Select Asset Allocation for invest event:
+        <select value={selectedInvestEvent} onChange={(e) => setSelectedInvestEvent(e.target.value)}>
+          <option value="">No Asset Allocation selected</option>
+          {investEvents.map((event) => (
+            <option key={event.id} value={event.name}>
+              {event.name} (
+              {Object.entries(event.allocations)
+                .map(([assetName, percentage]) => `${assetName}: ${percentage * 100}%`)
+                .join(", ")}
+              )
+            </option>
+          ))}
+        </select>
+      </label>
+      <br /> 
 
       {/* Checkbox for enabling/disabling Roth optimizer */}
       <label>
@@ -87,9 +107,11 @@ export const Exploration1D = ({ runSimulations, eventNames }) => {
           onChange={(e) => setEnableRothOptimizer(e.target.checked)}
         />
       </label>
+      <br />
 
       {/* Run Simulations Button */}
       <button onClick={handleRun}>Run Simulations</button>
+      
     </div>
   );
 };

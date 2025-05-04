@@ -66,6 +66,59 @@ router.get("/event-names", async (req, res) => {
   }
 });
 
+router.get("/event-types", async (req, res) => {
+  const { scenarioId } = req.query; // Get scenarioId from query parameters
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch distinct event types for the given scenarioId
+    const [rows] = await pool.execute(
+      `SELECT DISTINCT type FROM events WHERE scenario_id = ? ORDER BY type ASC`,
+      [scenarioId]
+    );
+
+    const eventTypes = rows.map((row) => row.type); // Extract event types
+    res.status(200).json(eventTypes); // Send event types as JSON response
+  } catch (error) {
+    console.error("Error fetching event types:", error);
+    res.status(500).json({ error: "Failed to fetch event types" });
+  }
+});
+
+router.get("/invest-events-1d", async (req, res) => {
+  const { scenarioId } = req.query;
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch investment events with exactly two items in asset_allocation
+    const [rows] = await pool.execute(
+      `
+      SELECT id, name, asset_allocation AS assetAllocation
+      FROM events
+      WHERE scenario_id = ? AND type = 'invest' AND JSON_LENGTH(asset_allocation) = 2
+      `,
+      [scenarioId]
+    );
+
+    // Use asset_allocation directly as an object
+    const investEvents = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      allocations: row.assetAllocation, // Directly use the object
+    }));
+
+    res.status(200).json(investEvents);
+  } catch (error) {
+    console.error("Error fetching investment events:", error);
+    res.status(500).json({ error: "Failed to fetch investment events" });
+  }
+});
 
 router.get("/discretionary-expenses", (req, res) => {
   console.log("Received request for locally stored discretionary expenses.");
@@ -222,7 +275,7 @@ router.post("/run-simulation", async (req, res) => {
     );
 
     // Call the Monte Carlo simulation worker manager function
-    const results =  await managerSimulation(
+    const results = await managerSimulation(
       currentYear,
       numSimulations,
       userId,
@@ -233,7 +286,6 @@ router.post("/run-simulation", async (req, res) => {
     // Send the results back to the client
     console.log("Running parallel simulations completed successfully.");
     res.json(results);
-    
   } catch (error) {
     console.error("Error running parallel simulation:", error);
     res.status(500).send("Failed to run simulation");
@@ -985,7 +1037,7 @@ async function insertEvents(pool, scenario_id, events) {
     event.scenarioId = scenario_id;
 
     const eventSnakeCase = keysToSnakeCase(event);
-    console.log("event snake case", eventSnakeCase);
+    // console.log("event snake case", eventSnakeCase);
     const [eventResult] = await pool.query(
       "INSERT INTO events SET ?",
       eventSnakeCase
@@ -1008,26 +1060,6 @@ async function insertEvents(pool, scenario_id, events) {
       )
     `;
 
-    const eventsValues = [
-      scenario_id ?? null,
-      event.name ?? null,
-      event.description ?? "",
-      event.type ?? null,
-      event.start ?? null,
-      event.duration ?? null,
-      event.changeDistribution ?? null,
-      event.initialAmount ?? null,
-      event.changeAmtOrPct ?? null,
-      event.inflationAdjusted ?? null,
-      event.userFraction ?? null,
-      event.socialSecurity ?? null,
-      event.assetAllocation ?? null,
-      event.glidePath ?? null,
-      event.assetAllocation2 ?? null,
-      event.discretionary ?? null,
-      event.maxCash ?? null,
-    ];
-
     // console.log("Inserting values:", eventsValues);
     // await pool.execute(eventsQuery, eventsValues);
     console.log(`Event ${event.name} saved to the database.`);
@@ -1043,23 +1075,19 @@ async function insertEvents(pool, scenario_id, events) {
  */
 async function insertInvestmentTypes(pool, scenario_id, investmentTypes) {
   for (const investmentType of investmentTypes) {
-    const investmentTypeQuery = `
-      INSERT INTO investment_types (scenario_id, name, description, return_distribution, 
-      return_amt_or_pct, expense_ratio, income_distribution, income_amt_or_pct, taxability) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const investmentTypeValues = [
-      scenario_id ?? null,
-      investmentType.name ?? null,
-      investmentType.description ?? null,
-      investmentType.returnDistribution ?? null,
-      investmentType.returnAmtOrPct ?? null,
-      investmentType.expenseRatio ?? null,
-      investmentType.incomeDistribution ?? null,
-      investmentType.incomeAmtOrPct ?? null,
-      investmentType.taxability ?? null,
-    ];
-    await pool.execute(investmentTypeQuery, investmentTypeValues);
+    investmentType.returnDistribution =
+      JSON.stringify(investmentType.returnDistribution) ?? null;
+    investmentType.incomeDistribution =
+      JSON.stringify(investmentType.incomeDistribution) ?? null;
+    investmentType.scenarioId = scenario_id;
+
+    const investTypeSnakeCase = keysToSnakeCase(investmentType);
+    const [investTypeResult] = await pool.query(
+      "INSERT INTO investment_types SET ?",
+      investTypeSnakeCase
+    );
+
+    // await pool.execute(investmentTypeQuery, investmentTypeValues);
     console.log(
       `Investment type ${investmentType.name} saved to the database.`
     );

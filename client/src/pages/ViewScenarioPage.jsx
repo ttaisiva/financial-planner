@@ -2,22 +2,24 @@ import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
-import { loadAnimation, fetchEventNames } from "../utils";
+import { loadAnimation, fetchEventNames , fetchEventTypes, fetchInvest1d} from "../utils";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
-import yaml from "js-yaml";
+import yaml, { load } from "js-yaml";
 import { LineChart, ShadedLineChart, StackedBarChart, calculateSuccessProbability } from "../utilsPlots";
 import { Exploration1D } from "../components/Explorations";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
   const [numSimulations, setNumSimulations] = useState(""); // Default value for simulations
+  const [investEvents, setInvestEvents] = useState([]); // State to store invest events
   const [simulationResults, setSimulationResults] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [userId, setUserId] = useState(null); // State to store user ID
   const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
   const [eventNames, setEventNames] = useState([]);
+  const [eventTypes, setEventTypes] = useState([]); // State to store event types
   const [showPopup, setShowPopup] = useState(false);
 
   const togglePopup = () => {
@@ -41,6 +43,30 @@ export const ViewScenarioPage = () => {
 
     loadEventNames();
   }, [scenarioId]);
+
+  useEffect(() => {
+    const loadEventTypes = async () => {
+      if (scenarioId) { 
+        const types = await fetchEventTypes(scenarioId); 
+        setEventTypes(types);
+      }
+    };
+
+    loadEventTypes();
+  }, [scenarioId]);
+
+  useEffect(() => {
+    const loadInvestEvents = async () => {
+      if (scenarioId) {
+        const events = await fetchInvest1d(scenarioId);
+        setInvestEvents(events);
+      }
+    };
+
+    loadInvestEvents();
+  }, [scenarioId]);
+
+  console.log("Invest Events:", investEvents); // Log invest events
 
   const handleRunSimulation = async () => {
     setIsRunning(true);
@@ -244,7 +270,7 @@ export const ViewScenarioPage = () => {
 
       {simulationResults && <DisplaySimulationResults simulationResults={simulationResults} /> }
       {simulationResults && <h2> Scenario Parameter Exploration</h2>}
-      {simulationResults && <Exploration1D eventNames={eventNames} />}
+      {simulationResults && <Exploration1D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents}/>}
       <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>
