@@ -79,18 +79,20 @@ function processQueue() {
  * @param {string} scenarioId - The scenario ID.
  * @returns {Promise} A promise that resolves with the results of all simulations.
  */
-export async function managerSimulation(date, numSimulations, userId, scenarioId) {
+export async function managerSimulation(date, numSimulations, userId, scenarioId, dimParams) {
   console.log("RUNNING Monte Carlo simulation WITH parallelism.");
 
   // Question: should we do 1 worker per one simulation?
   const tasks = []; // Store all the tasks/simulations
 
+  // dimParams will be undefined if this is not an exploration simulation
   for (let i = 0; i < numSimulations; i++) {
     const taskData = {
       date,
       numSimulations: 1, // Each task runs one simulation
       userId,
       scenarioId,
+      dimParams,
     };
 
     // Each of the promises/results are collected in task array
