@@ -312,11 +312,11 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
           });
         } else if (breakdownType === "income") {
           console.log("INCOME STACKED BAR CHART: ", yearlyResult.incomes)
-          yearlyResult.incomes.forEach(({ name, initialAmount }) => {
+          yearlyResult.incomes.forEach(({ name, adjustedAmount }) => {
             if (!yearlyData[year][name]) {
               yearlyData[year][name] = [];
             }
-            yearlyData[year][name].push(initialAmount);
+            yearlyData[year][name].push(adjustedAmount);
           });
         } else if (breakdownType === "expenses") {
           console.log("EXPENSES STACKED BAR CHART: ", yearlyResult.expenses)
