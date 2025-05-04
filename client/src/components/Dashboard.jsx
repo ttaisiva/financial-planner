@@ -154,6 +154,7 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
           financialGoal: yamlScn.financialGoal,
           residenceState: yamlScn.residenceState,
         }
+        console.log(scenario);
 
         // INVESTMENTS FOR UPLOAD
         const investments = [];

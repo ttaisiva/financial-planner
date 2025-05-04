@@ -422,9 +422,13 @@ router.post("/import-scenario", async (req, res) => {
     userId = req.session.user.id;
     console.log("Authenticated user ID:", userId);
   }
+  else {
+    res.status(401).send();
+  }
 
   console.log("authenticated", req.session.user);
   const scenario = req.body.scenario;
+  console.log("Uploaded Scenario", scenario);
 
   const query = `
     INSERT INTO scenarios (
@@ -538,6 +542,58 @@ router.get("/export-scenario", async (req, res) => {
     console.error("Failed to export scenario", err);
   }
 });
+
+/**
+ * @param req.query Holds scenario id
+ * @param req.body List of emails with read or write access to be added
+ */
+router.post("/share-scenario", async (req, res) => {
+  const emails = req.body.users;
+  let userId; // Will be added to db for given shared scenario
+  if (req.session.user) {
+    userId = req.session.user.id;
+    console.log("Authenticated user ID:", userId);
+  }
+  else {
+    res.status(401).send();
+  }
+  console.log("user id", userId);
+  console.log("scenario id", req.query.id);
+  // Collect UserIDs from list of emails; send error if any email does not have an account
+  const user_query = `
+    SELECT id 
+    FROM users 
+    WHERE email = ?
+  `
+  console.log(emails); 
+  const users = []
+  for (const email of emails) {
+    const [rows] = await pool.execute(user_query, [email.email]);
+    if (rows.length > 0) {
+      users.push({
+        id: rows[0].id, 
+        access: email.access,
+      });
+    } else {
+      console.error(`No account found for email: ${email.email}`);
+      return res.status(400).json({ error: `No account found for email: ${email.email}` });
+    }
+  }
+  console.log("users", users);
+  // List of only authenticated users, users array
+  // Record will be saved for each user that is added to shared scenario
+  const scenarioId = req.query.id;
+  const query = `
+    INSERT INTO shared (owner_id, scenario_id, user_id, read_or_write) 
+    VALUES (?, ?, ?, ?)
+  `;
+  const values = users.map(user => [userId, scenarioId, user.id, user.access]);
+  console.log("values", values);
+  for (const value of values) {
+    await pool.execute(query, value);
+  }
+  res.status(200).json({ message: "Scenario shared successfully." })
+})
 
 /**
  * Returns the scenario from the database based on ID and user_id
