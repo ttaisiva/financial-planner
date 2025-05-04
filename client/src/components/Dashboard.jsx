@@ -9,6 +9,7 @@ import yaml from "js-yaml";
 
 export const Dashboard = () => {
   const [username, setUsername] = useState("undefined");
+  const [showSharedScenarios, setShowSharedScenarios] = useState(true);
 
   useEffect(() => {
     loadAnimation();
@@ -21,21 +22,24 @@ export const Dashboard = () => {
       .then((data) => {
         setUsername(data.name);
       });
-  });
+  }, []);
 
   return (
     <div className="container-dashboard">
       <div className="content-dashboard">
-        <DashboardContent />
+        <DashboardContent
+          showSharedScenarios={showSharedScenarios}
+          setShowSharedScenarios={setShowSharedScenarios}
+        />
         <div className="user_scenarios">
-          <DisplayUserScenarios />
+          <DisplayUserScenarios showSharedScenarios={showSharedScenarios} />
         </div>
       </div>
     </div>
   );
 };
 
-const DashboardContent = () => {
+const DashboardContent = ({ showSharedScenarios, setShowSharedScenarios }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
@@ -45,6 +49,10 @@ const DashboardContent = () => {
 
   const toggleUpload = () => {
     setShowUpload(!showUpload);
+  };
+
+  const handleCheckboxChange = (e) => {
+    setShowSharedScenarios(e.target.checked); // Update state based on checkbox
   };
 
   return (
@@ -61,7 +69,6 @@ const DashboardContent = () => {
       <UploadScenario
         toggleUpload={toggleUpload}
         isActive={showUpload}
-        // handleFileChange={handleFileChange}
       />
       <div className={`upload-overlay ${showUpload ? "active" : ""}`}></div>
 
@@ -80,10 +87,15 @@ const DashboardContent = () => {
 
       <div className="filter-options fade-in">
         <label>
-          <input type="checkbox" checked /> Created by me
+          <input type="checkbox" checked readOnly /> Created by me
         </label>
         <label>
-          <input type="checkbox" /> Shared with me
+          <input
+            type="checkbox"
+            checked={showSharedScenarios}
+            onChange={handleCheckboxChange}
+          />{" "}
+          Shared with me
         </label>
       </div>
     </>
@@ -154,6 +166,7 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
           financialGoal: yamlScn.financialGoal,
           residenceState: yamlScn.residenceState,
         }
+        console.log(scenario);
 
         // INVESTMENTS FOR UPLOAD
         const investments = [];
@@ -231,8 +244,9 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
   );
 };
 
-export const DisplayUserScenarios = () => {
+export const DisplayUserScenarios = ({ showSharedScenarios }) => {
   const [scenarios, setScenarios] = useState([]);
+  const [sharedScenarios, setSharedScenarios] = useState([]);
   const navigate = useNavigate();
 
   const fetchScenarios = async () => {
@@ -253,9 +267,29 @@ export const DisplayUserScenarios = () => {
     }
   };
 
+  const fetchSharedScenarios = async () => {
+    try {
+      setSharedScenarios([]); // Reset existing data before fetching new
+      const response = await fetch("http://localhost:3000/api/shared-scenarios", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        setSharedScenarios(data);
+      } else {
+        console.error("Failed to fetch shared scenarios");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   useEffect(() => {
     loadAnimation();
     fetchScenarios();
+    fetchSharedScenarios();
   }, []);
 
   const handleScenarioClick = (scenarioId) => {
@@ -267,27 +301,38 @@ export const DisplayUserScenarios = () => {
     <div className="content-dashboard fade-in">
       <div className="scenarios-list">
         {scenarios.length > 0 ? (
-          scenarios.map((scenario, index) => {
-            const renderFields = (fields) =>
-              fields
-                .filter(({ value }) => value != null)
-                .map(({ label, value }) => `${label}: ${value}`)
-                .join(", ");
-
-            return (
-              <div key={index} className="scenario-item">
-                <h3>
-                  <strong>Scenario Name: </strong>
-                  {scenario.name}
-                </h3>
-                <button onClick={() => handleScenarioClick(scenario.id)}>
-                  View
-                </button>
-              </div>
-            );
-          })
+          scenarios.map((scenario, index) => (
+            <div key={index} className="scenario-item">
+              <h3>
+                <strong>Scenario Name: </strong>
+                {scenario.name}
+              </h3>
+              <button onClick={() => handleScenarioClick(scenario.id)}>
+                View
+              </button>
+            </div>
+          ))
         ) : (
           <p className="fade-in">No scenarios available</p>
+        )}
+
+        {/* Conditionally render shared scenarios */}
+        {showSharedScenarios && sharedScenarios.length > 0 ? (
+          sharedScenarios.map((scenario, index) => (
+            <div key={index} className="scenario-item">
+              <h3>
+                <strong>Shared Scenario Name: </strong>
+                {scenario.name}
+              </h3>
+              <button onClick={() => handleScenarioClick(scenario.id)}>
+                View
+              </button>
+            </div>
+          ))
+        ) : (
+          showSharedScenarios && (
+            <p className="fade-in">No shared scenarios available</p>
+          )
         )}
       </div>
     </div>

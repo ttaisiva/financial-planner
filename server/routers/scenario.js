@@ -312,16 +312,28 @@ router.get("/single-scenario", async (req, res) => {
   await createTablesIfNotExist();
 
   // 1. Fetch user scenario info
-  const [scenarios] = await pool.execute(
+  let [scenarios] = await pool.execute(
     `SELECT * FROM scenarios WHERE user_id = ? AND id = ?`,
     [userId, scenarioId]
   );
 
-  if (scenarios.length === 0) {
-    return res.status(200).json([]); // No scenario found
+  if (scenarios.length === 0) { // Could be a shared scenario
+    const [sharedScenario] = await pool.execute(
+      `SELECT * FROM shared WHERE user_id = ? AND scenario_id = ?`,
+      [userId, scenarioId]
+    );
+    if (sharedScenario.length === 0) {
+      return res.status(200).json([]); // No scenario found
+    }
+    // Not empty; sharedScenario is the object retrieved from db need another query to get the scenario
+    scenarios = await pool.execute(
+      `SELECT * FROM scenarios WHERE id = ?`,
+      [sharedScenario[0].scenario_id]
+    );
   }
 
-  const scenario = scenarios[0]; // Grab the single scenario object
+  const scenario = scenarios[0][0];
+  console.log("Scenario:", scenario);
 
   // 2. Fetch all related data
   const [investments] = await pool.query(
@@ -432,6 +444,92 @@ router.get("/scenarios", async (req, res) => {
   }
 });
 
+router.get("/shared-scenarios", async (req, res) => {
+  console.log("Display shared scenarios in server");
+  console.log(req.session.user);
+  
+  try {
+    if (!req.session.user) {
+      return res.status(401).send("User is not authenticated.");
+    }
+
+  const userId = req.session.user["id"];
+  console.log("user id: ", userId);
+  
+  await createTablesIfNotExist();
+
+  // 1. Fetch user scenarios
+  const [sharedScenarios] = await pool.execute(
+    `SELECT * FROM shared WHERE user_id = ?`,
+    [userId]
+  );
+
+  const scenarios = []
+  for (const sharedScenario of sharedScenarios) {
+    const [scenario] = await pool.execute(
+      `SELECT * FROM scenarios WHERE id = ?`,
+      [sharedScenario.scenario_id]
+    );
+    if (scenario.length > 0) {
+      scenarios.push(scenario[0]);
+    }
+  }
+
+  console.log("scenarios", scenarios);
+ 
+  if (scenarios.length === 0) {
+    return res.status(200).json([]); // No scenarios
+  }
+
+  // Get all scenario IDs
+  const scenarioIds = scenarios.map((s) => s.id);
+
+  // 2. Fetch all related investments, investment types, and events in one go
+  const [investments] = await pool.query(
+    `SELECT * FROM investments WHERE scenario_id IN (?)`,
+    [scenarioIds]
+  );
+
+  const [investmentTypes] = await pool.query(
+    `SELECT * FROM investment_types WHERE scenario_id IN (?)`,
+    [scenarioIds]
+  );
+
+  const [events] = await pool.query(
+    `SELECT * FROM events WHERE scenario_id IN (?)`,
+    [scenarioIds]
+  );
+
+  const [strategies] = await pool.query(
+    `SELECT * FROM strategy WHERE scenario_id IN (?) ORDER BY strategy_order`,
+    [scenarioIds]
+  );
+
+  // 3. Group related data under each scenario
+  const scenarioMap = scenarios.map((scenario) => {
+    return {
+      ...scenario,
+      investments: investments.filter(
+        (inv) => inv.scenario_id === scenario.id
+      ),
+      investment_types: investmentTypes.filter(
+        (type) => type.scenario_id === scenario.id
+      ),
+      events: events.filter((evt) => evt.scenario_id === scenario.id),
+      strategies: strategies.filter(
+        (strat) => strat.scenario_id === scenario.id
+      ),
+    };
+  });
+
+  //console.log("Formatted scenarios:", scenarioMap);
+  res.status(200).json(scenarioMap);
+} catch (err) {
+  console.error("Error retrieving scenarios:", err);
+  res.status(500).send("Failed to retrieve scenarios.");
+}
+});
+
 router.get("/get-investments", (req, res) => {
   console.log("Server received request for investments..");
   const { taxStatus } = req.query;
@@ -474,9 +572,13 @@ router.post("/import-scenario", async (req, res) => {
     userId = req.session.user.id;
     console.log("Authenticated user ID:", userId);
   }
+  else {
+    res.status(401).send();
+  }
 
   console.log("authenticated", req.session.user);
   const scenario = req.body.scenario;
+  console.log("Uploaded Scenario", scenario);
 
   const query = `
     INSERT INTO scenarios (
@@ -548,6 +650,7 @@ router.get("/export-scenario", async (req, res) => {
     if (!scenario) {
       res.status(500).send("Not Authorized");
     }
+    console.log("Scenario for export:", scenario);
 
     // Past this point is a valid export
 
@@ -592,6 +695,58 @@ router.get("/export-scenario", async (req, res) => {
 });
 
 /**
+ * @param req.query Holds scenario id
+ * @param req.body List of emails with read or write access to be added
+ */
+router.post("/share-scenario", async (req, res) => {
+  const emails = req.body.users;
+  let userId; // Will be added to db for given shared scenario
+  if (req.session.user) {
+    userId = req.session.user.id;
+    console.log("Authenticated user ID:", userId);
+  }
+  else {
+    res.status(401).send();
+  }
+  console.log("user id", userId);
+  console.log("scenario id", req.query.id);
+  // Collect UserIDs from list of emails; send error if any email does not have an account
+  const user_query = `
+    SELECT id 
+    FROM users 
+    WHERE email = ?
+  `
+  console.log(emails); 
+  const users = []
+  for (const email of emails) {
+    const [rows] = await pool.execute(user_query, [email.email]);
+    if (rows.length > 0) {
+      users.push({
+        id: rows[0].id, 
+        access: email.access,
+      });
+    } else {
+      console.error(`No account found for email: ${email.email}`);
+      return res.status(400).json({ error: `No account found for email: ${email.email}` });
+    }
+  }
+  console.log("users", users);
+  // List of only authenticated users, users array
+  // Record will be saved for each user that is added to shared scenario
+  const scenarioId = req.query.id;
+  const query = `
+    INSERT INTO shared (owner_id, scenario_id, user_id, read_or_write) 
+    VALUES (?, ?, ?, ?)
+  `;
+  const values = users.map(user => [userId, scenarioId, user.id, user.access]);
+  console.log("values", values);
+  for (const value of values) {
+    await pool.execute(query, value);
+  }
+  res.status(200).json({ message: "Scenario shared successfully." })
+})
+
+/**
  * Returns the scenario from the database based on ID and user_id
  * @param pool mySQL Connection
  * @param id Scenario ID
@@ -604,6 +759,20 @@ async function getScenario(pool, id, user_id) {
   `;
   const values = [id, user_id];
   const [rows] = await pool.execute(query, values);
+  if (rows.length === 0) { // Could be shared
+    const sharedQuery = `
+      SELECT * FROM shared WHERE scenario_id = ? AND user_id = ?
+    `;
+    const [sharedRows] = await pool.execute(sharedQuery, [id, user_id]);
+    // If sharedRows is not empty, we can return the scenario
+    if (sharedRows.length > 0) {
+      const scenarioQuery = `
+        SELECT * FROM scenarios WHERE id = ?
+      `;
+      const [scenarioRows] = await pool.execute(scenarioQuery, [id]);
+      return scenarioRows[0]; // Will return either scenario or undefined
+    }
+  }
   return rows[0]; // Will return either scenario or undefined
 }
 

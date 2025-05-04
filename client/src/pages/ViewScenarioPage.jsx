@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
 import { loadAnimation, fetchEventNames , fetchEventTypes, fetchInvest1d} from "../utils";
+import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml, { load } from "js-yaml";
@@ -19,6 +20,11 @@ export const ViewScenarioPage = () => {
   const [scenarioId, setScenarioId] = useState(null); // State to store scenario ID
   const [eventNames, setEventNames] = useState([]);
   const [eventTypes, setEventTypes] = useState([]); // State to store event types
+  const [showPopup, setShowPopup] = useState(false);
+
+  const togglePopup = () => {
+    setShowPopup(!showPopup);
+  };
 
   const { id: scenarioIdFromUrl } = useParams(); // gets scenario id from url that took you to this page
   useEffect(() => {
@@ -115,10 +121,130 @@ export const ViewScenarioPage = () => {
     .catch((error) => console.error("Error:", error));
   }
 
+  /**
+   * CHATGPT
+   * Prompt: give me an html snippet for a short form that takes each line as an email for sharing purposes; additional prompts to tailor for react with adding and removing emails
+   * TODO: Make it so when opening a scenario, previously shared users get added to share popup
+   */
+  function ShareForm() {
+    const [sharedUsers, setSharedUsers] = useState([
+      { email: '', access: 'read' },
+    ]);
+  
+    const handleEmailChange = (index, event) => {
+      const updatedUsers = [...sharedUsers];
+      updatedUsers[index].email = event.target.value;
+      setSharedUsers(updatedUsers);
+    };
+  
+    const handleAccessChange = (index, event) => {
+      const updatedUsers = [...sharedUsers];
+      updatedUsers[index].access = event.target.value;
+      setSharedUsers(updatedUsers);
+    };
+  
+    const handleAddUser = () => {
+      setSharedUsers([...sharedUsers, { email: '', access: 'read' }]);
+    };
+  
+    const handleRemoveUser = (index) => {
+      const updatedUsers = sharedUsers.filter((_, i) => i !== index);
+      setSharedUsers(updatedUsers);
+    };
+  
+    const handleSubmit = (event) => {
+      event.preventDefault();
+      const cleanedUsers = sharedUsers
+        .map(u => ({ email: u.email.trim(), access: u.access }))
+        .filter(u => u.email !== '');
+      console.log('Users to share with:', cleanedUsers);
+
+      fetch(`http://localhost:3000/api/share-scenario?id=${scenarioId}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ users: cleanedUsers }) // Should just be an array of Strings (emails)
+      })
+      .catch(error => console.error('Error:', error));
+
+      // Toggle Share
+      togglePopup();
+    };
+  
+    return (
+      <form onSubmit={handleSubmit}>
+        {sharedUsers.map((user, index) => (
+          <div key={index} style={{ marginBottom: '10px' }}>
+            <input
+              type="email"
+              value={user.email}
+              onChange={(e) => handleEmailChange(index, e)}
+              placeholder="Enter email address"
+              required
+            />
+            <select
+              value={user.access}
+              onChange={(e) => handleAccessChange(index, e)}
+              style={{ marginLeft: '8px' }}
+            >
+              <option value="read">Read Access</option>
+              <option value="write">Write Access</option>
+            </select>
+            {sharedUsers.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleRemoveUser(index)}
+                style={{ marginLeft: '8px' }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
+        <button type="button" onClick={handleAddUser}>
+          Add another user
+        </button>
+        <br /><br />
+        <button type="submit">Share</button>
+      </form>
+    );
+  }
+
+  const Popup = ({ togglePopup, isActive }) => {
+    return (
+      <div className={`popup ${isActive ? "active" : ""}`}>
+        <div className="content-popup">
+          <h2>Add Users to Share Scenario</h2>
+          <ShareForm />
+          <div>
+            <button onClick={togglePopup} className="btn-action-popup">
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="viewscenario-container">
       <Header />
-      <h1> Your Scenario </h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <h1 style={{ marginRight: "10px" }}> Your Scenario </h1>
+        {/* Add Scenario Popups */}
+        <Popup
+          togglePopup={togglePopup}
+          isActive={showPopup}
+        />
+        <button onClick={togglePopup} className="share-popup">
+          {/*<img src="client\public\plus.png" className="icon"></img>
+          <img src="client\public\plus_white.png" className="icon-hover"></img>*/}
+          Share
+        </button>
+        <div className={`overlay ${showPopup ? "active" : ""}`}></div>
+      </div>
       <ViewSingleScenario
         scenarioId={scenarioId}
         setScenarioId={setScenarioId}
