@@ -43,7 +43,21 @@ export async function payNonDiscExpenses(
     currentSimulationYear
   );
   console.log("Active non-discretionary events:", activeEvents);
-  runningTotals.expenses.push(...activeEvents);
+  // Adjust expenses for annual change and inflation
+  const adjustedExpenses = activeEvents.map((event) => {
+    const adjustedAmount = calculateAdjustedExpense(
+      event,
+      currentSimulationYear,
+      inflationRate
+    );
+
+    return {
+      ...event,
+      adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
+    };
+  });
+  console.log("Adjusted non-discretionary expenses:", adjustedExpenses);
+  runningTotals.expenses.push(...adjustedExpenses);
 
   // Calculate total non-discretionary expenses
   const totalNonDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -72,6 +86,7 @@ export async function payNonDiscExpenses(
       currentSimulationYear,
       inflationRate
     );
+
     console.log(
       `Attempting to pay non-discretionary expense: ${expense.name}, amount: ${expenseAmount}`
     );
@@ -238,4 +253,34 @@ async function filterActiveNonDiscretionaryEvents(
   }
 
   return activeEvents;
+}
+
+/**
+ * Calculates the adjusted expense amount for an event, considering annual change and inflation adjustment.
+ * @param {Object} event - The expense event.
+ * @param {number} currentSimulationYear - The current simulation year.
+ * @param {number} inflationRate - The inflation rate for the current year.
+ * @returns {number} The adjusted expense amount.
+ */
+export function calculateAdjustedExpense(event, currentSimulationYear, inflationRate) {
+  const yearsSinceStart = currentSimulationYear - event.start;
+
+  // Start with the initial amount
+  let adjustedAmount = event.initialAmount;
+
+  // Apply annual change (percentage or fixed amount)
+  if (event.changeAmtOrPct) {
+    if (event.changeDistribution === "percentage") {
+      adjustedAmount *= Math.pow(1 + event.changeAmtOrPct, yearsSinceStart);
+    } else if (event.changeDistribution === "amount") {
+      adjustedAmount += event.changeAmtOrPct * yearsSinceStart;
+    }
+  }
+
+  // Apply inflation adjustment if the flag is set
+  if (event.inflationAdjusted) {
+    adjustedAmount *= 1 + inflationRate;
+  }
+
+  return adjustedAmount;
 }

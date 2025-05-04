@@ -2,6 +2,7 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { getEventDuration, getEventStartYear } from "./run_income_events.js";
 import { pool } from "../utils.js";
+import { calculateAdjustedExpense } from "./nondisc_expenses.js";
 
 /**
  * Pays discretionary expenses based on the spending strategy and available cash.
@@ -33,8 +34,21 @@ export async function payDiscExpenses(
     currentSimulationYear
   );
   console.log("active events", activeEvents);
-  runningTotals.expenses.push(...activeEvents);
+  
+  const adjustedExpenses = activeEvents.map((event) => {
+    const adjustedAmount = calculateAdjustedExpense(
+      event,
+      currentSimulationYear,
+      inflationRate
+    );
 
+    return {
+      ...event,
+      adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
+    };
+  });
+  console.log("Adjusted discretionary expenses:", adjustedExpenses);
+  runningTotals.expenses.push(...adjustedExpenses);
 
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
     const expenseAmount = calculateExpenseAmount(

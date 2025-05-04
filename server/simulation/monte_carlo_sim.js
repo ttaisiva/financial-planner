@@ -178,6 +178,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       date
     );
 
+    console.log("CASH BEFORE INVEST EVENTS: ", runningTotals.cashInvestment);
     // Step 7: Invest Events
     await runInvestEvent(
       currentSimulationYear,
@@ -188,6 +189,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       afterTaxContributionLimit,
       date
     );
+    console.log("CASH AFTER INVEST EVENTS: ", runningTotals.cashInvestment);
 
     // Step 8: Rebalance investments
     await runRebalanceEvents(
@@ -196,6 +198,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals
     );
 
+    console.log(`Year ${currentSimulationYear} cash results: `, runningTotals.cashInvestment);
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
@@ -235,6 +238,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       currentSimulationYear
     );
 
+    runningTotals.actualDiscExpenses = []; // Reset actual discretionary expenses for the next year
     runningTotals.expenses = []; // Reset expenses for the next year
     runningTotals.incomes = []; // Reset incomes for the next year
     runningTotals.taxes = []; // Reset taxes for the next year
