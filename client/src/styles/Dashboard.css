@@ -192,3 +192,27 @@ h6.dashboard {
   opacity: 1;
   pointer-events: auto;
 }
+
+.share-popup {
+  display: flex;
+  color: var(--primary-color);
+  padding: 0.5rem;
+  align-items: center;
+  font-size: 1.5rem;
+  border-radius: 8px;
+  border: 3px solid var(--primary-color);
+  box-sizing: border-box;
+  background-color: var(--primary-color4);
+}
+.share-popup:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transition: background-color 0.25s;
+  border: 3px solid var(--primary-color);
+}
+.share-popup:hover .icon {
+  display: none;
+}
+.share-popup:hover .icon-hover {
+  display: inline-block;
+}
