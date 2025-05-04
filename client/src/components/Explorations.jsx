@@ -116,7 +116,7 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
   );
 };
 
-export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEvents }) => {
+export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEvents, scenarioID }) => {
   const [selectedInvestEvent, setSelectedInvestEvent] = useState("");
   const [selectedEvent, setSelectedEvent] = useState("");
   const [parameter1, setParameter1] = useState(""); // State for the first parameter
@@ -161,8 +161,9 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
 
       try {
         // Send combinations to the backend
-        const response = await fetch("http://localhost:3000/api/run-2d-simulation", {
+        const response = await fetch(`http://localhost:3000/api/run-2d-simulation?id=${scenarioID}`, {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },

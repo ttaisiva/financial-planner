@@ -25,7 +25,7 @@ import {
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export async function simulation(date, numSimulations, userId, scenarioId) {
+export async function simulation(date, numSimulations, userId, scenarioId, dimParams) {
   const logs = await initLogs(userId); // open log files for writing
 
   const totalYears = await getTotalYears(date, scenarioId);
