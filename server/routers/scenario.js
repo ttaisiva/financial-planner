@@ -293,18 +293,23 @@ router.post("/run-simulation", async (req, res) => {
   }
 });
 
-router.post("/api/run-2d-simulation", async (req, res) => {
+router.post("/run-2d-simulation", async (req, res) => {
 
   const { parameter1, parameter2, combinations, enableRothOptimizer } = req.body;
-  const { scenarioId } = req.query;
+  const scenarioId = req.query.id;
+  console.log("2D Simulation request received:", req.body, req.query.id, req.query);
+  
 
   // Check if the user is authenticated
   if (!req.session.user) {
+    console.log(req.session, req.session.user);
     return res.status(401).json({ error: "User is not authenticated" });
   }
+  console.log(req.query.id, parameter1, parameter2, combinations, enableRothOptimizer);
 
   const userId = req.session.user["id"]; // Get the authenticated user's ID
 
+  console.log(scenarioId, !scenarioId, !parameter1, !parameter2, !combinations, combinations.length === 0);
   if (!scenarioId || !parameter1 || !parameter2 || !combinations || combinations.length === 0) {
     return res.status(400).json({ error: "Invalid input data" });
   }
