@@ -16,7 +16,12 @@ import { getRothStrategy } from "./roth_optimizer.js";
 import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
 import { initLogs } from "../logging.js";
 import { logResults } from "../logging.js";
-import { generateNormalRandom, generateUniformRandom, pool } from "../utils.js";
+import {
+  generateNormalRandom,
+  generateUniformRandom,
+  getEventYears,
+  pool,
+} from "../utils.js";
 import {
   getRebalanceEvents,
   runRebalanceEvents,
@@ -25,7 +30,13 @@ import {
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export async function simulation(date, numSimulations, userId, scenarioId) {
+export async function simulation(
+  date,
+  numSimulations,
+  userId,
+  scenarioId,
+  dimParams
+) {
   console.log(`Running ${numSimulations}simulation for scenario ${scenarioId}`);
   const logs = await initLogs(userId); // open log files for writing
 
@@ -39,6 +50,13 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   let incomeEventsStart = {};
   let incomeEventsDuration = {};
 
+  let spouseBirthYear = await getSpouseBirthYear(scenarioId);
+  let spouseLifeExpect = await getSpouseLifeExpectancy(scenarioId);
+
+  let spouseDeathYear = spouseBirthYear + spouseLifeExpect;
+
+  console.log("Spouse Life Expectancy Year:", spouseDeathYear);
+
   let isUserAlive = true;
   let isSpouseAlive = true;
 
@@ -49,6 +67,8 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   let taxData = await getTaxData(scenarioId, date);
 
   let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+  const incomeEvents = await getIncomeEvents(scenarioId, []);
+  const expenseEvents = await getExpenseEvents(scenarioId);
 
   const runningTotals = {
     cashInvestment: cashInvestment,
@@ -61,9 +81,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     expenses: [],
     incomes: [],
     taxes: [],
+    actualDiscExpenses: [],
+    maritalStatus: await getFilingStatus(scenarioId),
+    incomeEvents: incomeEvents,
+    expenseEvents: expenseEvents,
   };
-
-  const incomeEvents = await getIncomeEvents(scenarioId, []);
 
   await populateYearsAndDuration(
     incomeEvents,
@@ -74,15 +96,26 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
   const rothYears = await getRothYears(scenarioId);
   let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
-  let investEventYears = await getInvestEvents(scenarioId);
-
   let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
 
+  // populate years and durations for invest events
+  let investEvents = await getInvestEvents(scenarioId);
+  let investEventYears = await getEventYears(investEvents);
+
+  // populate years and durations for rebalance events
   let rebalanceEvents = await getRebalanceEvents(scenarioId);
+  let rebalanceEventYears = await getEventYears(rebalanceEvents);
 
   // log investments before any changes
 
   logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
+
+  // **Update Event Fields Based on dimParams**
+  updateEventFields(dimParams, {
+    incomeEvents,
+    investEventYears,
+    rebalanceEvents,
+  });
 
   for (let year = 0; year < totalYears; year++) {
     //years in which the simulation is  being run
@@ -91,6 +124,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     const inflationRate = await run_preliminaries(scenarioId);
 
     const currentSimulationYear = date + year; //actual year being simulated
+    console.log("********CURRENT YEAR********", currentSimulationYear);
 
     if (year === 0) {
       // Populate the object with initial amounts based on event IDs
@@ -147,6 +181,31 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
 
     await updateInvestments(scenarioId, runningTotals);
 
+    // Step 4.5: Handle spouse death
+    if (isSpouseAlive) {
+      // if spouse currently alive, check if death year is reached
+      if (currentSimulationYear === spouseDeathYear) {
+        console.log(
+          `Spouse has reached life expectancy in year ${currentSimulationYear}.`
+        );
+        isSpouseAlive = false;
+      }
+
+      // if spouse is dead, change marital status to single
+      if (!isSpouseAlive) {
+        console.log(
+          `Handling death of ${
+            !isUserAlive ? "user" : "spouse"
+          } in year ${currentSimulationYear}`
+        );
+
+        // Change tax filing status to single
+        console.log("Changing tax filing status to single.");
+        runningTotals.maritalStatus = "single";
+        console.log("marital status:", runningTotals.maritalStatus);
+      }
+    }
+
     // Step 5: Pay non-discretionary expenses and taxes
     const taxes = await payTaxes(
       runningTotals,
@@ -166,11 +225,12 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       currentSimulationYear,
       inflationRate,
       date,
+      isSpouseAlive,
       taxes,
       logs.evtlog
     );
 
-    // Step 6: Pay discretionary expenses
+    //Step 6: Pay discretionary expenses
     await payDiscExpenses(
       scenarioId,
       runningTotals,
@@ -180,6 +240,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       logs.evtlog
     );
 
+    // console.log("CASH BEFORE INVEST EVENTS: ", runningTotals.cashInvestment);
     // Step 7: Invest Events
     await runInvestEvent(
       currentSimulationYear,
@@ -191,15 +252,30 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       date,
       logs.evtlog
     );
+    // console.log("CASH AFTER INVEST EVENTS: ", runningTotals.cashInvestment);
+    // console.log(
+    //   "INVESTMENTS BEFORE REBALANCE EVENTS: ",
+    //   runningTotals.investments
+    // );
 
     // Step 8: Rebalance investments
     await runRebalanceEvents(
       currentSimulationYear,
       rebalanceEvents,
+      rebalanceEventYears,
       runningTotals,
       logs.evtlog
     );
 
+    // console.log(
+    //   "INVESTMENTS AFTER REBALANCE EVENTS: ",
+    //   runningTotals.investments
+    // );
+
+    console.log(
+      `Year ${currentSimulationYear} cash results: `,
+      runningTotals.cashInvestment
+    );
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
@@ -208,27 +284,27 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearGains: runningTotals.curYearGains,
       curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
       purchasePrices: JSON.parse(JSON.stringify(runningTotals.purchasePrices)), // Deep copy
-      investments: JSON.parse(JSON.stringify(runningTotals.investments)), // Deep copy
-      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), // Deep copy
-      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), // Deep copy
+      investments: JSON.parse(JSON.stringify(runningTotals.investments)),
+      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)),
+      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)),
       taxes: JSON.parse(JSON.stringify(runningTotals.taxes)),
+      actualDiscExpenses: JSON.parse(
+        JSON.stringify(runningTotals.actualDiscExpenses)
+      ),
     });
 
     console.log("Logging yearlyResults for incomes, expenses, and taxes:");
     yearlyResults.forEach((result) => {
-      console.log(`Year ${result.year}:`);
-
+      // console.log(`Year ${result.year}:`);
       // // Log incomes
       // console.log("Incomes:");
       // console.log(JSON.stringify(result.incomes, null, 2));
-
       // // Log expenses
       // console.log("Expenses:");
       // console.log(JSON.stringify(result.expenses, null, 2));
-
       // Log taxes
-      console.log("Taxes:");
-      console.log(JSON.stringify(result.taxes, null, 2));
+      // console.log("Taxes:");
+      // console.log(JSON.stringify(result.taxes, null, 2));
     });
 
     logResults(
@@ -238,6 +314,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       currentSimulationYear
     );
 
+    runningTotals.actualDiscExpenses = []; // Reset actual discretionary expenses for the next year
     runningTotals.expenses = []; // Reset expenses for the next year
     runningTotals.incomes = []; // Reset incomes for the next year
     runningTotals.taxes = []; // Reset taxes for the next year
@@ -372,6 +449,42 @@ export async function getUserLifeExpectancy(scenarioId) {
     return sample(results[0].life_expectancy[0]);
   } catch (error) {
     console.error("Error fetching user life expectancy:", error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+}
+
+/**
+ * Get spouse birth year from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
+export async function getSpouseBirthYear(scenarioId) {
+  const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
+  try {
+    const [results] = await pool.execute(query, [scenarioId]);
+    // console.log("results user birth year", [results]);
+    return results[0]?.birth_years[1] || 0; // Return the birth year or 0 if not found
+  } catch (error) {
+    console.error("Error fetching spouse birth year:", error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+}
+
+/**
+ * Get spouse life expectancy from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
+export async function getSpouseLifeExpectancy(scenarioId) {
+  const query = `SELECT 
+            life_expectancy
+            FROM scenarios WHERE id = ?`;
+  try {
+    const [results] = await pool.execute(query, [scenarioId]);
+    // console.log("results spouse life expectancy: ", results);
+    return sample(results[0].life_expectancy[1]);
+  } catch (error) {
+    console.error("Error fetching spouse life expectancy:", error);
     throw error; // Re-throw the error for the caller to handle
   }
 }
@@ -576,5 +689,90 @@ export async function getFinancialGoal(scenarioId) {
   } catch (error) {
     console.error("Error fetching financial goal:", error);
     throw error; // Re-throw the error for the caller to handle
+  }
+}
+
+export const getExpenseEvents = async (scenarioId) => {
+  const [rows] = await pool.execute(
+    "SELECT * FROM events WHERE scenario_id = ? AND type = 'expense'",
+    [scenarioId]
+  );
+
+  // console.log("rows", rows);
+
+  return rows;
+};
+
+/**
+ * Updates the event fields based on dimParams for 1D or 2D exploration.
+ * @param {Array} dimParams - Array of parameter combinations.
+ * @param {Object} events - Object containing different event types (incomeEvents, investEventYears, rebalanceEvents).
+ */
+function updateEventFields(dimParams, events) {
+  if (!dimParams || dimParams.length === 0) return;
+
+  const is2D = dimParams[0].hasOwnProperty("param2"); // Check if param2 exists in the first entry
+
+  for (const param of dimParams) {
+    const eventId = param.event; // Get the event ID from dimParams
+
+    // Determine the event type and find the corresponding event
+    let event = null;
+    if (events.incomeEvents) {
+      event = events.incomeEvents.find((e) => e.id === eventId);
+    }
+    if (!event && events.investEventYears) {
+      event = events.investEventYears.find((e) => e.id === eventId);
+    }
+    if (!event && events.rebalanceEvents) {
+      event = events.rebalanceEvents.find((e) => e.id === eventId);
+    }
+
+    if (event) {
+      if (is2D) {
+        // **2D Exploration: Update two fields**
+        updateEventField(event, Object.keys(param)[0], param.param1);
+        updateEventField(event, Object.keys(param)[1], param.param2);
+      } else {
+        // **1D Exploration: Update one field**
+        updateEventField(event, Object.keys(param)[0], param.param1);
+      }
+    }
+  }
+}
+
+/**
+ * Updates a specific field of an event based on the parameter type and value.
+ * @param {Object} event - The event object to update.
+ * @param {string} field - The field to update (e.g., startYear, duration, initialAmount).
+ * @param {any} value - The value to set for the field.
+ */
+function updateEventField(event, field, value) {
+  if (!value) return;
+
+  switch (field) {
+    case "startYear":
+      event.startYear = { type: "fixed", value }; // Update start year format
+      break;
+
+    case "duration":
+      event.duration = { type: "fixed", value }; // Update duration format
+      break;
+
+    case "initialAmount":
+      event.initialAmount = parseFloat(value); // Update initial amount as a double
+      break;
+
+    case "percentage":
+      if (event.assetAllocations && event.assetAllocations.length === 2) {
+        // Update the percentage for the first investment
+        event.assetAllocations[0].percentage = value;
+        // Automatically calculate the percentage for the second investment
+        event.assetAllocations[1].percentage = 100 - value;
+      }
+      break;
+
+    default:
+      console.warn(`Unknown field: ${field}`);
   }
 }

@@ -1,4 +1,4 @@
-import { pool } from "../utils.js";
+import { generateNormalRandom, generateUniformRandom, pool } from "../utils.js";
 
 /**
  * Fetches necessary preliminary data from the database.
@@ -67,18 +67,12 @@ export function sample(item) {
 
     case "normal":
       // Sample from a normal distribution
-      result = sample_normal_distribution(
-        Number(item.mean),
-        Number(item.stdev)
-      );
+      result = generateNormalRandom(Number(item.mean), Number(item.stdev));
       break;
 
     case "uniform":
       // Sample from a uniform distribution
-      result = sample_uniform_distribution(
-        Number(item.upper),
-        Number(item.lower)
-      );
+      result = generateUniformRandom(Number(item.lower), Number(item.upper));
       break;
 
     default:
@@ -108,7 +102,7 @@ export function sample_uniform_distribution(max, min) {
     throw new Error("Minimum value must be less than the maximum value.");
   }
 
-  return Math.random() * (max - min) + min;
+  return Math.floor(Math.random() * (max - min) + min);
 }
 
 export function transfer(investment1, investment2, amount) {

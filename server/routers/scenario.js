@@ -44,6 +44,82 @@ router.post("/events", (req, res) => {
   res.status(200).json(eventsData);
 });
 
+router.get("/event-names", async (req, res) => {
+  const { scenarioId } = req.query; // Get scenarioId from query parameters
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch event names for the given scenarioId
+    const [rows] = await pool.execute(
+      `SELECT DISTINCT name FROM events WHERE scenario_id = ? ORDER BY name ASC`,
+      [scenarioId]
+    );
+
+    const eventNames = rows.map((row) => row.name); // Extract event names
+    res.status(200).json(eventNames); // Send event names as JSON response
+  } catch (error) {
+    console.error("Error fetching event names:", error);
+    res.status(500).json({ error: "Failed to fetch event names" });
+  }
+});
+
+router.get("/event-types", async (req, res) => {
+  const { scenarioId } = req.query; // Get scenarioId from query parameters
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch distinct event types for the given scenarioId
+    const [rows] = await pool.execute(
+      `SELECT DISTINCT type FROM events WHERE scenario_id = ? ORDER BY type ASC`,
+      [scenarioId]
+    );
+
+    const eventTypes = rows.map((row) => row.type); // Extract event types
+    res.status(200).json(eventTypes); // Send event types as JSON response
+  } catch (error) {
+    console.error("Error fetching event types:", error);
+    res.status(500).json({ error: "Failed to fetch event types" });
+  }
+});
+
+router.get("/invest-events-1d", async (req, res) => {
+  const { scenarioId } = req.query;
+
+  if (!scenarioId) {
+    return res.status(400).json({ error: "scenarioId is required" });
+  }
+
+  try {
+    // Query to fetch investment events with exactly two items in asset_allocation
+    const [rows] = await pool.execute(
+      `
+      SELECT id, name, asset_allocation AS assetAllocation
+      FROM events
+      WHERE scenario_id = ? AND type = 'invest' AND JSON_LENGTH(asset_allocation) = 2
+      `,
+      [scenarioId]
+    );
+
+    // Use asset_allocation directly as an object
+    const investEvents = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      allocations: row.assetAllocation, // Directly use the object
+    }));
+
+    res.status(200).json(investEvents);
+  } catch (error) {
+    console.error("Error fetching investment events:", error);
+    res.status(500).json({ error: "Failed to fetch investment events" });
+  }
+});
+
 router.get("/discretionary-expenses", (req, res) => {
   console.log("Received request for locally stored discretionary expenses.");
   const filtered = eventsLocalStorage.filter(
@@ -199,21 +275,69 @@ router.post("/run-simulation", async (req, res) => {
     );
 
     // Call the Monte Carlo simulation worker manager function
-    const results =  await managerSimulation(
+    const results = await managerSimulation(
       currentYear,
       numSimulations,
       userId,
       scenarioId,
+      [], // Pass an empty array for dimParams
       pool
     );
 
     // Send the results back to the client
     console.log("Running parallel simulations completed successfully.");
     res.json(results);
-    
   } catch (error) {
     console.error("Error running parallel simulation:", error);
     res.status(500).send("Failed to run simulation");
+  }
+});
+
+router.post("/run-2d-simulation", async (req, res) => {
+
+  const { parameter1, parameter2, combinations, enableRothOptimizer } = req.body;
+  const scenarioId = req.query.id;
+  console.log("2D Simulation request received:", req.body, req.query.id, req.query);
+  
+
+  // Check if the user is authenticated
+  if (!req.session.user) {
+    console.log(req.session, req.session.user);
+    return res.status(401).json({ error: "User is not authenticated" });
+  }
+  console.log(req.query.id, parameter1, parameter2, combinations, enableRothOptimizer);
+
+  const userId = req.session.user["id"]; // Get the authenticated user's ID
+
+  console.log(scenarioId, !scenarioId, !parameter1, !parameter2, !combinations, combinations.length === 0);
+  if (!scenarioId || !parameter1 || !parameter2 || !combinations || combinations.length === 0) {
+    return res.status(400).json({ error: "Invalid input data" });
+  }
+
+  try {
+    // Prepare the dimParams for the sim_manager
+    const dimParams = combinations.map(({ param1, param2 }) => ({
+      event: req.body.selectedEvent, // Include the event in each dimParams object
+      enableRothOptimizer: enableRothOptimizer,
+      [parameter1]: param1,
+      [parameter2]: param2,
+    }));
+
+    console.log("2D Simulation: dimParams prepared:", dimParams);
+    // Call the simulation manager
+    const results = await managerSimulation(
+      new Date().getFullYear(), // Current year
+      dimParams.length, // Number of simulations (one per combination)
+      userId, // Authenticated user ID
+      scenarioId, // Scenario ID from query
+      dimParams // Pass the parameter combinations
+    );
+
+    console.log("2D Simulation completed successfully.");
+    res.json(results);
+  } catch (error) {
+    console.error("Error running 2D simulation:", error);
+    res.status(500).send("Failed to run 2D simulation");
   }
 });
 
@@ -237,18 +361,37 @@ router.get("/single-scenario", async (req, res) => {
   await createTablesIfNotExist();
 
   // 1. Fetch user scenario info
-  const [scenarios] = await pool.execute(
+  let [scenarios] = await pool.execute(
     `SELECT * FROM scenarios WHERE user_id = ? AND id = ?`,
     [userId, scenarioId]
   );
 
-  if (scenarios.length === 0) {
-    return res.status(200).json([]); // No scenario found
+  
+
+  if (scenarios.length === 0) { // Could be a shared scenario
+    const [sharedScenario] = await pool.execute(
+      `SELECT * FROM shared WHERE user_id = ? AND scenario_id = ?`,
+      [userId, scenarioId]
+    );
+    if (sharedScenario.length === 0) {
+      return res.status(200).json([]); // No scenario found
+    }
+    // Not empty; sharedScenario is the object retrieved from db need another query to get the scenario
+    scenarios = await pool.execute(
+      `SELECT * FROM scenarios WHERE id = ?`,
+      [sharedScenario[0].scenario_id]
+    );
   }
 
-  const scenario = scenarios[0]; // Grab the single scenario object
+  const scenario = scenarios[0][0];
+  
 
   // 2. Fetch all related data
+  const [scenarioDetails] = await pool.query(
+    `SELECT * FROM scenarios WHERE id = ?`,
+    [scenarioId]
+  );
+
   const [investments] = await pool.query(
     `SELECT * FROM investments WHERE scenario_id = ?`,
     [scenarioId]
@@ -272,12 +415,14 @@ router.get("/single-scenario", async (req, res) => {
   // 3. Assemble the full scenario object
   const scenarioWithDetails = {
     ...scenario,
+    scenarioDetails,
     investments,
     investment_types: investmentTypes,
     events,
     strategy,
   };
 
+  console.log("Scenario with details:", scenarioWithDetails);
   res.status(200).json(scenarioWithDetails);
 });
 
@@ -357,6 +502,92 @@ router.get("/scenarios", async (req, res) => {
   }
 });
 
+router.get("/shared-scenarios", async (req, res) => {
+  console.log("Display shared scenarios in server");
+  console.log(req.session.user);
+  
+  try {
+    if (!req.session.user) {
+      return res.status(401).send("User is not authenticated.");
+    }
+
+  const userId = req.session.user["id"];
+  console.log("user id: ", userId);
+  
+  await createTablesIfNotExist();
+
+  // 1. Fetch user scenarios
+  const [sharedScenarios] = await pool.execute(
+    `SELECT * FROM shared WHERE user_id = ?`,
+    [userId]
+  );
+
+  const scenarios = []
+  for (const sharedScenario of sharedScenarios) {
+    const [scenario] = await pool.execute(
+      `SELECT * FROM scenarios WHERE id = ?`,
+      [sharedScenario.scenario_id]
+    );
+    if (scenario.length > 0) {
+      scenarios.push(scenario[0]);
+    }
+  }
+
+  console.log("scenarios", scenarios);
+ 
+  if (scenarios.length === 0) {
+    return res.status(200).json([]); // No scenarios
+  }
+
+  // Get all scenario IDs
+  const scenarioIds = scenarios.map((s) => s.id);
+
+  // 2. Fetch all related investments, investment types, and events in one go
+  const [investments] = await pool.query(
+    `SELECT * FROM investments WHERE scenario_id IN (?)`,
+    [scenarioIds]
+  );
+
+  const [investmentTypes] = await pool.query(
+    `SELECT * FROM investment_types WHERE scenario_id IN (?)`,
+    [scenarioIds]
+  );
+
+  const [events] = await pool.query(
+    `SELECT * FROM events WHERE scenario_id IN (?)`,
+    [scenarioIds]
+  );
+
+  const [strategies] = await pool.query(
+    `SELECT * FROM strategy WHERE scenario_id IN (?) ORDER BY strategy_order`,
+    [scenarioIds]
+  );
+
+  // 3. Group related data under each scenario
+  const scenarioMap = scenarios.map((scenario) => {
+    return {
+      ...scenario,
+      investments: investments.filter(
+        (inv) => inv.scenario_id === scenario.id
+      ),
+      investment_types: investmentTypes.filter(
+        (type) => type.scenario_id === scenario.id
+      ),
+      events: events.filter((evt) => evt.scenario_id === scenario.id),
+      strategies: strategies.filter(
+        (strat) => strat.scenario_id === scenario.id
+      ),
+    };
+  });
+
+  //console.log("Formatted scenarios:", scenarioMap);
+  res.status(200).json(scenarioMap);
+} catch (err) {
+  console.error("Error retrieving scenarios:", err);
+  res.status(500).send("Failed to retrieve scenarios.");
+}
+});
+
 router.get("/get-investments", (req, res) => {
   console.log("Server received request for investments..");
   const { taxStatus } = req.query;
@@ -399,9 +630,13 @@ router.post("/import-scenario", async (req, res) => {
     userId = req.session.user.id;
     console.log("Authenticated user ID:", userId);
   }
+  else {
+    res.status(401).send();
+  }
 
   console.log("authenticated", req.session.user);
   const scenario = req.body.scenario;
+  console.log("Uploaded Scenario", scenario);
 
   const query = `
     INSERT INTO scenarios (
@@ -473,6 +708,7 @@ router.get("/export-scenario", async (req, res) => {
     if (!scenario) {
       res.status(500).send("Not Authorized");
     }
+    console.log("Scenario for export:", scenario);
 
     // Past this point is a valid export
 
@@ -517,6 +753,58 @@ router.get("/export-scenario", async (req, res) => {
 });
 
 /**
+ * @param req.query Holds scenario id
+ * @param req.body List of emails with read or write access to be added
+ */
+router.post("/share-scenario", async (req, res) => {
+  const emails = req.body.users;
+  let userId; // Will be added to db for given shared scenario
+  if (req.session.user) {
+    userId = req.session.user.id;
+    console.log("Authenticated user ID:", userId);
+  }
+  else {
+    res.status(401).send();
+  }
+  console.log("user id", userId);
+  console.log("scenario id", req.query.id);
+  // Collect UserIDs from list of emails; send error if any email does not have an account
+  const user_query = `
+    SELECT id 
+    FROM users 
+    WHERE email = ?
+  `
+  console.log(emails); 
+  const users = []
+  for (const email of emails) {
+    const [rows] = await pool.execute(user_query, [email.email]);
+    if (rows.length > 0) {
+      users.push({
+        id: rows[0].id, 
+        access: email.access,
+      });
+    } else {
+      console.error(`No account found for email: ${email.email}`);
+      return res.status(400).json({ error: `No account found for email: ${email.email}` });
+    }
+  }
+  console.log("users", users);
+  // List of only authenticated users, users array
+  // Record will be saved for each user that is added to shared scenario
+  const scenarioId = req.query.id;
+  const query = `
+    INSERT INTO shared (owner_id, scenario_id, user_id, read_or_write) 
+    VALUES (?, ?, ?, ?)
+  `;
+  const values = users.map(user => [userId, scenarioId, user.id, user.access]);
+  console.log("values", values);
+  for (const value of values) {
+    await pool.execute(query, value);
+  }
+  res.status(200).json({ message: "Scenario shared successfully." })
+})
+
+/**
  * Returns the scenario from the database based on ID and user_id
  * @param pool mySQL Connection
  * @param id Scenario ID
@@ -529,6 +817,20 @@ async function getScenario(pool, id, user_id) {
   `;
   const values = [id, user_id];
   const [rows] = await pool.execute(query, values);
+  if (rows.length === 0) { // Could be shared
+    const sharedQuery = `
+      SELECT * FROM shared WHERE scenario_id = ? AND user_id = ?
+    `;
+    const [sharedRows] = await pool.execute(sharedQuery, [id, user_id]);
+    // If sharedRows is not empty, we can return the scenario
+    if (sharedRows.length > 0) {
+      const scenarioQuery = `
+        SELECT * FROM scenarios WHERE id = ?
+      `;
+      const [scenarioRows] = await pool.execute(scenarioQuery, [id]);
+      return scenarioRows[0]; // Will return either scenario or undefined
+    }
+  }
   return rows[0]; // Will return either scenario or undefined
 }
 
@@ -906,7 +1208,7 @@ async function insertEvents(pool, scenario_id, events) {
     event.scenarioId = scenario_id;
 
     const eventSnakeCase = keysToSnakeCase(event);
-    console.log("event snake case", eventSnakeCase);
+    // console.log("event snake case", eventSnakeCase);
     const [eventResult] = await pool.query(
       "INSERT INTO events SET ?",
       eventSnakeCase
@@ -929,26 +1231,6 @@ async function insertEvents(pool, scenario_id, events) {
       )
     `;
 
-    const eventsValues = [
-      scenario_id ?? null,
-      event.name ?? null,
-      event.description ?? "",
-      event.type ?? null,
-      event.start ?? null,
-      event.duration ?? null,
-      event.changeDistribution ?? null,
-      event.initialAmount ?? null,
-      event.changeAmtOrPct ?? null,
-      event.inflationAdjusted ?? null,
-      event.userFraction ?? null,
-      event.socialSecurity ?? null,
-      event.assetAllocation ?? null,
-      event.glidePath ?? null,
-      event.assetAllocation2 ?? null,
-      event.discretionary ?? null,
-      event.maxCash ?? null,
-    ];
-
     // console.log("Inserting values:", eventsValues);
     // await pool.execute(eventsQuery, eventsValues);
     console.log(`Event ${event.name} saved to the database.`);
@@ -964,23 +1246,19 @@ async function insertEvents(pool, scenario_id, events) {
  */
 async function insertInvestmentTypes(pool, scenario_id, investmentTypes) {
   for (const investmentType of investmentTypes) {
-    const investmentTypeQuery = `
-      INSERT INTO investment_types (scenario_id, name, description, return_distribution, 
-      return_amt_or_pct, expense_ratio, income_distribution, income_amt_or_pct, taxability) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const investmentTypeValues = [
-      scenario_id ?? null,
-      investmentType.name ?? null,
-      investmentType.description ?? null,
-      investmentType.returnDistribution ?? null,
-      investmentType.returnAmtOrPct ?? null,
-      investmentType.expenseRatio ?? null,
-      investmentType.incomeDistribution ?? null,
-      investmentType.incomeAmtOrPct ?? null,
-      investmentType.taxability ?? null,
-    ];
-    await pool.execute(investmentTypeQuery, investmentTypeValues);
+    investmentType.returnDistribution =
+      JSON.stringify(investmentType.returnDistribution) ?? null;
+    investmentType.incomeDistribution =
+      JSON.stringify(investmentType.incomeDistribution) ?? null;
+    investmentType.scenarioId = scenario_id;
+
+    const investTypeSnakeCase = keysToSnakeCase(investmentType);
+    const [investTypeResult] = await pool.query(
+      "INSERT INTO investment_types SET ?",
+      investTypeSnakeCase
+    );
+
+    // await pool.execute(investmentTypeQuery, investmentTypeValues);
     console.log(
       `Investment type ${investmentType.name} saved to the database.`
     );
@@ -1001,15 +1279,8 @@ async function insertInvestment(pool, scenario_id, investments) {
       VALUES (?, ?, ?, ?, ?)
     `;
 
-    let investID;
-    if (investment.investmentType == "cash") {
-      investID = "cash";
-    } else {
-      investID = investment.investmentType + " " + investment.taxStatus;
-    }
-
     const investmentValues = [
-      investID ?? null,
+      investment.id ?? null,
       scenario_id ?? null,
       investment.investmentType ?? null,
       investment.value ?? null,

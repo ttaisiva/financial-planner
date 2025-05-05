@@ -62,7 +62,11 @@ export function LineChart({ successProbabilities }) {
     },
   };
 
-  return <Line data={data} options={options} />;
+  return (
+    <div className="chart-container">
+      <Line data={data} options={options} />
+    </div>
+  );
 }
 
 
@@ -107,29 +111,44 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
       simulationResults.forEach((simulation) => {
         simulation.forEach((yearlyResult) => {
           const year = yearlyResult.year;
-          const value = yearlyResult[selectedOption]; // e.g., cashInvestment, curYearIncome, etc.
-  
+
           if (!yearlyData[year]) {
             yearlyData[year] = [];
           }
-  
-          yearlyData[year].push(value);
+
+          if (selectedOption !== "discExpenses"){
+            console.log("NOT DISCRETIONARY EXPENSES: ", yearlyResult[selectedOption]);
+            const value = yearlyResult[selectedOption]; // e.g., cashInvestment, curYearIncome, etc.
+
+            if (selectedOption === "expenses") {
+              // Add taxes for each year to the yearly expenses
+              console.log("Adding taxes to yearly expenses: ", yearlyResult.taxes);
+              yearlyData[year].push(Number(yearlyResult.taxes));
+            }
+
+            yearlyData[year].push(value);
+          }
+          // need to do extra because we dont have that specific option in simulationResults
+          // Calculate the percentage of discretionary expenses incurred for the year
+          else {
+            console.log("DISCRETIONARY EXPENSES: ", yearlyResult.actualDiscExpenses, yearlyResult.expenses);
+            const incurred = yearlyResult.actualDiscExpenses || 0; // Amount of discretionary expenses incurred
+            const desired = yearlyResult.expenses 
+              .filter((expense) => expense.discretionary === 1)
+              .reduce((sum, expense) => Number(sum) + Number(expense.adjustedAmount), 0) || 1; // Sum initial amounts of discretionary expenses
+            const percentage = (incurred / desired) * 100; // Calculate percentage
+            console.log(`Year: ${year}, Incurred: ${incurred}, Desired: ${desired}, Percentage: ${percentage}`);
+            yearlyData[year].push(percentage);
+          }
+
         });
       });
-
- 
-  
-      // Calculate percentiles and median for each year
       
       return yearlyData;
     };
     
     const yearlyData = generateDataByYear(allSimulationResults, label);
    
- 
-
- 
-
     const median = [];
     const p10 = [], p90 = [];
     const p20 = [], p80 = [];
@@ -258,23 +277,16 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
       };
 
 
-    return <Line data={data} options={options} />;
+    return (
+      <div className="chart-container">
+          <Line data={data} options={options} />;
+      </div>
+    )
+    
 }
 
 export function StackedBarChart({ allSimulationResults, breakdownType, aggregationThreshold, useMedian }) {
   //Helper function to calculate median or average
-
-  // helper function to Calcualte the median or average of the simulation results for each investment type
-  // const calculateValue = (values, useMedian) => {
-  //   values.sort((a, b) => a - b);
-
-  //   if (useMedian) {
-      
-  //     return values[Math.floor(values.length * 0.5)];
-  //   }
-    
-  //   return values.reduce((sum, val) => sum + val, 0) / values.length;
-  // };
 
   const calculateValue = (values, useMedian) => {
     const sorted = [...values].sort((a, b) => a - b);  // Make a shallow copy before sorting
@@ -309,19 +321,19 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
           });
         } else if (breakdownType === "income") {
           console.log("INCOME STACKED BAR CHART: ", yearlyResult.incomes)
-          yearlyResult.incomes.forEach(({ name, initialAmount }) => {
+          yearlyResult.incomes.forEach(({ name, adjustedAmount }) => {
             if (!yearlyData[year][name]) {
               yearlyData[year][name] = [];
             }
-            yearlyData[year][name].push(initialAmount);
+            yearlyData[year][name].push(adjustedAmount);
           });
         } else if (breakdownType === "expenses") {
           console.log("EXPENSES STACKED BAR CHART: ", yearlyResult.expenses)
-          yearlyResult.expenses.forEach(({ name, initialAmount }) => {
+          yearlyResult.expenses.forEach(({ name, adjustedAmount }) => {
             if (!yearlyData[year][name]) {
               yearlyData[year][name] = [];
             }
-            yearlyData[year][name].push(initialAmount);
+            yearlyData[year][name].push(adjustedAmount);
           });
           if (!yearlyData[year]["Taxes"]) {
             yearlyData[year]["Taxes"] = [];
@@ -439,6 +451,10 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     },
   };
 
-  return <Bar data={data} options={options} />;
+  return (
+    <div className="chart-container">
+      <Bar data={data} options={options} />;
+    </div>
+  );
 
 }

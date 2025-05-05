@@ -121,7 +121,7 @@ export const getInvestEvents = async (scenarioId) => {
 
   // console.log("rows", rows);
 
-  return getEventYears(rows);
+  return rows;
 };
 
 /**

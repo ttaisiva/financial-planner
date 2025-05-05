@@ -17,13 +17,14 @@ import {
 export async function runRebalanceEvents(
   currentSimulationYear,
   rebalanceEvents,
+  rebalanceEventYears,
   runningTotals,
   evtlog
 ) {
-  const rebalanceEventYears = await getEventYears(rebalanceEvents);
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {
+    console.log("Rebalance Event:", rebalanceEvent);
     const eventYears = rebalanceEventYears[rebalanceEvent.id];
     if (!eventYears) continue;
 
@@ -37,10 +38,15 @@ export async function runRebalanceEvents(
     // Step 1: Calculate total value of relevant investments
     let totalPortfolioValue = 0;
     for (const investmentId in assetAllocation) {
-      totalPortfolioValue += Number(
-        runningTotals.investments[investmentId]?.value || 0
+      // console.log("investment id:", investmentId);
+      const investment = runningTotals.investments.find(
+        (inv) => inv.id === investmentId
       );
+      // console.log("Matching Investment:", investment);
+      totalPortfolioValue += Number(investment?.value || 0);
     }
+
+    // console.log("Total Portfolio Value:", totalPortfolioValue);
 
     // Step 2: Calculate target values based on allocation
     const targetValues = {};
@@ -49,54 +55,20 @@ export async function runRebalanceEvents(
         totalPortfolioValue * assetAllocation[investmentId];
     }
 
-    // Step 3: Sell from over-allocated investments first
+    // Step 3: Update investments to match target values
     for (const investmentId in targetValues) {
-      const currentValue = Number(
-        runningTotals.investments[investmentId]?.value || 0
-      );
       const targetValue = targetValues[investmentId];
 
-      if (currentValue > targetValue) {
-        const amountToSell = currentValue - targetValue;
-
-        // Capital gains (if not pre-tax)
-        if (runningTotals.investments[investmentId].taxStatus !== "pre-tax") {
-          const purchaseValue = Number(purchasePrices[investmentId] || 0);
-          const costBasis = (purchaseValue / currentValue) * amountToSell;
-          const capitalGain = amountToSell - costBasis;
-          runningTotals.curYearGains += capitalGain;
-        }
-
-        // Update purchase prices proportionally
-        const prevPurchase = Number(purchasePrices[investmentId] || 0);
-        const remainingValue = currentValue - amountToSell;
-        purchasePrices[investmentId] =
-          remainingValue > 0
-            ? (prevPurchase * (remainingValue / currentValue)).toFixed(2)
-            : "0.00";
-
-        // Apply the sale
-        runningTotals.investments[investmentId].value = targetValue.toFixed(2);
-        logRebalance(evtlog, currentSimulationYear, rebalanceEvent.name, targetValue, investmentId);
-      }
-    }
-
-    // Step 4: Buy into under-allocated investments using remaining value
-    for (const investmentId in targetValues) {
-      const currentValue = Number(
-        runningTotals.investments[investmentId]?.value || 0
+      // Find the matching investment in the array
+      const investment = runningTotals.investments.find(
+        (inv) => inv.id === investmentId
       );
-      const targetValue = targetValues[investmentId];
 
-      if (currentValue < targetValue) {
-        const amountToBuy = targetValue - currentValue;
-
-        // Update investment value and purchase price
-        runningTotals.investments[investmentId].value = targetValue.toFixed(2);
-        logRebalance(evtlog, currentSimulationYear, rebalanceEvent.name, targetValue, investmentId);
-
-        const prevPurchase = Number(purchasePrices[investmentId] || 0);
-        purchasePrices[investmentId] = (prevPurchase + amountToBuy).toFixed(2);
+      if (investment) {
+        // Update the value of the matching investment
+        investment.value = targetValue;
+      } else {
+        console.error(`Investment with ID "${investmentId}" not found.`);
       }
     }
   }

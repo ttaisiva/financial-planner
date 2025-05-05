@@ -49,9 +49,9 @@ export async function process_income_event(
     console.warn(
       `No income events found for scenario ID ${scenarioId}. Skipping income event processing.`
     );
-    return;
+    return; // Return early if no income events found
+  
   }
-
   console.log(
     `Found ${incomeEvents.length} income events for scenario ID ${scenarioId}.`
   );
@@ -66,6 +66,8 @@ export async function process_income_event(
 
 
     let currentAmount = 0;
+    let prevAmount = previousYearAmounts[event.id] || 0;
+    // console.log("previous", prevAmount);
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
@@ -77,10 +79,14 @@ export async function process_income_event(
         Number(previousYearAmounts[event.id]) + Number(sampledChange);
       
     }
-
+    // Apply inflation adjustment
     if (event.inflationAdjusted) {
       currentAmount *= 1 + inflationRate;
       currentAmount = currentAmount.toFixed(2);
+      console.log(
+        `Applied inflation adjustment. New adjustedAmount: ${currentAmount}`
+      );
+      event.adjustedAmount = currentAmount;
     }
 
     if (!isUserAlive) {
@@ -93,6 +99,9 @@ export async function process_income_event(
         ((1 - Number(event.spousePercentage)) / 100) * currentAmount;
       currentAmount -= spousePortion;
     }
+
+    event.adjustedAmount = Number(currentAmount).toFixed(2); // Store adjusted amount in the event object
+    console.log("Income adjusted amount for event:", event.name, currentAmount);
 
     // Add to cash investment and income totals 
     runningTotals.cashInvestment = (
@@ -139,6 +148,7 @@ export async function process_income_event(
     )}, curYearSS: ${Number(runningTotals.curYearSS)}`
   );
 }
+
 
 /**
  * Fetches and calculates necessary data for an income event from the database.
@@ -322,3 +332,5 @@ function isActiveIncomeEvent(eventId, currentSimulationYear, incomeEventsStart, 
   console.log(`Event ID: ${eventId} is active.`);
   return true;
 }
+
+

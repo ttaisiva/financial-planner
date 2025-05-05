@@ -2,6 +2,7 @@ import { sample } from "./preliminaries.js"; // Assuming you have a sampling fun
 import { getUserBirthYear } from "./monte_carlo_sim.js";
 import { getEventDuration, getEventStartYear } from "./run_income_events.js";
 import { pool } from "../utils.js";
+import { calculateAdjustedExpense } from "./nondisc_expenses.js";
 import { logExpense } from "../logging.js";
 
 /**
@@ -20,6 +21,7 @@ export async function payDiscExpenses(
   currentSimulationYear,
   inflationRate,
   date,
+  isSpouseAlive,
   evtlog
 ) {
 
@@ -31,8 +33,22 @@ export async function payDiscExpenses(
     discretionaryExpenses,
     currentSimulationYear
   );
-  runningTotals.expenses.push(...activeEvents);
+  // console.log("active events", activeEvents);
 
+  const adjustedExpenses = activeEvents.map((event) => {
+    const adjustedAmount = calculateAdjustedExpense(
+      event,
+      currentSimulationYear,
+      inflationRate
+    );
+
+    return {
+      ...event,
+      adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
+    };
+  });
+  console.log("Adjusted discretionary expenses:", adjustedExpenses);
+  runningTotals.expenses.push(...adjustedExpenses);
 
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
     const expenseAmount = calculateExpenseAmount(
@@ -54,20 +70,43 @@ export async function payDiscExpenses(
     .filter(Boolean);
 
   // Step 3: Iterate over discretionary expenses and pay them if cash is available
+  let actualDiscExpensesAmt = 0;
   for (const expense of sortedExpenses) {
-    const expenseAmount = calculateExpenseAmount(
+    let expenseAmount = calculateExpenseAmount(
       expense,
       currentSimulationYear,
       inflationRate
     );
 
+    console.log(
+      `Processing expense: ${expense.name}, initial amount: ${expenseAmount}`
+    );
+
+    // Adjust for spouse death
+    if (!isSpouseAlive) {
+      console.log("expense amount: ", expenseAmount);
+      console.log("user fraction: ", expense.userFraction);
+      const spousePortion = (
+        expenseAmount *
+        (1 - expense.userFraction)
+      ).toFixed(2);
+      expenseAmount -= spousePortion;
+      console.log(
+        `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${expenseAmount}`
+      );
+    }
+
+    console.log("cashInvestment", runningTotals.cashInvestment);
+
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
       logExpense(evtlog, currentSimulationYear, expense.name, expenseAmount, "cash");
+      actualDiscExpensesAmt += Number(expenseAmount); //this is for tracking if we paid the full amount of the disc expense or we still have money leftover
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
-      remainingWithdrawal = expenseAmount - runningTotals.cashInvestment;
+      remainingWithdrawal =
+        expenseAmount - Number(runningTotals.cashInvestment);
 
       // Perform withdrawals from investments
       const expenseWithdrawalStrategy = await getExpenseWithdrawalStrategy(
@@ -83,7 +122,7 @@ export async function payDiscExpenses(
 
         const withdrawalAmount = Math.min(
           remainingWithdrawal,
-          investment.value
+          Number(investment.value)
         );
 
         // Calculate capital gain or loss
@@ -121,13 +160,29 @@ export async function payDiscExpenses(
       }
 
       if (remainingWithdrawal > 0) {
+        //meaning we could not pay the full expense
+        actualDiscExpensesAmt +=
+          Number(expenseAmount) - Number(remainingWithdrawal); // Track the amount actually paid
         break; // Stop paying further expenses if this one cannot be fully paid
+      } else {
+        //meaning with the money form strategy we could pay the full expense
+        actualDiscExpensesAmt += Number(expenseAmount); // Track the full amount paid
       }
 
       // Deduct the expense amount from cash
       runningTotals.cashInvestment = 0;
+      console.log(
+        `Paid ${expense.name} using cash and withdrawals. Remaining cash: ${runningTotals.cashInvestment}`
+      );
+      
     }
   }
+  runningTotals.actualDiscExpenses = Number(actualDiscExpensesAmt); // Track the total discretionary expenses paid
+  console.log(
+    `Total discretionary expenses paid: ${Number(
+      runningTotals.actualDiscExpenses
+    )}`
+  );
 }
 
 /**
@@ -146,7 +201,8 @@ async function getDiscretionaryExpenses(scenarioId) {
             change_distribution AS changeDistribution,
             inflation_adjusted AS inflationAdjusted,
             start AS start,
-            duration AS duration
+            duration AS duration,
+            user_fraction AS userFraction
          FROM events
          WHERE scenario_id = ? AND type = 'expense' AND discretionary = 1`,
     [scenarioId]
@@ -202,7 +258,7 @@ export function calculateExpenseAmount(
     amount *= 1 + inflationRate;
   }
 
-  return amount;
+  return Number(amount);
 }
 
 /**

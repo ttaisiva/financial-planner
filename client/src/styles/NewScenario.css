@@ -55,6 +55,7 @@
   transition: background-color 0.25s; 
 }
 
+
 .row {
   display: flex;
   gap: 2rem; /* space between columns */
@@ -66,3 +67,45 @@
   flex-wrap: wrap;
   gap: 1rem; /* space between items */
 }
+
+.simulation-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center all simulation blocks horizontally */
+  gap: 2rem;            /* Optional: spacing between simulations */
+  padding: 2rem;
+}
+
+.simulation {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center the heading and row */
+}
+
+.simulation-row {
+  display: flex;
+  flex-wrap: wrap; /* Allows wrapping if there are many items */
+  gap: 1rem;        /* Space between items */
+}
+
+.simulationitem {
+  border-radius: 25px;
+  padding: 0.6em 1.2em;
+  font-weight: 500;
+  background-color: var(--primary-color3);
+  color: var(--text-color);
+  transition: background-color 0.25s;
+  width: 320px; /* Wider than 250px */
+  box-sizing: border-box;
+  text-align: left;
+}
+
+
+.chart-container {
+  width: 800px;      /* Adjust this value to make the chart smaller or larger */
+  max-width: 95%;    /* Responsive scaling on small screens */
+  margin: 2rem auto; /* Center the chart with spacing above/below */
+  padding: 1rem;
+}
+
+

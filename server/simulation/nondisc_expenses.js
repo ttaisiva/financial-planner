@@ -7,6 +7,7 @@ import {
 } from "./disc_expenses.js";
 import { pool } from "../utils.js";
 import { logExpense } from "../logging.js";
+
 /**
  * Pays non-discretionary expenses based on available cash and investments.
  * @param {number} scenarioId - The ID of the scenario.
@@ -14,6 +15,7 @@ import { logExpense } from "../logging.js";
  * @param {number} currentSimulationYear - The current simulation year.
  * @param {number} inflationRate - The inflation rate for the current year.
  * @param {number} date - The current date.
+ * @param {boolean} isSpouseAlive - Indicates if the spouse is alive.
  * @param {number} taxes - The amount owed from federal, state, and capital gains tax
  * @returns {Object} Updated financial data.
  *
@@ -25,6 +27,7 @@ export async function payNonDiscExpenses(
   currentSimulationYear,
   inflationRate,
   date,
+  isSpouseAlive,
   taxes,
   evtlog
 ) {
@@ -40,7 +43,36 @@ export async function payNonDiscExpenses(
     nonDiscretionaryExpenses,
     currentSimulationYear
   );
-  runningTotals.expenses.push(...activeEvents);
+  // console.log("Active non-discretionary events:", activeEvents);
+  // Adjust expenses for annual change and inflation
+  const adjustedExpenses = activeEvents.map((event) => {
+    let adjustedAmount = calculateAdjustedExpense(
+      event,
+      currentSimulationYear,
+      inflationRate
+    );
+
+    console.log("adjusted amount: ", adjustedAmount);
+
+    // Adjust for spouse death
+    if (!isSpouseAlive) {
+      console.log("user fraction: ", event.userFraction);
+      const spousePortion = (adjustedAmount * (1 - event.userFraction)).toFixed(
+        2
+      );
+      adjustedAmount -= spousePortion;
+      console.log(
+        `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${adjustedAmount}`
+      );
+    }
+
+    return {
+      ...event,
+      adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
+    };
+  });
+  console.log("Adjusted non-discretionary expenses:", adjustedExpenses);
+  runningTotals.expenses.push(...adjustedExpenses);
 
   // Calculate total non-discretionary expenses
   const totalNonDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -155,7 +187,8 @@ async function getNonDiscretionaryExpenses(scenarioId) {
             change_distribution AS changeDistribution,
             inflation_adjusted AS inflationAdjusted,
             start AS start,
-            duration AS duration
+            duration AS duration,
+            user_fraction AS userFraction
          FROM events
          WHERE scenario_id = ? AND type = 'expense' AND discretionary = 0`,
     [scenarioId]
@@ -190,4 +223,40 @@ async function filterActiveNonDiscretionaryEvents(
   }
 
   return activeEvents;
+}
+
+/**
+ * Calculates the adjusted expense amount for an event, considering annual change and inflation adjustment.
+ * @param {Object} event - The expense event.
+ * @param {number} currentSimulationYear - The current simulation year.
+ * @param {number} inflationRate - The inflation rate for the current year.
+ * @returns {number} The adjusted expense amount.
+ */
+export function calculateAdjustedExpense(
+  event,
+  currentSimulationYear,
+  inflationRate
+) {
+  const startingYear = getEventStartYear(event);
+  console.log("starting year", startingYear);
+  const yearsSinceStart = currentSimulationYear - startingYear;
+  if (yearsSinceStart < 0) return 0;
+
+  let adjustedAmount = event.initialAmount;
+
+  // Apply annual change (percentage or fixed amount)
+  const changeValue = Number(sample(event.changeDistribution)) || 0; // Assuming this is the numeric change
+
+  if (event.changeAmtOrPct === "percent") {
+    adjustedAmount *= Math.pow(1 + changeValue / 100, yearsSinceStart); // Compounding %
+  } else if (event.changeAmtOrPct === "amount") {
+    adjustedAmount += changeValue * yearsSinceStart; // Linear $
+  }
+
+  // Apply inflation, compounded
+  if (event.inflationAdjusted) {
+    adjustedAmount *= Math.pow(1 + inflationRate, yearsSinceStart);
+  }
+
+  return adjustedAmount;
 }
