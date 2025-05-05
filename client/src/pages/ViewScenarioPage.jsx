@@ -345,6 +345,8 @@ export const ViewSingleScenario = ({
         return `Uniform (Lower: ${lower}, Upper: ${upper})`;
       case "startWith":
         return `Start With ${eventSeries}`;
+      case "startAfter":
+        return `Start After ${eventSeries}`;
       default:
         return "Unknown Distribution Type";
     }
