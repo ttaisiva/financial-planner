@@ -77,6 +77,7 @@ export async function runInvestEvent(
 }
 
 const getEventById = async (eventId) => {
+  // console.log("in geteventbyid eventid:", eventId);
   const [rows] = await pool.execute("SELECT * FROM events WHERE id = ?", [
     eventId,
   ]);
@@ -118,6 +119,7 @@ export const getInvestEvents = async (scenarioId) => {
     [scenarioId]
   );
 
+  // console.log("rows", rows);
 
   return rows;
 };

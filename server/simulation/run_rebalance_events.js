@@ -24,6 +24,7 @@ export async function runRebalanceEvents(
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {
+    console.log("Rebalance Event:", rebalanceEvent);
     const eventYears = rebalanceEventYears[rebalanceEvent.id];
     if (!eventYears) continue;
 
@@ -37,12 +38,15 @@ export async function runRebalanceEvents(
     // Step 1: Calculate total value of relevant investments
     let totalPortfolioValue = 0;
     for (const investmentId in assetAllocation) {
+      // console.log("investment id:", investmentId);
       const investment = runningTotals.investments.find(
         (inv) => inv.id === investmentId
       );
+      // console.log("Matching Investment:", investment);
       totalPortfolioValue += Number(investment?.value || 0);
     }
 
+    // console.log("Total Portfolio Value:", totalPortfolioValue);
 
     // Step 2: Calculate target values based on allocation
     const targetValues = {};
