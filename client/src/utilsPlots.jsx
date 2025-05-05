@@ -62,7 +62,11 @@ export function LineChart({ successProbabilities }) {
     },
   };
 
-  return <Line data={data} options={options} />;
+  return (
+    <div className="chart-container">
+      <Line data={data} options={options} />
+    </div>
+  );
 }
 
 
@@ -273,7 +277,12 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
       };
 
 
-    return <Line data={data} options={options} />;
+    return (
+      <div className="chart-container">
+          <Line data={data} options={options} />;
+      </div>
+    )
+    
 }
 
 export function StackedBarChart({ allSimulationResults, breakdownType, aggregationThreshold, useMedian }) {
@@ -442,6 +451,10 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     },
   };
 
-  return <Bar data={data} options={options} />;
+  return (
+    <div className="chart-container">
+      <Bar data={data} options={options} />;
+    </div>
+  );
 
 }
