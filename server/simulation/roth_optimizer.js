@@ -5,12 +5,12 @@ import { pool } from "../utils.js";
 export async function runRothOptimizer(
   scenarioId,
   rothStrategy,
-  incomeEvents,
+  income,
   year,
   evtlog,
   runningTotals
 ) {
-  let conversionAmt = await getMaxConversionAmt(scenarioId, incomeEvents);
+  let conversionAmt = await getMaxConversionAmt(scenarioId, income);
 
   for (let i = 0; i < rothStrategy.length; i++) {
     if (conversionAmt === 0) break;
@@ -35,7 +35,6 @@ export async function runRothOptimizer(
       if (aftertax) {
         aftertax.value += conversionAmt;
         pretax.value -= conversionAmt;
-
         logRothConversion(evtlog, year, pretax, aftertax, conversionAmt);
       } else {
         const newInvestment = {
@@ -56,11 +55,8 @@ export async function runRothOptimizer(
   return { resInvestment, rothStrategy };
 }
 
-async function getMaxConversionAmt(scenarioId, incomeEvents) {
-  let totalIncome = 0;
-  for (let i = 0; i < incomeEvents.length; i++) {
-    totalIncome += incomeEvents[i].currentAmount;
-  }
+async function getMaxConversionAmt(scenarioId, income) {
+  let totalIncome = income;
   const filingStatus = await getFilingStatus(scenarioId);
   const taxBrackets = await getTaxBrackets(filingStatus);
 
@@ -81,14 +77,14 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
 }
 
 async function getTaxBrackets(filingStatus) {
-  if (filingStatus === "individual") filingStatus = "single";
-  if (filingStatus === "couple") filingStatus = "married";
+  // if (filingStatus === "individual") filingStatus = "single";
+  // if (filingStatus === "couple") filingStatus = "married";
 
   const [rows] = await pool.execute(
     `SELECT 
-            income_max as incomeMax
-         FROM tax_brackets
-         WHERE filing_status = ?`,
+      income_max as incomeMax
+    FROM tax_brackets
+    WHERE filing_status = ?`,
     [filingStatus]
   );
   return rows;

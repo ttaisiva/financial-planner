@@ -37,7 +37,7 @@ export async function simulation(
   scenarioId,
   dimParams
 ) {
-  console.log(`Running ${numSimulations}simulation for scenario ${scenarioId}`);
+  console.log(`Running ${numSimulations} simulation for scenario ${scenarioId}`);
   const logs = await initLogs(userId); // open log files for writing
   if (!logs.evtlog) throw new Error("evtlog is undefined after initialization");
 
@@ -116,7 +116,6 @@ export async function simulation(
     investEventYears,
     rebalanceEvents,
   });
-
   for (let year = 0; year < totalYears; year++) {
     //years in which the simulation is  being run
 
@@ -166,7 +165,7 @@ export async function simulation(
       const rothResult = await runRothOptimizer(
         scenarioId,
         rothStrategy,
-        incomeEvents,
+        runningTotals.curYearIncome,
         currentSimulationYear,
         logs.evtlog,
         runningTotals
