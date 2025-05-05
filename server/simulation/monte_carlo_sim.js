@@ -70,7 +70,7 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
     incomeEventsStart,
     incomeEventsDuration
   ); // Populate years and duration for income events
-  // need to do the same for expense events
+// need to do the same for expense events
   const rothYears = await getRothYears(scenarioId);
   let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
@@ -83,6 +83,9 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
   // log investments before any changes
 
   logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
+
+  // **Update Event Fields Based on dimParams**
+  updateEventFields(dimParams, { incomeEvents, investEventYears, rebalanceEvents });
 
   for (let year = 0; year < totalYears; year++) {
     //years in which the simulation is  being run
@@ -622,5 +625,79 @@ export async function getFinancialGoal(scenarioId) {
   } catch (error) {
     console.error("Error fetching financial goal:", error);
     throw error; // Re-throw the error for the caller to handle
+  }
+}
+
+/**
+ * Updates the event fields based on dimParams for 1D or 2D exploration.
+ * @param {Array} dimParams - Array of parameter combinations.
+ * @param {Object} events - Object containing different event types (incomeEvents, investEventYears, rebalanceEvents).
+ */
+function updateEventFields(dimParams, events) {
+  if (!dimParams || dimParams.length === 0) return;
+
+  const is2D = dimParams[0].hasOwnProperty("param2"); // Check if param2 exists in the first entry
+
+  for (const param of dimParams) {
+    const eventId = param.event; // Get the event ID from dimParams
+
+    // Determine the event type and find the corresponding event
+    let event = null;
+    if (events.incomeEvents) {
+      event = events.incomeEvents.find((e) => e.id === eventId);
+    }
+    if (!event && events.investEventYears) {
+      event = events.investEventYears.find((e) => e.id === eventId);
+    }
+    if (!event && events.rebalanceEvents) {
+      event = events.rebalanceEvents.find((e) => e.id === eventId);
+    }
+
+    if (event) {
+      if (is2D) {
+        // **2D Exploration: Update two fields**
+        updateEventField(event, Object.keys(param)[0], param.param1);
+        updateEventField(event, Object.keys(param)[1], param.param2);
+      } else {
+        // **1D Exploration: Update one field**
+        updateEventField(event, Object.keys(param)[0], param.param1);
+      }
+    }
+  }
+}
+
+/**
+ * Updates a specific field of an event based on the parameter type and value.
+ * @param {Object} event - The event object to update.
+ * @param {string} field - The field to update (e.g., startYear, duration, initialAmount).
+ * @param {any} value - The value to set for the field.
+ */
+function updateEventField(event, field, value) {
+  if (!value) return;
+
+  switch (field) {
+    case "startYear":
+      event.startYear = { type: "fixed", value }; // Update start year format
+      break;
+
+    case "duration":
+      event.duration = { type: "fixed", value }; // Update duration format
+      break;
+
+    case "initialAmount":
+      event.initialAmount = parseFloat(value); // Update initial amount as a double
+      break;
+
+    case "percentage":
+      if (event.assetAllocations && event.assetAllocations.length === 2) {
+        // Update the percentage for the first investment
+        event.assetAllocations[0].percentage = value;
+        // Automatically calculate the percentage for the second investment
+        event.assetAllocations[1].percentage = 100 - value;
+      }
+      break;
+
+    default:
+      console.warn(`Unknown field: ${field}`);
   }
 }

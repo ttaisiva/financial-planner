@@ -271,7 +271,7 @@ export const ViewScenarioPage = () => {
       {simulationResults && <DisplaySimulationResults simulationResults={simulationResults} /> }
       {simulationResults && <h2> Scenario Parameter Exploration</h2>}
       {simulationResults && <Exploration1D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents}/>}
-      {simulationResults && <Exploration2D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents} scenarioID={scenarioId}/>}
+      {simulationResults && <Exploration2D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents} scenarioId={scenarioId}/>}
       <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>

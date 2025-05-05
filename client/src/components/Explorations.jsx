@@ -116,9 +116,9 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
   );
 };
 
-export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEvents, scenarioID }) => {
-  const [selectedInvestEvent, setSelectedInvestEvent] = useState("");
+export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEvents, scenarioId }) => {
   const [selectedEvent, setSelectedEvent] = useState("");
+  const [selectedInvestEvent, setSelectedInvestEvent] = useState(""); // State for selected asset allocation
   const [parameter1, setParameter1] = useState(""); // State for the first parameter
   const [parameter2, setParameter2] = useState(""); // State for the second parameter
   const [lowerBound1, setLowerBound1] = useState(0);
@@ -127,7 +127,29 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
   const [lowerBound2, setLowerBound2] = useState(0);
   const [upperBound2, setUpperBound2] = useState(0);
   const [stepSize2, setStepSize2] = useState(1);
-  const [enableRothOptimizer, setEnableRothOptimizer] = useState(false);
+  const [enableRothOptimizer, setEnableRothOptimizer] = useState(false); // State for Roth optimizer
+
+  const parameterOptions = [
+    { value: "startYear", label: "Start Year" },
+    { value: "duration", label: "Duration" },
+    { value: "initialAmount", label: "Initial Amount" },
+  ];
+
+  const handleParameter1Change = (e) => {
+    setParameter1(e.target.value);
+    // Reset parameter2 if it conflicts with the new parameter1
+    if (e.target.value === parameter2) {
+      setParameter2("");
+    }
+  };
+
+  const handleParameter2Change = (e) => {
+    setParameter2(e.target.value);
+    // Reset parameter1 if it conflicts with the new parameter2
+    if (e.target.value === parameter1) {
+      setParameter1("");
+    }
+  };
 
   const handleRun2DSimulations = async () => {
     if (
@@ -161,7 +183,7 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
 
       try {
         // Send combinations to the backend
-        const response = await fetch(`http://localhost:3000/api/run-2d-simulation?id=${scenarioID}`, {
+        const response = await fetch(`http://localhost:3000/api/run-2d-simulation?id=${scenarioId}`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -169,10 +191,11 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
           },
           body: JSON.stringify({
             selectedEvent,
+            selectedInvestEvent, // Include selected asset allocation
             parameter1,
             parameter2,
             combinations,
-            enableRothOptimizer,
+            enableRothOptimizer, // Include Roth optimizer state
           }),
         });
 
@@ -211,11 +234,16 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
       {/* First Parameter Dropdown */}
       <label>
         Select First Parameter:
-        <select value={parameter1} onChange={(e) => setParameter1(e.target.value)}>
+        <select value={parameter1} onChange={handleParameter1Change}>
           <option value="">Select Parameter</option>
-          <option value="startYear">Start Year</option>
-          <option value="duration">Duration</option>
-          <option value="initialAmount">Initial Amount</option>
+          {parameterOptions.map(
+            (option) =>
+              option.value !== parameter2 && ( // Exclude the option selected in parameter2
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              )
+          )}
         </select>
       </label>
 
@@ -253,11 +281,16 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
       {/* Second Parameter Dropdown */}
       <label>
         Select Second Parameter:
-        <select value={parameter2} onChange={(e) => setParameter2(e.target.value)}>
+        <select value={parameter2} onChange={handleParameter2Change}>
           <option value="">Select Parameter</option>
-          <option value="startYear">Start Year</option>
-          <option value="duration">Duration</option>
-          <option value="initialAmount">Initial Amount</option>
+          {parameterOptions.map(
+            (option) =>
+              option.value !== parameter1 && ( // Exclude the option selected in parameter1
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              )
+          )}
         </select>
       </label>
 
@@ -291,7 +324,6 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
         </>
       )}
       <br />
-
       {/* Dropdown for selecting an investment event */}
       <label>
         Select Asset Allocation for invest event:
@@ -320,7 +352,6 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
         />
       </label>
       <br />
-
       {/* Run Simulations Button */}
       <button onClick={handleRun2DSimulations}>Run Simulations</button>
     </div>
