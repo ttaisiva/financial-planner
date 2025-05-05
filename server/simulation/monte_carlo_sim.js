@@ -202,8 +202,9 @@ export async function simulation(
       incomeEvents,
       runningTotals,
       taxData,
+      currentSimulationYear,
+      logs.evtlog
     );
-    logTaxes(logs.evtlog, currentSimulationYear, taxes);
     if (taxes) {
       runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
     }

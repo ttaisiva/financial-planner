@@ -104,10 +104,10 @@ export function logExpense(evtlog, year, name, amount, investment) {
   logEvent(evtlog, event);
 }
 
-export function logTaxes(evtlog, year, amount) {
+export function logTaxes(evtlog, year, type, amount) {
   const event = {
     year: year,
-    type: `Taxes paid for the year.`,
+    type: `${type} taxes paid.`,
     amount: amount,
   };
   logEvent(evtlog, event);
