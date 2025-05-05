@@ -537,19 +537,20 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
 
       <div className="simulation-details">
         {allSimulationResults.flat(1).map((simulation, simIndex) => (
-          <div key={simIndex} className="simulation">
+          <div key={simIndex} className="simulation" >
             <h3>Simulation {simIndex + 1}</h3>
+            <div className="simulation-row">
             {simulation.map((yearlyResult, yearIndex) => (
-              <div key={yearIndex} className="item">
+              <div key={yearIndex} className="simulationitem">
                 <h4>Year: {yearlyResult.year}</h4>
                 <p><strong>Cash Investment:</strong> ${Number(yearlyResult.cashInvestment).toFixed(2)}</p>
                 <p><strong>Current Year Income:</strong> ${Number(yearlyResult.curYearIncome).toFixed(2)}</p>
                 <p><strong>Current Year Social Security:</strong> ${Number(yearlyResult.curYearSS).toFixed(2)}</p>
                 <p><strong>Current Year Gains:</strong> ${Number(yearlyResult.curYearGains).toFixed(2)}</p>
                 <p><strong>Current Year Early Withdrawals:</strong> ${Number(yearlyResult.curYearEarlyWithdrawals).toFixed(2)}</p>
-                <p><strong>Purchase Prices:</strong> {JSON.stringify(yearlyResult.purchasePrices)}</p>
               </div>
             ))}
+            </div>
           </div>
         ))}
       </div>
