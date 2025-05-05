@@ -29,7 +29,7 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
 
   return (
     <div className="section-new-scenario">
-      <label>
+      <label htmlFor={`${key}-type`}>
         <h4>
           {" "}
           {(prefix === "user" && "Your") ||
@@ -40,7 +40,8 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
 
       <div>
         <select
-          name={`${key}.type`}
+          id={`${key}-type`}
+          name={`${key}-type`}
           value={formData[key]?.type}
           onChange={handleChange}
         >
@@ -301,11 +302,12 @@ const ScenarioInfo = forwardRef((props, ref) => {
         <h1>New Scenario</h1>
         <div className="divider"></div>
 
-        <label>
+        <label htmlFor="scenario-name">
           <h2>Scenario Name</h2>
         </label>
         <div>
           <input
+            id="scenario-name"
             type="text"
             name="name"
             value={formData.name}
@@ -332,11 +334,12 @@ const ScenarioInfo = forwardRef((props, ref) => {
           </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
-          <label>
+          <label htmlFor="financial-goal">
             <h4>Financial goal (in $):</h4>
           </label>
           <div>
             <input
+              id="financial-goal"
               type="number"
               min="0"
               name="financialGoal"
@@ -365,12 +368,13 @@ const ScenarioInfo = forwardRef((props, ref) => {
           </p>
           <ReactTooltip id="tooltip" place="right" type="info" effect="solid" />
 
-          <label>
+          <label htmlFor="residence-state">
             <h4>Choose your state of residence (optional):</h4>
           </label>
 
           <div>
             <select
+              id="residence-state"
               name="residenceState"
               value={formData.residenceState}
               onChange={handleChange}
@@ -399,12 +403,13 @@ const ScenarioInfo = forwardRef((props, ref) => {
             onChange={(e) => handleFileUpload(e)}
           />
 
-          <label>
+          <label htmlFor="filing-status">
             <h4>Filing Status:</h4>
           </label>
 
           <div>
             <select
+              id="filing-status"
               name="maritalStatus"
               value={formData.maritalStatus}
               onChange={handleChange}
@@ -429,12 +434,13 @@ const ScenarioInfo = forwardRef((props, ref) => {
           </div>
         </div>
 
-        <label>
+        <label htmlFor="inflation-assumption">
           <h4>Inflation Assumption %:</h4>
         </label>
 
         <div>
           <select
+            id="inflation-assumption"
             name="inflationAssumption.type"
             value={formData.inflationAssumption.type}
             onChange={handleChange}
@@ -457,7 +463,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
           {console.log("form Data", formData)}
         </div>
 
-        <label>
+        <label htmlFor="after-tax-contribution-limit">
           <h4>After-Tax Contribution Limit:</h4>
         </label>
         <p>
@@ -469,6 +475,7 @@ const ScenarioInfo = forwardRef((props, ref) => {
 
         <div>
           <input
+            id="after-tax-contribution-limit"
             type="number"
             min="0"
             name="afterTaxContributionLimit"
@@ -507,11 +514,12 @@ const ScenarioInfo = forwardRef((props, ref) => {
           /> */}
 
           <div>
-            <label>
+            <label htmlFor="user-birth-year">
               {" "}
               <h4>Your birth year:</h4>{" "}
             </label>
             <input
+              id="user-birth-year"
               type="number"
               name="userBirthYear"
               value={formData.userBirthYear}
