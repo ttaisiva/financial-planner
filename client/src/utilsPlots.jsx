@@ -320,11 +320,11 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
           });
         } else if (breakdownType === "expenses") {
           console.log("EXPENSES STACKED BAR CHART: ", yearlyResult.expenses)
-          yearlyResult.expenses.forEach(({ name, initialAmount }) => {
+          yearlyResult.expenses.forEach(({ name, adjustedAmount }) => {
             if (!yearlyData[year][name]) {
               yearlyData[year][name] = [];
             }
-            yearlyData[year][name].push(initialAmount);
+            yearlyData[year][name].push(adjustedAmount);
           });
           if (!yearlyData[year]["Taxes"]) {
             yearlyData[year]["Taxes"] = [];

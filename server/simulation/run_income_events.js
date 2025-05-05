@@ -79,7 +79,8 @@ export async function process_income_event(
 
     // Apply expected annual change for active income events
     let currentAmount = 0;
-    console.log("previous", previousYearAmounts[event.id]);
+    let prevAmount = previousYearAmounts[event.id] || 0;
+    console.log("previous", prevAmount);
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change

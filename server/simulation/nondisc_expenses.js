@@ -6,6 +6,7 @@ import {
   getExpenseWithdrawalStrategy,
 } from "./disc_expenses.js";
 import { pool } from "../utils.js";
+
 /**
  * Pays non-discretionary expenses based on available cash and investments.
  * @param {number} scenarioId - The ID of the scenario.
@@ -263,24 +264,27 @@ async function filterActiveNonDiscretionaryEvents(
  * @returns {number} The adjusted expense amount.
  */
 export function calculateAdjustedExpense(event, currentSimulationYear, inflationRate) {
-  const yearsSinceStart = currentSimulationYear - event.start;
+  const startingYear = getEventStartYear(event);
+  console.log("starting year", startingYear);
+  const yearsSinceStart = currentSimulationYear - startingYear;
+  if (yearsSinceStart < 0) return 0;
 
-  // Start with the initial amount
   let adjustedAmount = event.initialAmount;
 
   // Apply annual change (percentage or fixed amount)
-  if (event.changeAmtOrPct) {
-    if (event.changeDistribution === "percentage") {
-      adjustedAmount *= Math.pow(1 + event.changeAmtOrPct, yearsSinceStart);
-    } else if (event.changeDistribution === "amount") {
-      adjustedAmount += event.changeAmtOrPct * yearsSinceStart;
-    }
+  const changeValue = Number(sample(event.changeDistribution)) || 0; // Assuming this is the numeric change
+
+  if (event.changeAmtOrPct === "percent") {
+    adjustedAmount *= Math.pow(1 + changeValue / 100, yearsSinceStart); // Compounding %
+  } else if (event.changeAmtOrPct === "amount") {
+    adjustedAmount += changeValue * yearsSinceStart; // Linear $
   }
 
-  // Apply inflation adjustment if the flag is set
+  // Apply inflation, compounded
   if (event.inflationAdjusted) {
-    adjustedAmount *= 1 + inflationRate;
+    adjustedAmount *= Math.pow(1 + inflationRate, yearsSinceStart);
   }
 
   return adjustedAmount;
 }
+
