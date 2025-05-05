@@ -43,7 +43,6 @@ export async function payNonDiscExpenses(
     nonDiscretionaryExpenses,
     currentSimulationYear
   );
-  // console.log("Active non-discretionary events:", activeEvents);
   // Adjust expenses for annual change and inflation
   const adjustedExpenses = activeEvents.map((event) => {
     let adjustedAmount = calculateAdjustedExpense(
@@ -52,18 +51,13 @@ export async function payNonDiscExpenses(
       inflationRate
     );
 
-    console.log("adjusted amount: ", adjustedAmount);
 
     // Adjust for spouse death
     if (!isSpouseAlive) {
-      console.log("user fraction: ", event.userFraction);
       const spousePortion = (adjustedAmount * (1 - event.userFraction)).toFixed(
         2
       );
       adjustedAmount -= spousePortion;
-      console.log(
-        `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${adjustedAmount}`
-      );
     }
 
     return {
@@ -71,7 +65,6 @@ export async function payNonDiscExpenses(
       adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
     };
   });
-  console.log("Adjusted non-discretionary expenses:", adjustedExpenses);
   runningTotals.expenses.push(...adjustedExpenses);
 
   // Calculate total non-discretionary expenses
@@ -238,7 +231,6 @@ export function calculateAdjustedExpense(
   inflationRate
 ) {
   const startingYear = getEventStartYear(event);
-  console.log("starting year", startingYear);
   const yearsSinceStart = currentSimulationYear - startingYear;
   if (yearsSinceStart < 0) return 0;
 

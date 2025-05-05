@@ -52,9 +52,6 @@ export async function process_income_event(
     return; // Return early if no income events found
   
   }
-  console.log(
-    `Found ${incomeEvents.length} income events for scenario ID ${scenarioId}.`
-  );
 
   let activeIncomeEvents = [];
   for (const event of incomeEvents) {
@@ -67,7 +64,6 @@ export async function process_income_event(
 
     let currentAmount = 0;
     let prevAmount = previousYearAmounts[event.id] || 0;
-    // console.log("previous", prevAmount);
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
@@ -83,9 +79,6 @@ export async function process_income_event(
     if (event.inflationAdjusted) {
       currentAmount *= 1 + inflationRate;
       currentAmount = currentAmount.toFixed(2);
-      console.log(
-        `Applied inflation adjustment. New adjustedAmount: ${currentAmount}`
-      );
       event.adjustedAmount = currentAmount;
     }
 
@@ -101,7 +94,6 @@ export async function process_income_event(
     }
 
     event.adjustedAmount = Number(currentAmount).toFixed(2); // Store adjusted amount in the event object
-    console.log("Income adjusted amount for event:", event.name, currentAmount);
 
     // Add to cash investment and income totals 
     runningTotals.cashInvestment = (
@@ -115,14 +107,6 @@ export async function process_income_event(
 
     activeIncomeEvents.push(event);
 
-    
-    
-
-    console.log(
-      `Added adjustedAmount to cashInvestment and curYearIncome. Updated cashInvestment: ${Number(
-        runningTotals.cashInvestment
-      )}, curYearIncome: ${Number(runningTotals.curYearIncome)}`
-    );
 
     if (event.isSocialSecurity) {
       runningTotals.curYearSS =
@@ -130,23 +114,10 @@ export async function process_income_event(
     }
 
     previousYearAmounts[event.id] = currentAmount;
-    console.log(
-      `Updated previousYearAmounts for event ID ${event.id}: ${currentAmount}`
-    );
   }
   
   runningTotals.incomes = activeIncomeEvents; // Store active income events in running totals
 
-  console.log(
-    `Finished processing income events for scenario ID ${scenarioId}.`
-  );
-  console.log(
-    `Final cashInvestment: ${Number(
-      runningTotals.cashInvestment
-    )}, curYearIncome: ${Number(
-      runningTotals.curYearIncome
-    )}, curYearSS: ${Number(runningTotals.curYearSS)}`
-  );
 }
 
 
@@ -163,7 +134,6 @@ export async function getIncomeEvents(
   incomeEventsDuration,
   currentSimulationYear
 ) {
-  //   console.log(`Fetching income events for scenario ID: ${scenarioId}`);
 
   const [rows] = await pool.execute(
     `SELECT 
@@ -264,9 +234,7 @@ function getEventStartYearFromSeries(eventSeries) {
 export async function getEventEndYearFromSeries(eventSeries) {
   console.warn(`Fetching end year for event series: ${eventSeries}`);
   const userBirthYear = Number(await getUserBirthYear(scenarioId));
-  console.log("User birth year: ", userBirthYear);
   const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId));
-  console.log("User life expectancy: ", userLifeExpectancy);
 
   const userLifespan = userBirthYear + userLifeExpectancy;
 
@@ -314,18 +282,14 @@ function isActiveIncomeEvent(eventId, currentSimulationYear, incomeEventsStart, 
   const startYear = incomeEventsStart[eventId];
   const duration = incomeEventsDuration[eventId];
 
-  console.log(`Checking if event ID: ${eventId} is active.`);
-  console.log(`Start year: ${startYear}, Duration: ${duration}, Current simulation year: ${currentSimulationYear}`);
 
   // Check if the event starts in the future
   if (startYear > currentSimulationYear) {
-    console.log(`Event ID: ${eventId} starts in the future. Skipping.`);
     return false;
   }
 
   // Check if the event's duration has ended
   if (startYear + duration <= currentSimulationYear) {
-    console.log(`Event ID: ${eventId} has ended. Skipping.`);
     return false;
   }
 
