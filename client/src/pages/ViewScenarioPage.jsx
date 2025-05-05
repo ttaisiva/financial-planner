@@ -309,10 +309,12 @@ export const ViewSingleScenario = ({
         console.log("Scenario data:", data);
         setScenario(data);
 
-        if (data.user_id) {
-          setUserId(data.user_id);
-          console.log("User ID from scenario:", data.user_id);
+        
+        if (data.userId) {
+          setUserId(data.userId);
+          console.log("User ID from scenario:", data.userId);
         }
+        console.log("CHECKING USER ID:", data.userId);
       } else {
         console.error("Failed to fetch scenario");
       }

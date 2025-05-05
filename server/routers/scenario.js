@@ -415,6 +415,7 @@ router.get("/single-scenario", async (req, res) => {
   // 3. Assemble the full scenario object
   const scenarioWithDetails = {
     ...scenario,
+    userId,
     scenarioDetails,
     investments,
     investment_types: investmentTypes,
