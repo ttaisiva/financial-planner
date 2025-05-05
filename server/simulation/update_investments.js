@@ -30,19 +30,23 @@ export async function updateInvestments(scenarioId, runningTotals) {
       continue; // Skip this investment if its type is not found
     }
 
+    // bad naming initalValue is the value of investments before update
     const initialValue = Number(investment.value);
+   
 
     // a. Calculate the generated income
     let generatedIncome = 0;
-    generatedIncome = sample(investmentType.income_distribution);
+    generatedIncome = Number(sample(investmentType.income_distribution));
     if (investmentType.income_amt_or_pct === "percent") {
       generatedIncome = (generatedIncome / 100) * initialValue;
     }
+   
 
     // b. Add the income to curYearIncome if applicable
+ 
     if (
       investment.taxStatus === "non-retirement" &&
-      investmentType.taxability === "taxable"
+      investmentType.taxability === 1 // taxable
     ) {
       runningTotals.curYearIncome =
         Number(runningTotals.curYearIncome) + Number(generatedIncome);
@@ -55,15 +59,20 @@ export async function updateInvestments(scenarioId, runningTotals) {
     if (investmentType.return_amt_or_pct === "percent") {
       changeInValue = (changeInValue / 100) * initialValue;
     }
+   
 
     // c. Add the income to the value of the investment (initial value of investment) -> reinvest income back into investment
     let updatedValue = initialValue + changeInValue + generatedIncome;
 
+
     // e. Calculate this year’s expenses
     const averageValue = (initialValue + updatedValue) / 2;
+    
     let expenses = 0;
     if (Number(investmentType.expense_ratio) !== 0) {
-      expenses = averageValue * (Number(investmentType.expense_ratio) / 100);
+      
+      expenses = averageValue * (Number(investmentType.expense_ratio));
+     
     }
 
     updatedValue -= expenses;
@@ -73,6 +82,7 @@ export async function updateInvestments(scenarioId, runningTotals) {
 
     // Update investment in the database with the updated value
     investment.value = updatedValue; // Update the investment object
+
   }
 }
 
