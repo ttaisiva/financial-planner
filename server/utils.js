@@ -181,7 +181,7 @@ export const getEventYears = async (events) => {
         }
         break;
 
-      case "startsAfter":
+      case "startAfter":
         const referencedEventAfter = events.find(
           (e) => e.name === startObj.eventSeries
         );

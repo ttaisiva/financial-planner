@@ -13,6 +13,7 @@ import { pool } from "../utils.js";
  * @param {number} currentSimulationYear - The current simulation year.
  * @param {number} inflationRate - The inflation rate for the current year.
  * @param {number} date - The current date.
+ * @param {boolean} isSpouseAlive - Indicates if the spouse is alive.
  * @param {number} taxes - The amount owed from federal, state, and capital gains tax
  * @returns {Object} Updated financial data.
  *
@@ -24,6 +25,7 @@ export async function payNonDiscExpenses(
   currentSimulationYear,
   inflationRate,
   date,
+  isSpouseAlive,
   taxes
 ) {
   console.log(
@@ -34,22 +36,35 @@ export async function payNonDiscExpenses(
   const nonDiscretionaryExpenses = await getNonDiscretionaryExpenses(
     scenarioId
   );
-  console.log("Non-discretionary expenses fetched:", nonDiscretionaryExpenses);
- 
+  // console.log("Non-discretionary expenses fetched:", nonDiscretionaryExpenses);
 
   // Filter active non-discretionary events
   const activeEvents = await filterActiveNonDiscretionaryEvents(
     nonDiscretionaryExpenses,
     currentSimulationYear
   );
-  console.log("Active non-discretionary events:", activeEvents);
+  // console.log("Active non-discretionary events:", activeEvents);
   // Adjust expenses for annual change and inflation
   const adjustedExpenses = activeEvents.map((event) => {
-    const adjustedAmount = calculateAdjustedExpense(
+    let adjustedAmount = calculateAdjustedExpense(
       event,
       currentSimulationYear,
       inflationRate
     );
+
+    console.log("adjusted amount: ", adjustedAmount);
+
+    // Adjust for spouse death
+    if (!isSpouseAlive) {
+      console.log("user fraction: ", event.userFraction);
+      const spousePortion = (adjustedAmount * (1 - event.userFraction)).toFixed(
+        2
+      );
+      adjustedAmount -= spousePortion;
+      console.log(
+        `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${adjustedAmount}`
+      );
+    }
 
     return {
       ...event,
@@ -75,7 +90,6 @@ export async function payNonDiscExpenses(
 
   console.log("nondisc taxes", taxes);
 
-  
   let remainingWithdrawal = totalNonDiscExpenses + taxes;
   console.log("Remaining withdrawal:", remainingWithdrawal);
 
@@ -215,7 +229,8 @@ async function getNonDiscretionaryExpenses(scenarioId) {
             change_distribution AS changeDistribution,
             inflation_adjusted AS inflationAdjusted,
             start AS start,
-            duration AS duration
+            duration AS duration,
+            user_fraction AS userFraction
          FROM events
          WHERE scenario_id = ? AND type = 'expense' AND discretionary = 0`,
     [scenarioId]
@@ -262,7 +277,11 @@ async function filterActiveNonDiscretionaryEvents(
  * @param {number} inflationRate - The inflation rate for the current year.
  * @returns {number} The adjusted expense amount.
  */
-export function calculateAdjustedExpense(event, currentSimulationYear, inflationRate) {
+export function calculateAdjustedExpense(
+  event,
+  currentSimulationYear,
+  inflationRate
+) {
   const yearsSinceStart = currentSimulationYear - event.start;
 
   // Start with the initial amount
