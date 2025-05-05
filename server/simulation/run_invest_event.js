@@ -4,6 +4,7 @@ import {
   getEventYears,
   pool,
 } from "../utils.js";
+import { logInvest } from "../logging.js";
 
 /**
  * Runs invest events for the durations they are active. Allocates excess cash to investements based on asset allocation info.
@@ -23,7 +24,8 @@ export async function runInvestEvent(
   runningTotals,
   inflationRate,
   afterTaxContributionLimit,
-  date
+  date,
+  evtlog
 ) {
   const activeEventId = getActiveEventId(
     currentSimulationYear,
@@ -56,6 +58,7 @@ export async function runInvestEvent(
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
           runningTotals,
+          evtlog: evtlog
         });
       } else {
         applyFixedAssetAllocation({
@@ -68,16 +71,14 @@ export async function runInvestEvent(
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
           runningTotals,
+          evtlog: evtlog
         });
       }
-    } else {
-      console.log("No excess cash available to allocate to investments");
     }
   }
 }
 
 const getEventById = async (eventId) => {
-  // console.log("in geteventbyid eventid:", eventId);
   const [rows] = await pool.execute("SELECT * FROM events WHERE id = ?", [
     eventId,
   ]);
@@ -110,10 +111,6 @@ const getActiveEventId = (year, eventYears) => {
 /**
  * Get event ids associated with the scenario id
  *
- * TP: ChatGpt, prompt - "{code here} how would i get the ids
- * of each event such that the scenario_id equals a specific int?
- * and how would i store them on server side?"
- *
  * @param {*} scenarioId
  * @returns array of event ids
  */
@@ -123,21 +120,11 @@ export const getInvestEvents = async (scenarioId) => {
     [scenarioId]
   );
 
-  // console.log("rows", rows);
 
   return rows;
 };
 
 /**
- *
- *
- * TP: ChatGPT, prompt - "asset_allocation field example:
- * {"S&P 500 after-tax": 0.4, "S&P 500 non-retirement": 0.6}
- * asset_allocation2 field example:
- * {"S&P 500 after-tax": 0.2, "S&P 500 non-retirement": 0.8}
- * get these field data from the events table given an id.
- * if glide_path field is true (equals 1), then asset_allocation2 is not null, and you must get asset_allocation2 data.
- * if glide_path field is null, then asset_allocatio2 is null - do not get asset_allocation2 data."
  *
  * @param {*} eventId
  * @returns
@@ -173,14 +160,6 @@ export async function getAssetAllocations(eventId) {
 
 /**
  *
- * TP: ChatGPT, prompt:
- *
- *    "for each key in the asset allocations, i want to retrieve the investment with the matching id from a list of elements.
- *    with that id, i want to add to the "value" key of that investment
- *
- *    now can you allocate a percentage of the amountToAllocate according to the values in the allocation?
- *    for example, "S&P 500 after-tax" would get 40% of the amountToAllocate, and  "S&P 500 non-retirement" would get 60%"
- *
  * @param {*} allocation
  * @param {*} amountToAllocate
  */
@@ -194,6 +173,7 @@ async function applyGlideAssetAllocation({
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
   runningTotals,
+  evtlog
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -232,7 +212,6 @@ async function applyGlideAssetAllocation({
   const yearDuration = currentYear - simulationStartYear;
   const adjustedLimit =
     afterTaxContributionLimit * Math.pow(1 + inflationRate, yearDuration);
-  console.log("AFTER TAX LIMIT: ", adjustedLimit);
 
   let remainingToAllocate = amountToAllocate;
   const uncappedAllocations = {};
@@ -257,6 +236,7 @@ async function applyGlideAssetAllocation({
       const newValue = (currentValue + cappedAmount).toFixed(2);
       target.value = newValue;
       remainingToAllocate -= cappedAmount;
+      logInvest(evtlog, currentYear, event.name, cappedAmount, target.type);
 
       // Update the matching purchase price
       if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
@@ -291,6 +271,7 @@ async function applyGlideAssetAllocation({
 
     const newValue = (currentValue + reallocAmount).toFixed(2);
     target.value = newValue;
+    logInvest(evtlog, currentYear, event.name, reallocAmount, target.type);
 
     // Update the matching purchase price
     if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
@@ -300,12 +281,6 @@ async function applyGlideAssetAllocation({
 }
 
 /**
- *
- * TP: ChatGPT, prompt - "can you make a similar function but instead of glide path, it is a fixed percentage allocated to each investment.
- * for example, the event would only have the field asset_allocation but not asset_allocation2.
- * if asset_allocation is: {"S&P 500 after-tax": 0.4, "S&P 500 non-retirement": 0.6}
- * then apply 40% of excess cash to "S&P 500 after-tax" and 60% to the other.
- * inflation assumptions are kept"
  *
  * @param {*} param0
  * @returns
@@ -319,6 +294,7 @@ async function applyFixedAssetAllocation({
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
   runningTotals,
+  evtlog
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -336,7 +312,6 @@ async function applyFixedAssetAllocation({
   const yearDuration = currentYear - simulationStartYear;
   const adjustedLimit =
     afterTaxContributionLimit * Math.pow(1 + inflationRate, yearDuration);
-  console.log("Inflation-adjusted after-tax limit: ", adjustedLimit);
 
   let remainingToAllocate = amountToAllocate;
   const uncappedAllocations = {};
@@ -361,6 +336,8 @@ async function applyFixedAssetAllocation({
       const newValue = (currentValue + cappedAmount).toFixed(2);
       target.value = newValue;
       remainingToAllocate -= cappedAmount;
+      logInvest(evtlog, currentYear, event.name, cappedAmount, target.type);
+
 
       // Update the matching purchase price
       if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
@@ -395,6 +372,7 @@ async function applyFixedAssetAllocation({
 
     const newValue = (currentValue + reallocAmount).toFixed(2);
     target.value = newValue;
+    logInvest(evtlog, currentYear, event.name, reallocAmount, target.type);
 
     // Update the matching purchase price
     if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {

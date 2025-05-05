@@ -444,7 +444,6 @@ export async function scrapeRMD(connectionPool) {
                   age: newAge,
                   distribution_period: distPeriod1,
                 });
-                console.log("new age", newage);
               } else {
                 RMDs.push({
                   year: year,
