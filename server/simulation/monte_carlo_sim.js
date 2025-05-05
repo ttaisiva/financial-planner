@@ -39,6 +39,7 @@ export async function simulation(
 ) {
   console.log(`Running ${numSimulations}simulation for scenario ${scenarioId}`);
   const logs = await initLogs(userId); // open log files for writing
+  if (!logs.evtlog) throw new Error("evtlog is undefined after initialization");
 
   const totalYears = await getTotalYears(date, scenarioId);
 
@@ -226,6 +227,7 @@ export async function simulation(
       currentSimulationYear,
       inflationRate,
       date,
+      isSpouseAlive,
       logs.evtlog
     );
 

@@ -89,6 +89,7 @@ export async function payDiscExpenses(
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
+      if (!evtlog) throw new Error("evtlog is undefined in payDiscExpenses");
       logExpense(evtlog, currentSimulationYear, expense.name, expenseAmount, "cash");
       actualDiscExpensesAmt += Number(expenseAmount); //this is for tracking if we paid the full amount of the disc expense or we still have money leftover
     } else {
@@ -120,6 +121,7 @@ export async function payDiscExpenses(
             runningTotals.purchasePrices[String(investment.id)];
           const currentValueBeforeSale = investment.value;
           investment.value -= withdrawalAmount;
+          if (!evtlog) throw new Error("evtlog is undefined in payDiscExpenses");
           logExpense(evtlog, currentSimulationYear, expense.name, withdrawalAmount, investment.type);
 
           if (investment.value === 0) {
