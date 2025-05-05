@@ -150,7 +150,7 @@ export function logRothConversion(
 ) {
   const event = {
     year: year,
-    type: `Roth conversion from pre-tax investment "${pretax.type}" to after-tax investment "${aftertax.type}"`,
+    type: `Roth conversion from pre-tax investment "${pretax}" to after-tax investment "${aftertax}"`,
     amount: conversionAmt,
   };
   console.log("event amount in logRothConversion", event.amount);

@@ -12,6 +12,28 @@ export async function runRothOptimizer(
 ) {
   let conversionAmt = await getMaxConversionAmt(scenarioId, income);
 
+  if(conversionAmt<0) { // user in max tax bracket so no upper limit
+    // just transfer everything into one big after tax
+    let pretaxTotal = 0;
+    for (const inv of rothStrategy) {
+      let pretax = runningTotals.investments.find(
+        (investment) => investment.id === inv.investment_id
+      );
+      pretaxTotal += pretax.value;
+      logRothConversion(evtlog, year, pretax.type, "Roth Conversion", pretax.value);
+      pretax.value = 0;
+    }
+    const newInvestment = {
+      id: "Roth Conversion after-tax",
+      type: "Roth Conversion",
+      taxStatus: "after-tax",
+      value: pretaxTotal,
+    };
+    runningTotals.investments.push(newInvestment);
+    let resInvestment = runningTotals.investments;
+    return { resInvestment, rothStrategy };
+  }
+
   for (let i = 0; i < rothStrategy.length; i++) {
     if (conversionAmt === 0) break;
 
@@ -22,7 +44,7 @@ export async function runRothOptimizer(
     if (pretax.value <= conversionAmt) {
       conversionAmt -= pretax.value;
       pretax.taxStatus = "after-tax";
-      logRothConversion(evtlog, year, pretax, pretax, pretax.value);
+      logRothConversion(evtlog, year, pretax.type, pretax.type, pretax.value);
       rothStrategy = rothStrategy.filter(
         (strategy) => strategy.investment_id !== pretax.id
       );
@@ -35,7 +57,7 @@ export async function runRothOptimizer(
       if (aftertax) {
         aftertax.value += conversionAmt;
         pretax.value -= conversionAmt;
-        logRothConversion(evtlog, year, pretax, aftertax, conversionAmt);
+        logRothConversion(evtlog, year, pretax.type, aftertax.type, conversionAmt);
       } else {
         const newInvestment = {
           id: pretax.type + " after-tax",
@@ -45,7 +67,7 @@ export async function runRothOptimizer(
         };
         runningTotals.investments.push(newInvestment);
 
-        logRothConversion(evtlog, year, pretax, pretax, conversionAmt);
+        logRothConversion(evtlog, year, pretax.type, pretax.type, conversionAmt);
       }
       conversionAmt = 0;
     }
