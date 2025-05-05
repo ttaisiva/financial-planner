@@ -395,69 +395,40 @@ export const ViewSingleScenario = ({
         <div className="row">
           <div className="item">
             <h3>Scenario Details</h3>
-            {scenario &&
+            {scenario && scenario.scenarioDetails &&
               renderAttributes({
-                scenario_name: scenario.name,
-                filing_status: scenario.filing_status,
-                state_of_residence: scenario.state_of_residence,
-              })}
+                scenario_name: scenario.scenarioDetails[0].name,
+                filing_status: scenario.scenarioDetails[0].marital_status,
+                state_of_residence: scenario.scenarioDetails[0].residence_state,
+              })
+              }
           </div>
 
           <div className="item">
             <h3>Financial Details</h3>
-            {scenario &&
+            {scenario && scenario.scenarioDetails &&
               renderAttributes({
-                financial_goal: scenario.financial_goal,
-                inflation_assumption_type: scenario.inflation_assumption_type,
-                inflation_assumption_value: scenario.inflation_assumption_value,
-                inflation_assumption_mean: scenario.inflation_assumption_mean,
-                inflation_assumption_std_dev:
-                  scenario.inflation_assumption_std_dev,
-                inflation_assumption_lower: scenario.inflation_assumption_lower,
-                inflation_assumption_upper: scenario.inflation_assumption_upper,
+                financial_goal: scenario.scenarioDetails[0].financial_goal,
+                inflation_assumption: formatDistribution(scenario.scenarioDetails[0].inflation_assumption)
               })}
           </div>
 
           <div className="item">
             <h3>Personal Details</h3>
-            {scenario &&
+            {scenario && scenario.scenarioDetails &&
               renderAttributes({
-                user_life_expectancy_type: scenario.user_life_expectancy_type,
-                user_life_expectancy_value: scenario.user_life_expectancy_value,
-                user_life_expectancy_mean: scenario.user_life_expectancy_mean,
-                user_life_expectancy_std_dev:
-                  scenario.user_life_expectancy_std_dev,
-                user_retirement_age_type: scenario.user_retirement_age_type,
-                user_retirement_age_value: scenario.user_retirement_age_value,
-                user_retirement_age_mean: scenario.user_retirement_age_mean,
-                user_retirement_age_std_dev:
-                  scenario.user_retirement_age_std_dev,
-                user_birth_year: scenario.user_birth_year,
+                user_birth_year: scenario.scenarioDetails[0].birth_years[0],
+                life_expectancy: formatDistribution(scenario.scenarioDetails[0].life_expectancy[0]),
               })}
           </div>
 
-          {scenario.spouse_life_expectancy_type && (
+          {scenario  && scenario.scenarioDetails?.[0]?.birth_years?.length > 1  && (
             <div className="item">
               <h3>Spouse Details</h3>
               {scenario &&
                 renderAttributes({
-                  spouse_life_expectancy_type:
-                    scenario.spouse_life_expectancy_type,
-                  spouse_life_expectancy_value:
-                    scenario.spouse_life_expectancy_value,
-                  spouse_life_expectancy_mean:
-                    scenario.spouse_life_expectancy_mean,
-                  spouse_life_expectancy_std_dev:
-                    scenario.spouse_life_expectancy_std_dev,
-                  spouse_retirement_age_type:
-                    scenario.spouse_retirement_age_type,
-                  spouse_retirement_age_value:
-                    scenario.spouse_retirement_age_value,
-                  spouse_retirement_age_mean:
-                    scenario.spouse_retirement_age_mean,
-                  spouse_retirement_age_std_dev:
-                    scenario.spouse_retirement_age_std_dev,
-                  spouse_birth_year: scenario.spouse_birth_year,
+                  spouse_birth_year: scenario.scenarioDetails[0].birth_years[1],
+                  spouse_life_expectancy: formatDistribution(scenario.scenarioDetails[0].life_expectancy[1]),
                 })}
             </div>
           )}

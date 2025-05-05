@@ -361,6 +361,8 @@ router.get("/single-scenario", async (req, res) => {
     [userId, scenarioId]
   );
 
+  
+
   if (scenarios.length === 0) { // Could be a shared scenario
     const [sharedScenario] = await pool.execute(
       `SELECT * FROM shared WHERE user_id = ? AND scenario_id = ?`,
@@ -377,9 +379,14 @@ router.get("/single-scenario", async (req, res) => {
   }
 
   const scenario = scenarios[0][0];
-  console.log("Scenario:", scenario);
+  
 
   // 2. Fetch all related data
+  const [scenarioDetails] = await pool.query(
+    `SELECT * FROM scenarios WHERE id = ?`,
+    [scenarioId]
+  );
+
   const [investments] = await pool.query(
     `SELECT * FROM investments WHERE scenario_id = ?`,
     [scenarioId]
@@ -403,12 +410,14 @@ router.get("/single-scenario", async (req, res) => {
   // 3. Assemble the full scenario object
   const scenarioWithDetails = {
     ...scenario,
+    scenarioDetails,
     investments,
     investment_types: investmentTypes,
     events,
     strategy,
   };
 
+  console.log("Scenario with details:", scenarioWithDetails);
   res.status(200).json(scenarioWithDetails);
 });
 
