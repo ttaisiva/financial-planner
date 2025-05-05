@@ -55,18 +55,22 @@ export async function process_income_event(
 
   let activeIncomeEvents = [];
   for (const event of incomeEvents) {
+    
 
     if (!isActiveIncomeEvent(event.id, currentSimulationYear, incomeEventsStart, incomeEventsDuration)) {
       continue; // Skip inactive events
     }
 
 
-
+    // Apply annual change to the previous year's amount
     let currentAmount = 0;
     let prevAmount = previousYearAmounts[event.id] || 0;
+  
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
+ 
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
+ 
       currentAmount = Number(previousYearAmounts[event.id]) + percentageChange;
       
     } else {
@@ -75,22 +79,26 @@ export async function process_income_event(
         Number(previousYearAmounts[event.id]) + Number(sampledChange);
       
     }
+   
+
+
     // Apply inflation adjustment
     if (event.inflationAdjusted) {
       currentAmount *= 1 + inflationRate;
       currentAmount = currentAmount.toFixed(2);
-      event.adjustedAmount = currentAmount;
+
     }
 
     if (!isUserAlive) {
-      const userPortion = (Number(event.userFraction) / 100) * currentAmount;
+      const userPortion = (Number(event.userFraction) ) * currentAmount;
       currentAmount -= userPortion;
       currentAmount = currentAmount.toFixed(2);
+      console.log("User is dead. Removed user portion. Adjusted amount to: ", currentAmount);
     }
     if (!isSpouseAlive) {
-      const spousePortion =
-        ((1 - Number(event.spousePercentage)) / 100) * currentAmount;
+      const spousePortion = ((1 - Number(event.userFraction)) ) * currentAmount;
       currentAmount -= spousePortion;
+      console.log("Spouse is dead. Removed spouse portion. Adjusted amount to: ", currentAmount);
     }
 
     event.adjustedAmount = Number(currentAmount).toFixed(2); // Store adjusted amount in the event object
@@ -99,24 +107,27 @@ export async function process_income_event(
     runningTotals.cashInvestment = (
       Number(runningTotals.cashInvestment) + Number(currentAmount)
     ).toFixed(2);
+
     runningTotals.curYearIncome = (
       Number(runningTotals.curYearIncome) + Number(currentAmount)
     ).toFixed(2);
-    logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
+
+    logIncome(evtlog, currentSimulationYear, event.name, Number(currentAmount));
       
-
-    activeIncomeEvents.push(event);
-
-
+  
     if (event.isSocialSecurity) {
       runningTotals.curYearSS =
         Number(runningTotals.curYearSS) + Number(currentAmount);
+
     }
+
+    activeIncomeEvents.push(event);
 
     previousYearAmounts[event.id] = currentAmount;
   }
   
   runningTotals.incomes = activeIncomeEvents; // Store active income events in running totals
+
 
 }
 
@@ -168,9 +179,7 @@ export async function getIncomeEvents(
       initialAmount: event.initial_amount,
       changeDistribution: event.change_distribution,
       inflationAdjusted: event.inflation_adjusted || false,
-      userPercentage: event.user_percentage || 0,
-      spousePercentage: event.spouse_percentage || 0,
-      isSocialSecurity: event.is_social_security || false,
+      isSocialSecurity: event.social_security || false,
       changeAmtOrPct: event.change_amt_or_pct || "percent",
       userFraction: event.user_fraction || 1,
       start: event.start,

@@ -116,13 +116,14 @@ export async function simulation(
     investEventYears,
     rebalanceEvents,
   });
-  for (let year = 0; year < totalYears; year++) {
+  for (let year = 0; year < 2; year++) {
     //years in which the simulation is  being run
 
     //Step 0: run preliminaries
     const inflationRate = await run_preliminaries(scenarioId);
 
     const currentSimulationYear = date + year; //actual year being simulated
+    
 
     if (year === 0) {
       // Populate the object with initial amounts based on event IDs
@@ -250,6 +251,7 @@ export async function simulation(
       logs.evtlog
     );
 
+    
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
