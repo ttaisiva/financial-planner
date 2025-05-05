@@ -41,7 +41,7 @@ const LifeExpectancyForm = ({ prefix, handleChange, formData }) => {
       <div>
         <select
           id={`${key}-type`}
-          name={`${key}-type`}
+          name={`${key}.type`}
           value={formData[key]?.type}
           onChange={handleChange}
         >

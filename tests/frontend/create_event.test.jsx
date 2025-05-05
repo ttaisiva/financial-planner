@@ -7,7 +7,7 @@ import {
 } from "../../client/src/components/EventsForm";
 
 describe("EventsForm", () => {
-  it("should display the name and type of the created event on the page", async () => {
+  it("Display the name of the created event on the page", async () => {
     // Mock state for events
     let events = [];
     const setEvents = (newEvents) => {
