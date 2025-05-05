@@ -309,10 +309,12 @@ export const ViewSingleScenario = ({
         console.log("Scenario data:", data);
         setScenario(data);
 
-        if (data.user_id) {
-          setUserId(data.user_id);
-          console.log("User ID from scenario:", data.user_id);
+        
+        if (data.userId) {
+          setUserId(data.userId);
+          console.log("User ID from scenario:", data.userId);
         }
+        console.log("CHECKING USER ID:", data.userId);
       } else {
         console.error("Failed to fetch scenario");
       }
@@ -331,6 +333,35 @@ export const ViewSingleScenario = ({
     }
   }, [scenarioId]);
 
+  const formatDistribution = (dist) => {
+    if (!dist) return "N/A";
+  
+    const { type, mean, stdev, value, lower, upper, eventSeries } = dist;
+  
+    switch (type) {
+      case "fixed":
+        return `Fixed Value: ${value}`;
+      case "normal":
+        return `Normal (Mean: ${mean}, Std Dev: ${stdev})`;
+      case "uniform":
+        return `Uniform (Lower: ${lower}, Upper: ${upper})`;
+      case "startWith":
+        return `Start With ${eventSeries}`;
+      case "startAfter":
+        return `Start After ${eventSeries}`;
+      default:
+        return "Unknown Distribution Type";
+    }
+  };
+
+  const formatAssetAllocation = (allocation) => {
+    if (!allocation || typeof allocation !== "object") return "N/A";
+  
+    return Object.entries(allocation)
+      .map(([key, value]) => `${key}: ${(value * 100).toFixed(2)}%`)
+      .join(", ");
+  };
+
   // Utility to render list of key-value fields from an object
   const renderAttributes = (obj) => {
     return (
@@ -348,7 +379,14 @@ export const ViewSingleScenario = ({
                 }
                 :
               </strong>{" "}
-              {value.toString()}
+              {(key.includes("distribution") ||
+              ["start", "duration"].includes(key.toLowerCase())) &&
+            typeof value === "object"
+              ? formatDistribution(value) // Apply formatDistribution for specific keys
+              : ["asset_allocation", "asset_allocation2"].includes(key.toLowerCase()) &&
+                typeof value === "object"
+              ? formatAssetAllocation(value) // Apply formatAssetAllocation for asset allocation keys
+              : value.toString()}
             </p>
           ))}
       </div>
@@ -361,69 +399,40 @@ export const ViewSingleScenario = ({
         <div className="row">
           <div className="item">
             <h3>Scenario Details</h3>
-            {scenario &&
+            {scenario && scenario.scenarioDetails &&
               renderAttributes({
-                scenario_name: scenario.name,
-                filing_status: scenario.filing_status,
-                state_of_residence: scenario.state_of_residence,
-              })}
+                scenario_name: scenario.scenarioDetails[0].name,
+                filing_status: scenario.scenarioDetails[0].marital_status,
+                state_of_residence: scenario.scenarioDetails[0].residence_state,
+              })
+              }
           </div>
 
           <div className="item">
             <h3>Financial Details</h3>
-            {scenario &&
+            {scenario && scenario.scenarioDetails &&
               renderAttributes({
-                financial_goal: scenario.financial_goal,
-                inflation_assumption_type: scenario.inflation_assumption_type,
-                inflation_assumption_value: scenario.inflation_assumption_value,
-                inflation_assumption_mean: scenario.inflation_assumption_mean,
-                inflation_assumption_std_dev:
-                  scenario.inflation_assumption_std_dev,
-                inflation_assumption_lower: scenario.inflation_assumption_lower,
-                inflation_assumption_upper: scenario.inflation_assumption_upper,
+                financial_goal: scenario.scenarioDetails[0].financial_goal,
+                inflation_assumption: formatDistribution(scenario.scenarioDetails[0].inflation_assumption)
               })}
           </div>
 
           <div className="item">
             <h3>Personal Details</h3>
-            {scenario &&
+            {scenario && scenario.scenarioDetails &&
               renderAttributes({
-                user_life_expectancy_type: scenario.user_life_expectancy_type,
-                user_life_expectancy_value: scenario.user_life_expectancy_value,
-                user_life_expectancy_mean: scenario.user_life_expectancy_mean,
-                user_life_expectancy_std_dev:
-                  scenario.user_life_expectancy_std_dev,
-                user_retirement_age_type: scenario.user_retirement_age_type,
-                user_retirement_age_value: scenario.user_retirement_age_value,
-                user_retirement_age_mean: scenario.user_retirement_age_mean,
-                user_retirement_age_std_dev:
-                  scenario.user_retirement_age_std_dev,
-                user_birth_year: scenario.user_birth_year,
+                user_birth_year: scenario.scenarioDetails[0].birth_years[0],
+                life_expectancy: formatDistribution(scenario.scenarioDetails[0].life_expectancy[0]),
               })}
           </div>
 
-          {scenario.spouse_life_expectancy_type && (
+          {scenario  && scenario.scenarioDetails?.[0]?.birth_years?.length > 1  && (
             <div className="item">
               <h3>Spouse Details</h3>
               {scenario &&
                 renderAttributes({
-                  spouse_life_expectancy_type:
-                    scenario.spouse_life_expectancy_type,
-                  spouse_life_expectancy_value:
-                    scenario.spouse_life_expectancy_value,
-                  spouse_life_expectancy_mean:
-                    scenario.spouse_life_expectancy_mean,
-                  spouse_life_expectancy_std_dev:
-                    scenario.spouse_life_expectancy_std_dev,
-                  spouse_retirement_age_type:
-                    scenario.spouse_retirement_age_type,
-                  spouse_retirement_age_value:
-                    scenario.spouse_retirement_age_value,
-                  spouse_retirement_age_mean:
-                    scenario.spouse_retirement_age_mean,
-                  spouse_retirement_age_std_dev:
-                    scenario.spouse_retirement_age_std_dev,
-                  spouse_birth_year: scenario.spouse_birth_year,
+                  spouse_birth_year: scenario.scenarioDetails[0].birth_years[1],
+                  spouse_life_expectancy: formatDistribution(scenario.scenarioDetails[0].life_expectancy[1]),
                 })}
             </div>
           )}
@@ -447,6 +456,7 @@ export const ViewSingleScenario = ({
           </>
         )}
       </div>
+
 
       <div>
         {scenario.investment_types?.length > 0 && (
@@ -529,19 +539,20 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
 
       <div className="simulation-details">
         {allSimulationResults.flat(1).map((simulation, simIndex) => (
-          <div key={simIndex} className="simulation">
+          <div key={simIndex} className="simulation" >
             <h3>Simulation {simIndex + 1}</h3>
+            <div className="simulation-row">
             {simulation.map((yearlyResult, yearIndex) => (
-              <div key={yearIndex} className="item">
+              <div key={yearIndex} className="simulationitem">
                 <h4>Year: {yearlyResult.year}</h4>
                 <p><strong>Cash Investment:</strong> ${Number(yearlyResult.cashInvestment).toFixed(2)}</p>
                 <p><strong>Current Year Income:</strong> ${Number(yearlyResult.curYearIncome).toFixed(2)}</p>
                 <p><strong>Current Year Social Security:</strong> ${Number(yearlyResult.curYearSS).toFixed(2)}</p>
                 <p><strong>Current Year Gains:</strong> ${Number(yearlyResult.curYearGains).toFixed(2)}</p>
                 <p><strong>Current Year Early Withdrawals:</strong> ${Number(yearlyResult.curYearEarlyWithdrawals).toFixed(2)}</p>
-                <p><strong>Purchase Prices:</strong> {JSON.stringify(yearlyResult.purchasePrices)}</p>
               </div>
             ))}
+            </div>
           </div>
         ))}
       </div>

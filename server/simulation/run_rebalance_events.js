@@ -17,11 +17,9 @@ import {
 export async function runRebalanceEvents(
   currentSimulationYear,
   rebalanceEvents,
+  rebalanceEventYears,
   runningTotals
 ) {
-  console.log("*******RUN REBALANCE EVENTS*****");
-  const rebalanceEventYears = await getEventYears(rebalanceEvents);
-  console.log("rebalance event years: ", rebalanceEventYears);
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {

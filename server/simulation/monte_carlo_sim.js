@@ -16,7 +16,12 @@ import { getRothStrategy } from "./roth_optimizer.js";
 import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
 import { initLogs } from "../logging.js";
 import { logResults } from "../logging.js";
-import { generateNormalRandom, generateUniformRandom, pool } from "../utils.js";
+import {
+  generateNormalRandom,
+  generateUniformRandom,
+  getEventYears,
+  pool,
+} from "../utils.js";
 import {
   getRebalanceEvents,
   runRebalanceEvents,
@@ -25,7 +30,13 @@ import {
 /**
  * Runs the Monte Carlo simulation for a given number of simulations.
  */
-export async function simulation(date, numSimulations, userId, scenarioId, dimParams) {
+export async function simulation(
+  date,
+  numSimulations,
+  userId,
+  scenarioId,
+  dimParams
+) {
   const logs = await initLogs(userId); // open log files for writing
 
   const totalYears = await getTotalYears(date, scenarioId);
@@ -38,6 +49,13 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
   let incomeEventsStart = {};
   let incomeEventsDuration = {};
 
+  let spouseBirthYear = await getSpouseBirthYear(scenarioId);
+  let spouseLifeExpect = await getSpouseLifeExpectancy(scenarioId);
+
+  let spouseDeathYear = spouseBirthYear + spouseLifeExpect;
+
+  console.log("Spouse Life Expectancy Year:", spouseDeathYear);
+
   let isUserAlive = true;
   let isSpouseAlive = true;
 
@@ -48,6 +66,8 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
   let taxData = await getTaxData(scenarioId, date);
 
   let investments = await initInvestments(scenarioId); // Initialize investments for the scenario
+  const incomeEvents = await getIncomeEvents(scenarioId, []);
+  const expenseEvents = await getExpenseEvents(scenarioId);
 
   const runningTotals = {
     cashInvestment: cashInvestment,
@@ -61,31 +81,40 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
     incomes: [],
     taxes: [],
     actualDiscExpenses: [],
+    maritalStatus: await getFilingStatus(scenarioId),
+    incomeEvents: incomeEvents,
+    expenseEvents: expenseEvents,
   };
-
-  const incomeEvents = await getIncomeEvents(scenarioId, []);
 
   await populateYearsAndDuration(
     incomeEvents,
     incomeEventsStart,
     incomeEventsDuration
   ); // Populate years and duration for income events
-// need to do the same for expense events
+  // need to do the same for expense events
   const rothYears = await getRothYears(scenarioId);
   let rothStrategy = await getRothStrategy(scenarioId); // to avoid repetitive fetching in loop
 
-  let investEventYears = await getInvestEvents(scenarioId);
-
   let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
 
+  // populate years and durations for invest events
+  let investEvents = await getInvestEvents(scenarioId);
+  let investEventYears = await getEventYears(investEvents);
+
+  // populate years and durations for rebalance events
   let rebalanceEvents = await getRebalanceEvents(scenarioId);
+  let rebalanceEventYears = await getEventYears(rebalanceEvents);
 
   // log investments before any changes
 
   logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
 
   // **Update Event Fields Based on dimParams**
-  updateEventFields(dimParams, { incomeEvents, investEventYears, rebalanceEvents });
+  updateEventFields(dimParams, {
+    incomeEvents,
+    investEventYears,
+    rebalanceEvents,
+  });
 
   for (let year = 0; year < totalYears; year++) {
     //years in which the simulation is  being run
@@ -94,6 +123,7 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
     const inflationRate = await run_preliminaries(scenarioId);
 
     const currentSimulationYear = date + year; //actual year being simulated
+    console.log("********CURRENT YEAR********", currentSimulationYear);
 
     if (year === 0) {
       // Populate the object with initial amounts based on event IDs
@@ -150,6 +180,31 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
 
     await updateInvestments(scenarioId, runningTotals);
 
+    // Step 4.5: Handle spouse death
+    if (isSpouseAlive) {
+      // if spouse currently alive, check if death year is reached
+      if (currentSimulationYear === spouseDeathYear) {
+        console.log(
+          `Spouse has reached life expectancy in year ${currentSimulationYear}.`
+        );
+        isSpouseAlive = false;
+      }
+
+      // if spouse is dead, change marital status to single
+      if (!isSpouseAlive) {
+        console.log(
+          `Handling death of ${
+            !isUserAlive ? "user" : "spouse"
+          } in year ${currentSimulationYear}`
+        );
+
+        // Change tax filing status to single
+        console.log("Changing tax filing status to single.");
+        runningTotals.maritalStatus = "single";
+        console.log("marital status:", runningTotals.maritalStatus);
+      }
+    }
+
     // Step 5: Pay non-discretionary expenses and taxes
     const taxes = await payTaxes(
       runningTotals,
@@ -158,7 +213,7 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
       runningTotals,
       taxData
     );
-    // console.log("Taxes paid for the year:", taxes);
+    console.log("Taxes paid for the year:", taxes);
     if (taxes) {
       runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
     }
@@ -169,6 +224,7 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
       currentSimulationYear,
       inflationRate,
       date,
+      isSpouseAlive,
       taxes
     );
 
@@ -181,7 +237,7 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
       date
     );
 
-    console.log("CASH BEFORE INVEST EVENTS: ", runningTotals.cashInvestment);
+    // console.log("CASH BEFORE INVEST EVENTS: ", runningTotals.cashInvestment);
     // Step 7: Invest Events
     await runInvestEvent(
       currentSimulationYear,
@@ -202,13 +258,14 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
     await runRebalanceEvents(
       currentSimulationYear,
       rebalanceEvents,
+      rebalanceEventYears,
       runningTotals
     );
 
-    console.log(
-      "INVESTMENTS AFTER REBALANCE EVENTS: ",
-      runningTotals.investments
-    );
+    // console.log(
+    //   "INVESTMENTS AFTER REBALANCE EVENTS: ",
+    //   runningTotals.investments
+    // );
 
     console.log(
       `Year ${currentSimulationYear} cash results: `,
@@ -233,19 +290,16 @@ export async function simulation(date, numSimulations, userId, scenarioId, dimPa
 
     console.log("Logging yearlyResults for incomes, expenses, and taxes:");
     yearlyResults.forEach((result) => {
-      console.log(`Year ${result.year}:`);
-
+      // console.log(`Year ${result.year}:`);
       // // Log incomes
       // console.log("Incomes:");
       // console.log(JSON.stringify(result.incomes, null, 2));
-
       // // Log expenses
       // console.log("Expenses:");
       // console.log(JSON.stringify(result.expenses, null, 2));
-
       // Log taxes
-      console.log("Taxes:");
-      console.log(JSON.stringify(result.taxes, null, 2));
+      // console.log("Taxes:");
+      // console.log(JSON.stringify(result.taxes, null, 2));
     });
 
     logResults(
@@ -406,6 +460,53 @@ export async function getUserLifeExpectancy(scenarioId) {
     return sample(results[0].life_expectancy[0]);
   } catch (error) {
     console.error("Error fetching user life expectancy:", error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+}
+
+/**
+ * Get spouse birth year from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
+export async function getSpouseBirthYear(scenarioId) {
+  const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
+  try {
+    const [results] = await pool.execute(query, [scenarioId]);
+    // console.log("results user birth year", [results]);
+    return results[0]?.birth_years[1] || 0; // Return the birth year or 0 if not found
+  } catch (error) {
+    console.error("Error fetching spouse birth year:", error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+}
+
+/**
+ * Get spouse life expectancy from scenario in database
+ * @param {int} scenarioId
+ * @returns
+ */
+export async function getSpouseLifeExpectancy(scenarioId) {
+  const queryCheck = `SELECT marital_status FROM scenarios WHERE id = ?`;
+  const query = `SELECT 
+            life_expectancy
+            FROM scenarios WHERE id = ?`;
+  try {
+    const [checkResults] = await pool.execute(queryCheck, [scenarioId]);
+    if (checkResults[0].marital_status === "individual") {
+      console.log("marital status is individual, no spouse life expectancy");
+      return 0; // No spouse life expectancy if marital status is individual
+    }
+    // console.log("marital status is not individual, spouse life expectancy");
+    const [results] = await pool.execute(query, [scenarioId]);
+    // console.log("results spouse life expectancy: ", results);
+    console.log(
+      "spouse life expectancy from db: ",
+      results[0].life_expectancy[0]
+    );
+    return sample(results[0].life_expectancy[1]);
+  } catch (error) {
+    console.error("Error fetching spouse life expectancy:", error);
     throw error; // Re-throw the error for the caller to handle
   }
 }
@@ -645,6 +746,17 @@ export async function getFinancialGoal(scenarioId) {
     throw error; // Re-throw the error for the caller to handle
   }
 }
+
+export const getExpenseEvents = async (scenarioId) => {
+  const [rows] = await pool.execute(
+    "SELECT * FROM events WHERE scenario_id = ? AND type = 'expense'",
+    [scenarioId]
+  );
+
+  // console.log("rows", rows);
+
+  return rows;
+};
 
 /**
  * Updates the event fields based on dimParams for 1D or 2D exploration.
