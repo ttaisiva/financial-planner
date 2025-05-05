@@ -24,23 +24,19 @@ router.post("/investment-type", (req, res) => {
   const investmentTypeData = req.body;
   investmentTypeData.id = investmentTypesLocalStorage.length;
   investmentTypesLocalStorage.push(investmentTypeData);
-  console.log("Investment type stored temporarily:", investmentTypeData);
   res.status(200).json(investmentTypeData);
 });
 
 router.post("/investments", (req, res) => {
   const investmentData = req.body;
   investmentsLocalStorage.push(investmentData);
-  console.log("Investment stored temporarily:", investmentData);
   res.status(200).json(investmentData);
-  console.log("All investments: ", investmentsLocalStorage);
 });
 
 router.post("/events", (req, res) => {
   const eventsData = req.body;
   eventsData.id = eventsLocalStorage.length; // Assign a unique ID
   eventsLocalStorage.push(eventsData);
-  console.log("Event stored temporarily:", eventsData);
   res.status(200).json(eventsData);
 });
 
@@ -422,7 +418,6 @@ router.get("/single-scenario", async (req, res) => {
     strategy,
   };
 
-  console.log("Scenario with details:", scenarioWithDetails);
   res.status(200).json(scenarioWithDetails);
 });
 
@@ -766,15 +761,12 @@ router.post("/share-scenario", async (req, res) => {
   else {
     res.status(401).send();
   }
-  console.log("user id", userId);
-  console.log("scenario id", req.query.id);
   // Collect UserIDs from list of emails; send error if any email does not have an account
   const user_query = `
     SELECT id 
     FROM users 
     WHERE email = ?
   `
-  console.log(emails); 
   const users = []
   for (const email of emails) {
     const [rows] = await pool.execute(user_query, [email.email]);
@@ -788,7 +780,6 @@ router.post("/share-scenario", async (req, res) => {
       return res.status(400).json({ error: `No account found for email: ${email.email}` });
     }
   }
-  console.log("users", users);
   // List of only authenticated users, users array
   // Record will be saved for each user that is added to shared scenario
   const scenarioId = req.query.id;
@@ -797,7 +788,6 @@ router.post("/share-scenario", async (req, res) => {
     VALUES (?, ?, ?, ?)
   `;
   const values = users.map(user => [userId, scenarioId, user.id, user.access]);
-  console.log("values", values);
   for (const value of values) {
     await pool.execute(query, value);
   }
@@ -847,7 +837,6 @@ async function getInvestmentTypes(pool, scenario_id) {
   const [rows] = await pool.execute(query, [scenario_id]);
   const investmentTypes = [];
   rows.forEach((type) => {
-    console.log("investment type check", type);
     const investmentType = {
       name: type.name,
       description: type.description,
@@ -858,7 +847,6 @@ async function getInvestmentTypes(pool, scenario_id) {
       incomeDistribution: type.income_distribution,
       taxability: type.taxability,
     };
-    console.log("afer investment type transfer", investmentType);
     investmentTypes.push(investmentType);
   });
   return investmentTypes;
@@ -1043,17 +1031,11 @@ async function insertStrategiesNewScenario(
   spendingLocalStorage
 ) {
   // Roth
-  console.log("Roth info before inserting to db:", rothLocalStorage);
   rothLocalStorage.rothStartYear = sanitizeToNull(
     parseInt(rothLocalStorage.rothStartYear, 10)
   );
   rothLocalStorage.rothEndYear = sanitizeToNull(
     parseInt(rothLocalStorage.rothEndYear, 10)
-  );
-  console.log(
-    "Roth years (int converted):",
-    rothLocalStorage.rothStartYear,
-    rothLocalStorage.rothEndYear
   );
   const investments = rothLocalStorage.rothConversionStrat;
   if (investments) {
@@ -1120,13 +1102,10 @@ async function insertStrategiesNewScenario(
  * @param strategies List of strategies to be inserted into DB
  */
 async function insertStrategies(pool, scenario_id, strategies) {
-  console.log("strategies json", strategies);
   // Roth
   const roth = strategies.roth;
-  console.log("Roth info before inserting to db:", roth);
   roth.start = parseInt(roth.start, 10);
   roth.end = parseInt(roth.end, 10);
-  console.log("Roth years (int converted):", roth.start, roth.end);
   const investments = roth.strategy;
   for (let i = 0; i < investments.length; i++) {
     // doesn't run for empty array (if optimizer disabled)
@@ -1198,7 +1177,6 @@ async function insertStrategies(pool, scenario_id, strategies) {
  * @param events List of event series to be inserted into DB
  */
 async function insertEvents(pool, scenario_id, events) {
-  console.log("events:", events);
   for (const event of events) {
     event.start = JSON.stringify(event.start) ?? null;
     event.duration = JSON.stringify(event.duration) ?? null;

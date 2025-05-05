@@ -33,7 +33,6 @@ export async function payDiscExpenses(
     discretionaryExpenses,
     currentSimulationYear
   );
-  // console.log("active events", activeEvents);
 
   const adjustedExpenses = activeEvents.map((event) => {
     const adjustedAmount = calculateAdjustedExpense(
@@ -47,7 +46,6 @@ export async function payDiscExpenses(
       adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
     };
   });
-  console.log("Adjusted discretionary expenses:", adjustedExpenses);
   runningTotals.expenses.push(...adjustedExpenses);
 
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -78,25 +76,15 @@ export async function payDiscExpenses(
       inflationRate
     );
 
-    console.log(
-      `Processing expense: ${expense.name}, initial amount: ${expenseAmount}`
-    );
 
     // Adjust for spouse death
     if (!isSpouseAlive) {
-      console.log("expense amount: ", expenseAmount);
-      console.log("user fraction: ", expense.userFraction);
       const spousePortion = (
         expenseAmount *
         (1 - expense.userFraction)
       ).toFixed(2);
       expenseAmount -= spousePortion;
-      console.log(
-        `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${expenseAmount}`
-      );
     }
-
-    console.log("cashInvestment", runningTotals.cashInvestment);
 
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
@@ -171,18 +159,9 @@ export async function payDiscExpenses(
 
       // Deduct the expense amount from cash
       runningTotals.cashInvestment = 0;
-      console.log(
-        `Paid ${expense.name} using cash and withdrawals. Remaining cash: ${runningTotals.cashInvestment}`
-      );
-      
     }
   }
   runningTotals.actualDiscExpenses = Number(actualDiscExpensesAmt); // Track the total discretionary expenses paid
-  console.log(
-    `Total discretionary expenses paid: ${Number(
-      runningTotals.actualDiscExpenses
-    )}`
-  );
 }
 
 /**
