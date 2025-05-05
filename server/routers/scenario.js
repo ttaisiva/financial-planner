@@ -341,8 +341,6 @@ router.post("/run-2d-simulation", async (req, res) => {
  * Sends a single scenario to the client for display
  */
 router.get("/single-scenario", async (req, res) => {
-  console.log("Display single scenario in server");
-  console.log(req.session.user);
   //const scenarioId = await waitForScenarioId();
   const scenarioId = req.query.scenarioId;
   const userId = req.session.user["id"];
@@ -425,8 +423,6 @@ router.get("/single-scenario", async (req, res) => {
  * Sends a map of scenarios to the client for display
  */
 router.get("/scenarios", async (req, res) => {
-  console.log("Display scenarios in server");
-  console.log(req.session.user);
 
   try {
     if (!req.session.user) {
@@ -498,8 +494,6 @@ router.get("/scenarios", async (req, res) => {
 });
 
 router.get("/shared-scenarios", async (req, res) => {
-  console.log("Display shared scenarios in server");
-  console.log(req.session.user);
   
   try {
     if (!req.session.user) {
