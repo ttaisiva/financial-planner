@@ -468,13 +468,13 @@ export const ViewSingleScenario = ({
 
       {/* Render related data if available */}
       <div>
-        {scenario.investments?.length > 0 && (
+        {scenario.investment_types?.length > 0 && (
           <>
-            <h3 style={{ textAlign: "center" }}>Investments</h3>
+            <h3>Investment Types</h3>
             <div className="grid">
-              {scenario.investments.map((investment, index) => (
+              {scenario.investment_types.map((type, index) => (
                 <div key={index} className="item">
-                  {renderAttributes(investment)}
+                  {renderAttributes(type)}
                 </div>
               ))}
             </div>
