@@ -468,13 +468,13 @@ export const ViewSingleScenario = ({
 
       {/* Render related data if available */}
       <div>
-        {scenario.investment_types?.length > 0 && (
+        {scenario.investments?.length > 0 && (
           <>
-            <h3>Investment Types</h3>
+            <h3 style={{ textAlign: "center" }}>Investments</h3>
             <div className="grid">
-              {scenario.investment_types.map((type, index) => (
+              {scenario.investments.map((investment, index) => (
                 <div key={index} className="item">
-                  {renderAttributes(type)}
+                  {renderAttributes(investment)}
                 </div>
               ))}
             </div>
@@ -488,16 +488,9 @@ export const ViewSingleScenario = ({
           <>
             <h3>Investment Types</h3>
             <div className="grid">
-              {scenario.investment_types.map((data, index) => (
+              {scenario.investment_types.map((type, index) => (
                 <div key={index} className="item">
-                  <h3>{data.name}</h3>
-                  <p><strong>Description:</strong> {data.description}</p>
-                  <p><strong>Return Distribution:</strong> {formatDistribution(data.return_distribution)}</p>
-                  <p><strong>Return Amt or Pct:</strong> {data.return_amt_or_pct}</p>
-                  <p><strong>Expense Ratio:</strong> {(Number(data.expense_ratio) * 100).toFixed(2)}%</p>
-                  <p><strong>Income Distribution:</strong> {formatDistribution(data.income_distribution)}</p>
-                  <p><strong>Income Amt or Pct:</strong> {data.income_amt_or_pct}</p>
-                  <p><strong>Taxability:</strong> {data.taxability === 1 ? "Taxable" : "Non-Taxable"}</p>
+                  {renderAttributes(type)}
                 </div>
               ))}
             </div>
