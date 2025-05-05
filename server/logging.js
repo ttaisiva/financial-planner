@@ -105,7 +105,6 @@ export function logExpense(evtlog, year, name, amount, investment) {
   logEvent(evtlog, event);
 }
 
-// TODO
 export function logTaxes(evtlog, year, amount) {
   const event = {
     year: year,
@@ -115,11 +114,10 @@ export function logTaxes(evtlog, year, amount) {
   logEvent(evtlog, event);
 }
 
-// TODO: not called
 export function logInvest(evtlog, year, name, amount, investment) {
   const event = {
     year: year,
-    type: `Invest "${name}" into investment "${investment}"`,
+    type: `Invest event "${name}" adding to investment "${investment}"`,
     amount: amount,
   };
   logEvent(evtlog, event);

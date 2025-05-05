@@ -58,6 +58,7 @@ export async function runInvestEvent(
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
           runningTotals,
+          evtlog: evtlog
         });
       } else {
         applyFixedAssetAllocation({
@@ -70,6 +71,7 @@ export async function runInvestEvent(
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
           runningTotals,
+          evtlog: evtlog
         });
       }
     }
@@ -171,6 +173,7 @@ async function applyGlideAssetAllocation({
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
   runningTotals,
+  evtlog
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -233,6 +236,7 @@ async function applyGlideAssetAllocation({
       const newValue = (currentValue + cappedAmount).toFixed(2);
       target.value = newValue;
       remainingToAllocate -= cappedAmount;
+      logInvest(evtlog, currentYear, event.name, cappedAmount, target.type);
 
       // Update the matching purchase price
       if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
@@ -267,6 +271,7 @@ async function applyGlideAssetAllocation({
 
     const newValue = (currentValue + reallocAmount).toFixed(2);
     target.value = newValue;
+    logInvest(evtlog, currentYear, event.name, reallocAmount, target.type);
 
     // Update the matching purchase price
     if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
@@ -289,6 +294,7 @@ async function applyFixedAssetAllocation({
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
   runningTotals,
+  evtlog
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -330,6 +336,8 @@ async function applyFixedAssetAllocation({
       const newValue = (currentValue + cappedAmount).toFixed(2);
       target.value = newValue;
       remainingToAllocate -= cappedAmount;
+      logInvest(evtlog, currentYear, event.name, cappedAmount, target.type);
+
 
       // Update the matching purchase price
       if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
@@ -364,6 +372,7 @@ async function applyFixedAssetAllocation({
 
     const newValue = (currentValue + reallocAmount).toFixed(2);
     target.value = newValue;
+    logInvest(evtlog, currentYear, event.name, reallocAmount, target.type);
 
     // Update the matching purchase price
     if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
