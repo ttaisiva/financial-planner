@@ -91,10 +91,11 @@ export async function performRMDs(
     if (!targetInvestment) {
       targetInvestment = {
         id: `${inv.type} non-retirement`,
-        investment_type: inv.type,
+        type: inv.type,
         taxStatus: "non-retirement",
         value: 0,
       };
+      console.log("in RMD: creating new target investment", targetInvestment);
       runningTotals.investments.push(targetInvestment);
     }
 
