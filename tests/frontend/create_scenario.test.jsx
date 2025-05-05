@@ -44,7 +44,7 @@ describe("NewScenarioPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("submits scenario data and navigates correctly", async () => {
+  it("Submits scenario data and navigates", async () => {
     render(
       <MemoryRouter>
         <NewScenarioPage />

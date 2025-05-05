@@ -21,7 +21,7 @@ describe("Dashboard", () => {
     vi.restoreAllMocks();
   });
 
-  it("should upload scenario and redirect to the correct URL", async () => {
+  it("Upload scenario and redirect to the correct URL", async () => {
     // Mock server response
     const mockResponse = {
       json: vi.fn().mockResolvedValue({ scenario_id: "12345" }),

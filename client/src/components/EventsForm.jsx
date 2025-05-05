@@ -143,8 +143,9 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
       <form onSubmit={handleSubmit}>
         <h3>Customize your event:</h3> {/* I should add a delete btn*/}
         <div>
-          <label>Name: </label>
+          <label htmlFor="event-name">Name:</label>
           <input
+            id="event-name"
             type="text"
             name="name"
             placeholder="Event name"
@@ -154,8 +155,9 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
           />
         </div>
         <div>
-          <label>Description: </label>
+          <label htmlFor="event-description">Description:</label>
           <input
+            id="event-description"
             type="text"
             name="description"
             placeholder="Describe your event..."
@@ -211,8 +213,9 @@ export const EventsForm = ({ events, setEvents, setShowEventsForm }) => {
           })}
         </div>
         <div>
-          <label>Event Type </label>
+          <label htmlFor="event-type">Event Type:</label>
           <select
+            id="event-type"
             name="type"
             value={formData.type}
             onChange={handleChange}
