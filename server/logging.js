@@ -32,6 +32,15 @@ export async function initLogs(userId) {
 
   return { csvlog, evtlog, csvStream };
 }
+
+async function logEvent(evtlog, event) {
+  console.log("in logEvent");
+  const eventString = `Year: ${event.year}
+    Event: ${event.type}
+    $${event.amount.toFixed(2)}\n\n`;
+  evtlog.write(eventString); // Write the event to the log file
+}
+
 export function logResults(csvlog, csvStream, investments, year) {
 
   // Initialize allInvestments if not present
@@ -44,6 +53,7 @@ export function logResults(csvlog, csvStream, investments, year) {
     const label = inv.type + " (" + inv.taxStatus + ")";
     if (!csvlog.allInvestments.includes(label)) {
       csvlog.allInvestments.push(label);
+      csvlog.headerWritten = false; // Reset header flag if new investment added
     }
   }
 
@@ -73,13 +83,7 @@ export function logResults(csvlog, csvStream, investments, year) {
 }
 
 
-export async function logEvent(evtlog, event) {
-  console.log("event amount in logEvent", event.amount);
-  const eventString = `Year: ${event.year}
-    Event: ${event.type}
-    $${event.amount.toFixed(2)}\n\n`;
-  evtlog.write(eventString); // Write the event to the log file
-}
+
 
 // event logging below
 
@@ -100,6 +104,17 @@ export function logExpense(evtlog, year, name, amount, investment) {
   };
   logEvent(evtlog, event);
 }
+
+// TODO
+export function logTaxes(evtlog, year, amount) {
+  const event = {
+    year: year,
+    type: `Taxes paid for the year.`,
+    amount: amount,
+  };
+  logEvent(evtlog, event);
+}
+
 // TODO: not called
 export function logInvest(evtlog, year, name, amount, investment) {
   const event = {

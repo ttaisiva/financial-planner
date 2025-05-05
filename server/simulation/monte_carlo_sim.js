@@ -14,7 +14,7 @@ import { payDiscExpenses } from "./disc_expenses.js";
 import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
 import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
-import { initLogs } from "../logging.js";
+import { initLogs, logTaxes } from "../logging.js";
 import { logResults } from "../logging.js";
 import {
   generateNormalRandom,
@@ -203,8 +203,7 @@ export async function simulation(
       runningTotals,
       taxData,
     );
-    // TODO LOG TAXES
-    console.log("Taxes paid for the year:", taxes);
+    logTaxes(logs.evtlog, currentSimulationYear, taxes);
     if (taxes) {
       runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
     }
