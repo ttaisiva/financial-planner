@@ -1,3 +1,7 @@
+/**
+ * TP: GitHub CoPilot, prompt - "make test(s) for creating a scenario"
+ * @jest-environment jsdom
+ */
 import { describe, it, vi, expect, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import NewScenarioPage from "../../client/src/pages/NewScenarioPage";

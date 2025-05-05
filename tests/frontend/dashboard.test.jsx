@@ -1,6 +1,4 @@
 import { describe, it, vi, expect, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import Dashboard from "../../client/src/components/Dashboard";
 
 /**
  * TP: GitHub CoPilot, prompt - "make a test for this file"
