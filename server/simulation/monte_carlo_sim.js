@@ -116,7 +116,7 @@ export async function simulation(
     investEventYears,
     rebalanceEvents,
   });
-  for (let year = 0; year < 2; year++) {
+  for (let year = 0; year < totalYears; year++) {
     //years in which the simulation is  being run
 
     //Step 0: run preliminaries
