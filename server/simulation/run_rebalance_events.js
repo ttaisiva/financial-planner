@@ -19,13 +19,15 @@ export async function runRebalanceEvents(
   rebalanceEvents,
   runningTotals
 ) {
+  console.log("*******RUN REBALANCE EVENTS*****");
   const rebalanceEventYears = await getEventYears(rebalanceEvents);
   console.log("rebalance event years: ", rebalanceEventYears);
   const purchasePrices = runningTotals.purchasePrices;
 
   for (const rebalanceEvent of rebalanceEvents) {
+    console.log("Rebalance Event:", rebalanceEvent);
     const eventYears = rebalanceEventYears[rebalanceEvent.id];
-    // console.log("YEAR OF EVENT: ", eventYears);
+    console.log("YEAR OF EVENT: ", eventYears);
     if (!eventYears) continue;
 
     const { startYear, endYear } = eventYears;
@@ -33,18 +35,23 @@ export async function runRebalanceEvents(
       continue;
 
     const assetAllocation = rebalanceEvent.asset_allocation;
-    // console.log("asset allocation: ", assetAllocation);
+    console.log("asset allocation: ", assetAllocation);
+    console.log("Asset Allocation Keys:", Object.keys(assetAllocation));
+    console.log("Investment Keys:", Object.keys(runningTotals.investments));
     if (!assetAllocation) continue;
 
     // Step 1: Calculate total value of relevant investments
     let totalPortfolioValue = 0;
     for (const investmentId in assetAllocation) {
-      // console.log("investment id:", investmentId);
-      // console.log("investments:", investments);
-      totalPortfolioValue += Number(
-        runningTotals.investments[investmentId]?.value || 0
+      console.log("investment id:", investmentId);
+      const investment = runningTotals.investments.find(
+        (inv) => inv.id === investmentId
       );
+      console.log("Matching Investment:", investment);
+      totalPortfolioValue += Number(investment?.value || 0);
     }
+
+    console.log("Total Portfolio Value:", totalPortfolioValue);
 
     // Step 2: Calculate target values based on allocation
     const targetValues = {};
@@ -53,52 +60,20 @@ export async function runRebalanceEvents(
         totalPortfolioValue * assetAllocation[investmentId];
     }
 
-    // Step 3: Sell from over-allocated investments first
+    // Step 3: Update investments to match target values
     for (const investmentId in targetValues) {
-      const currentValue = Number(
-        runningTotals.investments[investmentId]?.value || 0
-      );
       const targetValue = targetValues[investmentId];
 
-      if (currentValue > targetValue) {
-        const amountToSell = currentValue - targetValue;
-
-        // Capital gains (if not pre-tax)
-        if (runningTotals.investments[investmentId].taxStatus !== "pre-tax") {
-          const purchaseValue = Number(purchasePrices[investmentId] || 0);
-          const costBasis = (purchaseValue / currentValue) * amountToSell;
-          const capitalGain = amountToSell - costBasis;
-          runningTotals.curYearGains += capitalGain;
-        }
-
-        // Update purchase prices proportionally
-        const prevPurchase = Number(purchasePrices[investmentId] || 0);
-        const remainingValue = currentValue - amountToSell;
-        purchasePrices[investmentId] =
-          remainingValue > 0
-            ? (prevPurchase * (remainingValue / currentValue)).toFixed(2)
-            : "0.00";
-
-        // Apply the sale
-        runningTotals.investments[investmentId].value = targetValue.toFixed(2);
-      }
-    }
-
-    // Step 4: Buy into under-allocated investments using remaining value
-    for (const investmentId in targetValues) {
-      const currentValue = Number(
-        runningTotals.investments[investmentId]?.value || 0
+      // Find the matching investment in the array
+      const investment = runningTotals.investments.find(
+        (inv) => inv.id === investmentId
       );
-      const targetValue = targetValues[investmentId];
 
-      if (currentValue < targetValue) {
-        const amountToBuy = targetValue - currentValue;
-
-        // Update investment value and purchase price
-        runningTotals.investments[investmentId].value = targetValue.toFixed(2);
-
-        const prevPurchase = Number(purchasePrices[investmentId] || 0);
-        purchasePrices[investmentId] = (prevPurchase + amountToBuy).toFixed(2);
+      if (investment) {
+        // Update the value of the matching investment
+        investment.value = targetValue;
+      } else {
+        console.error(`Investment with ID "${investmentId}" not found.`);
       }
     }
   }

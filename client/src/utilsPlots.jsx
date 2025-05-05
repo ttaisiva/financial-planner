@@ -129,10 +129,9 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
           else {
             console.log("DISCRETIONARY EXPENSES: ", yearlyResult.actualDiscExpenses, yearlyResult.expenses);
             const incurred = yearlyResult.actualDiscExpenses || 0; // Amount of discretionary expenses incurred
-            //const desired = yearlyResult.expenses.filter((expense) => expense.discretionary === 1) || 1;
-            const desired = yearlyResult.expenses
+            const desired = yearlyResult.expenses 
               .filter((expense) => expense.discretionary === 1)
-              .reduce((sum, expense) => Number(sum) + Number(expense.initialAmount), 0) || 1; // Sum initial amounts of discretionary expenses
+              .reduce((sum, expense) => Number(sum) + Number(expense.adjustedAmount), 0) || 1; // Sum initial amounts of discretionary expenses
             const percentage = (incurred / desired) * 100; // Calculate percentage
             console.log(`Year: ${year}, Incurred: ${incurred}, Desired: ${desired}, Percentage: ${percentage}`);
             yearlyData[year].push(percentage);
@@ -313,19 +312,19 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
           });
         } else if (breakdownType === "income") {
           console.log("INCOME STACKED BAR CHART: ", yearlyResult.incomes)
-          yearlyResult.incomes.forEach(({ name, initialAmount }) => {
+          yearlyResult.incomes.forEach(({ name, adjustedAmount }) => {
             if (!yearlyData[year][name]) {
               yearlyData[year][name] = [];
             }
-            yearlyData[year][name].push(initialAmount);
+            yearlyData[year][name].push(adjustedAmount);
           });
         } else if (breakdownType === "expenses") {
           console.log("EXPENSES STACKED BAR CHART: ", yearlyResult.expenses)
-          yearlyResult.expenses.forEach(({ name, initialAmount }) => {
+          yearlyResult.expenses.forEach(({ name, adjustedAmount }) => {
             if (!yearlyData[year][name]) {
               yearlyData[year][name] = [];
             }
-            yearlyData[year][name].push(initialAmount);
+            yearlyData[year][name].push(adjustedAmount);
           });
           if (!yearlyData[year]["Taxes"]) {
             yearlyData[year]["Taxes"] = [];
