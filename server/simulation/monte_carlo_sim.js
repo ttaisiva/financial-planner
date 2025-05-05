@@ -169,7 +169,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       taxes
     );
 
-    // Step 6: Pay discretionary expenses
+    //Step 6: Pay discretionary expenses
     await payDiscExpenses(
       scenarioId,
       runningTotals,

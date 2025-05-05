@@ -62,8 +62,8 @@ export async function process_income_event(
       `No income events found for scenario ID ${scenarioId}. Skipping income event processing.`
     );
     return; // Return early if no income events found
+  
   }
-
   console.log(
     `Found ${incomeEvents.length} income events for scenario ID ${scenarioId}.`
   );
@@ -79,7 +79,8 @@ export async function process_income_event(
 
     // Apply expected annual change for active income events
     let currentAmount = 0;
-    console.log("previous", previousYearAmounts[event.id]);
+    let prevAmount = previousYearAmounts[event.id] || 0;
+    console.log("previous", prevAmount);
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
@@ -91,6 +92,7 @@ export async function process_income_event(
         Number(previousYearAmounts[event.id]) + Number(sampledChange);
       
     }
+  
 
     // Apply inflation adjustment
     if (event.inflationAdjusted) {
@@ -99,6 +101,7 @@ export async function process_income_event(
       console.log(
         `Applied inflation adjustment. New adjustedAmount: ${currentAmount}`
       );
+      event.adjustedAmount = currentAmount;
     }
 
     // Omit user or spouse portion if they are dead
@@ -118,6 +121,9 @@ export async function process_income_event(
         `Spouse is not alive. Omitted spouse portion: ${spousePortion}. New adjustedAmount: ${currentAmount}`
       );
     }
+
+    event.adjustedAmount = Number(currentAmount).toFixed(2); // Store adjusted amount in the event object
+    console.log("Income adjusted amount for event:", event.name, currentAmount);
 
     // Add to cash investment and income totals 
     runningTotals.cashInvestment = (
@@ -168,6 +174,7 @@ export async function process_income_event(
     )}, curYearSS: ${Number(runningTotals.curYearSS)}`
   );
 }
+
 
 /**
  * Fetches and calculates necessary data for an income event from the database.
@@ -367,3 +374,5 @@ function isActiveIncomeEvent(eventId, currentSimulationYear, incomeEventsStart, 
   console.log(`Event ID: ${eventId} is active.`);
   return true;
 }
+
+
