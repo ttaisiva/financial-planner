@@ -334,18 +334,28 @@ export const ViewSingleScenario = ({
   const formatDistribution = (dist) => {
     if (!dist) return "N/A";
   
-    const { type, mean, stdev, value, lower, upper } = dist;
+    const { type, mean, stdev, value, lower, upper, eventSeries } = dist;
   
-    switch (type.toLowerCase()) {
+    switch (type) {
       case "fixed":
         return `Fixed Value: ${value}`;
       case "normal":
-        return `Normal (Mean: ${(mean * 100).toFixed(2)}%, Std Dev: ${(stdev * 100).toFixed(2)}%)`;
+        return `Normal (Mean: ${mean}, Std Dev: ${stdev})`;
       case "uniform":
-        return `Uniform (Lower: ${(lower * 100).toFixed(2)}%, Upper: ${(upper * 100).toFixed(2)}%)`;
+        return `Uniform (Lower: ${lower}, Upper: ${upper})`;
+      case "startWith":
+        return `Start With ${eventSeries}`;
       default:
         return "Unknown Distribution Type";
     }
+  };
+
+  const formatAssetAllocation = (allocation) => {
+    if (!allocation || typeof allocation !== "object") return "N/A";
+  
+    return Object.entries(allocation)
+      .map(([key, value]) => `${key}: ${(value * 100).toFixed(2)}%`)
+      .join(", ");
   };
 
   // Utility to render list of key-value fields from an object
@@ -365,7 +375,14 @@ export const ViewSingleScenario = ({
                 }
                 :
               </strong>{" "}
-              {value.toString()}
+              {(key.includes("distribution") ||
+              ["start", "duration"].includes(key.toLowerCase())) &&
+            typeof value === "object"
+              ? formatDistribution(value) // Apply formatDistribution for specific keys
+              : ["asset_allocation", "asset_allocation2"].includes(key.toLowerCase()) &&
+                typeof value === "object"
+              ? formatAssetAllocation(value) // Apply formatAssetAllocation for asset allocation keys
+              : value.toString()}
             </p>
           ))}
       </div>
@@ -465,20 +482,7 @@ export const ViewSingleScenario = ({
         )}
       </div>
 
-      <div>
-        {/* {scenario.investment_types?.length > 0 && (
-          <>
-            <h3>Investment Types</h3>
-            <div className="grid">
-              {scenario.investment_types.map((type, index) => (
-                <div key={index} className="item">
-                  {renderAttributes(type)}
-                </div>
-              ))}
-            </div>
-          </>
-        )} */}
-      </div>
+
       <div>
         {scenario.investment_types?.length > 0 && (
           <>
