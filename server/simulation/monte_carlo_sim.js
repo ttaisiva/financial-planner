@@ -487,12 +487,23 @@ export async function getSpouseBirthYear(scenarioId) {
  * @returns
  */
 export async function getSpouseLifeExpectancy(scenarioId) {
+  const queryCheck = `SELECT marital_status FROM scenarios WHERE id = ?`;
   const query = `SELECT 
             life_expectancy
             FROM scenarios WHERE id = ?`;
   try {
+    const [checkResults] = await pool.execute(queryCheck, [scenarioId]);
+    if (checkResults[0].marital_status === "individual") {
+      console.log("marital status is individual, no spouse life expectancy");
+      return 0; // No spouse life expectancy if marital status is individual
+    }
+    // console.log("marital status is not individual, spouse life expectancy");
     const [results] = await pool.execute(query, [scenarioId]);
     // console.log("results spouse life expectancy: ", results);
+    console.log(
+      "spouse life expectancy from db: ",
+      results[0].life_expectancy[0]
+    );
     return sample(results[0].life_expectancy[1]);
   } catch (error) {
     console.error("Error fetching spouse life expectancy:", error);
