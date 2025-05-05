@@ -331,6 +331,23 @@ export const ViewSingleScenario = ({
     }
   }, [scenarioId]);
 
+  const formatDistribution = (dist) => {
+    if (!dist) return "N/A";
+  
+    const { type, mean, stdev, value, lower, upper } = dist;
+  
+    switch (type.toLowerCase()) {
+      case "fixed":
+        return `Fixed Value: ${value}`;
+      case "normal":
+        return `Normal (Mean: ${(mean * 100).toFixed(2)}%, Std Dev: ${(stdev * 100).toFixed(2)}%)`;
+      case "uniform":
+        return `Uniform (Lower: ${(lower * 100).toFixed(2)}%, Upper: ${(upper * 100).toFixed(2)}%)`;
+      default:
+        return "Unknown Distribution Type";
+    }
+  };
+
   // Utility to render list of key-value fields from an object
   const renderAttributes = (obj) => {
     return (
@@ -449,13 +466,34 @@ export const ViewSingleScenario = ({
       </div>
 
       <div>
-        {scenario.investment_types?.length > 0 && (
+        {/* {scenario.investment_types?.length > 0 && (
           <>
             <h3>Investment Types</h3>
             <div className="grid">
               {scenario.investment_types.map((type, index) => (
                 <div key={index} className="item">
                   {renderAttributes(type)}
+                </div>
+              ))}
+            </div>
+          </>
+        )} */}
+      </div>
+      <div>
+        {scenario.investment_types?.length > 0 && (
+          <>
+            <h3>Investment Types</h3>
+            <div className="grid">
+              {scenario.investment_types.map((data, index) => (
+                <div key={index} className="item">
+                  <h3>{data.name}</h3>
+                  <p><strong>Description:</strong> {data.description}</p>
+                  <p><strong>Return Distribution:</strong> {formatDistribution(data.return_distribution)}</p>
+                  <p><strong>Return Amt or Pct:</strong> {data.return_amt_or_pct}</p>
+                  <p><strong>Expense Ratio:</strong> {(Number(data.expense_ratio) * 100).toFixed(2)}%</p>
+                  <p><strong>Income Distribution:</strong> {formatDistribution(data.income_distribution)}</p>
+                  <p><strong>Income Amt or Pct:</strong> {data.income_amt_or_pct}</p>
+                  <p><strong>Taxability:</strong> {data.taxability === 1 ? "Taxable" : "Non-Taxable"}</p>
                 </div>
               ))}
             </div>
