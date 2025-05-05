@@ -34,7 +34,6 @@ export async function initLogs(userId) {
 }
 
 async function logEvent(evtlog, event) {
-  console.log("in logEvent");
   const eventString = `Year: ${event.year}
     Event: ${event.type}
     $${event.amount.toFixed(2)}\n\n`;
