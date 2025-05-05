@@ -9,7 +9,6 @@ export async function get_preliminaries_data(scenarioId) {
   // Query the database to fetch inflation assumptions and other necessary data
   // this would be different from guest
 
-  console.log("perform query to get preliminaries data");
   const [rows] = await pool.execute(
     `SELECT 
             inflation_assumption
