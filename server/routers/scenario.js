@@ -280,6 +280,7 @@ router.post("/run-simulation", async (req, res) => {
       numSimulations,
       userId,
       scenarioId,
+      [], // Pass an empty array for dimParams
       pool
     );
 
@@ -289,6 +290,49 @@ router.post("/run-simulation", async (req, res) => {
   } catch (error) {
     console.error("Error running parallel simulation:", error);
     res.status(500).send("Failed to run simulation");
+  }
+});
+
+router.post("/api/run-2d-simulation", async (req, res) => {
+
+  const { parameter1, parameter2, combinations, enableRothOptimizer } = req.body;
+  const { scenarioId } = req.query;
+
+  // Check if the user is authenticated
+  if (!req.session.user) {
+    return res.status(401).json({ error: "User is not authenticated" });
+  }
+
+  const userId = req.session.user["id"]; // Get the authenticated user's ID
+
+  if (!scenarioId || !parameter1 || !parameter2 || !combinations || combinations.length === 0) {
+    return res.status(400).json({ error: "Invalid input data" });
+  }
+
+  try {
+    // Prepare the dimParams for the sim_manager
+    const dimParams = combinations.map(({ param1, param2 }) => ({
+      event: req.body.selectedEvent, // Include the event in each dimParams object
+      enableRothOptimizer: enableRothOptimizer,
+      [parameter1]: param1,
+      [parameter2]: param2,
+    }));
+
+    console.log("2D Simulation: dimParams prepared:", dimParams);
+    // Call the simulation manager
+    const results = await managerSimulation(
+      new Date().getFullYear(), // Current year
+      dimParams.length, // Number of simulations (one per combination)
+      userId, // Authenticated user ID
+      scenarioId, // Scenario ID from query
+      dimParams // Pass the parameter combinations
+    );
+
+    console.log("2D Simulation completed successfully.");
+    res.json(results);
+  } catch (error) {
+    console.error("Error running 2D simulation:", error);
+    res.status(500).send("Failed to run 2D simulation");
   }
 });
 
@@ -1221,15 +1265,8 @@ async function insertInvestment(pool, scenario_id, investments) {
       VALUES (?, ?, ?, ?, ?)
     `;
 
-    let investID;
-    if (investment.investmentType == "cash") {
-      investID = "cash";
-    } else {
-      investID = investment.investmentType + " " + investment.taxStatus;
-    }
-
     const investmentValues = [
-      investID ?? null,
+      investment.id ?? null,
       scenario_id ?? null,
       investment.investmentType ?? null,
       investment.value ?? null,

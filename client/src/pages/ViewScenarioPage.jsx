@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml, { load } from "js-yaml";
 import { LineChart, ShadedLineChart, StackedBarChart, calculateSuccessProbability } from "../utilsPlots";
-import { Exploration1D } from "../components/Explorations";
+import { Exploration1D, Exploration2D } from "../components/Explorations";
 
 //this is for simulation results
 export const ViewScenarioPage = () => {
@@ -271,6 +271,7 @@ export const ViewScenarioPage = () => {
       {simulationResults && <DisplaySimulationResults simulationResults={simulationResults} /> }
       {simulationResults && <h2> Scenario Parameter Exploration</h2>}
       {simulationResults && <Exploration1D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents}/>}
+      {simulationResults && <Exploration2D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents}/>}
       <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>

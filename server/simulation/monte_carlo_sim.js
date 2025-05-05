@@ -60,7 +60,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
     expenses: [],
     incomes: [],
     taxes: [],
-    actualDiscExpenses: [], 
+    actualDiscExpenses: [],
   };
 
   const incomeEvents = await getIncomeEvents(scenarioId, []);
@@ -155,7 +155,7 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals,
       taxData
     );
-    console.log("Taxes paid for the year:", taxes);
+    // console.log("Taxes paid for the year:", taxes);
     if (taxes) {
       runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
     }
@@ -189,7 +189,11 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       afterTaxContributionLimit,
       date
     );
-    console.log("CASH AFTER INVEST EVENTS: ", runningTotals.cashInvestment);
+    // console.log("CASH AFTER INVEST EVENTS: ", runningTotals.cashInvestment);
+    // console.log(
+    //   "INVESTMENTS BEFORE REBALANCE EVENTS: ",
+    //   runningTotals.investments
+    // );
 
     // Step 8: Rebalance investments
     await runRebalanceEvents(
@@ -198,7 +202,15 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       runningTotals
     );
 
-    console.log(`Year ${currentSimulationYear} cash results: `, runningTotals.cashInvestment);
+    console.log(
+      "INVESTMENTS AFTER REBALANCE EVENTS: ",
+      runningTotals.investments
+    );
+
+    console.log(
+      `Year ${currentSimulationYear} cash results: `,
+      runningTotals.cashInvestment
+    );
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
@@ -207,11 +219,13 @@ export async function simulation(date, numSimulations, userId, scenarioId) {
       curYearGains: runningTotals.curYearGains,
       curYearEarlyWithdrawals: runningTotals.curYearEarlyWithdrawals,
       purchasePrices: JSON.parse(JSON.stringify(runningTotals.purchasePrices)), // Deep copy
-      investments: JSON.parse(JSON.stringify(runningTotals.investments)), 
-      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)), 
-      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)), 
+      investments: JSON.parse(JSON.stringify(runningTotals.investments)),
+      expenses: JSON.parse(JSON.stringify(runningTotals.expenses)),
+      incomes: JSON.parse(JSON.stringify(runningTotals.incomes)),
       taxes: JSON.parse(JSON.stringify(runningTotals.taxes)),
-      actualDiscExpenses: JSON.parse(JSON.stringify(runningTotals.actualDiscExpenses)), 
+      actualDiscExpenses: JSON.parse(
+        JSON.stringify(runningTotals.actualDiscExpenses)
+      ),
     });
 
     console.log("Logging yearlyResults for incomes, expenses, and taxes:");

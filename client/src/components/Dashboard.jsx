@@ -175,6 +175,7 @@ const UploadScenario = ({ toggleUpload, isActive }) => {
             investmentType: elem.investmentType,
             value: elem.value,
             taxStatus: elem.taxStatus,
+            id: elem.id,
           });
         });
 
