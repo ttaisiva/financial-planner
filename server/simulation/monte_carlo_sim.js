@@ -200,9 +200,10 @@ export async function simulation(
       scenarioId,
       incomeEvents,
       runningTotals,
-      taxData
+      taxData,
+      currentSimulationYear,
+      logs.evtlog
     );
-    logTaxes(logs.evtlog, currentSimulationYear, taxes);
     if (taxes) {
       runningTotals.taxes.push(Math.round(taxes * 100) / 100); // Store taxes for the year
     }
@@ -222,6 +223,7 @@ export async function simulation(
     await payDiscExpenses(
       scenarioId,
       runningTotals,
+      financialGoal,
       currentSimulationYear,
       inflationRate,
       date,
@@ -249,12 +251,6 @@ export async function simulation(
       runningTotals,
       logs.evtlog
     );
-
-    // console.log("investments: ", runningTotals.investments);
-    console.log(
-      `${currentSimulationYear} Year Capital Gains: ${runningTotals.curYearGains}`
-    );
-    console.log("purchase prices end:", runningTotals.purchasePrices);
 
     yearlyResults.push({
       year: currentSimulationYear,

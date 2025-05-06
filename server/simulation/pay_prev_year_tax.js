@@ -12,7 +12,7 @@
  * - Capital Gain Tax
  * - Early Withdrawal Tax
  */
-
+import { logTaxes } from "../logging.js";
 /**
  * @param totals cashinvestment, income, social security, gains, earlywithdrawals
  * @param scenarioID ID of given scenario
@@ -25,14 +25,19 @@ export async function payTaxes(
   scenarioID,
   incomeEvents,
   runningTotals,
-  taxData
+  taxData,
+  currentSimulationYear,
+  evtlog
 ) {
   // Find the amount owed by taxing all sources of income federally and by state
   const fedOwe = Number(
     await computeFederal(totals.curYearIncome, totals.curYearSS, taxData)
   );
+  logTaxes(evtlog, currentSimulationYear, 'federal', fedOwe);
   const stOwe = Number(await computeState(totals.curYearIncome, taxData));
+  logTaxes(evtlog, currentSimulationYear, 'state', stOwe);
   const cptOwe = Number(await computeCapital(totals.curYearGains, taxData));
+  logTaxes(evtlog, currentSimulationYear, 'capital gains', cptOwe);
   const amtOwed = Number(+fedOwe + +stOwe + +cptOwe);
   return amtOwed;
 }

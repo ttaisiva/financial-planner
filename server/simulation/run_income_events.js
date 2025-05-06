@@ -65,17 +65,22 @@ export async function process_income_event(
       continue; // Skip inactive events
     }
 
+    // Apply annual change to the previous year's amount
     let currentAmount = 0;
     let prevAmount = previousYearAmounts[event.id] || 0;
+
     if (event.changeAmtOrPct === "percent") {
       const sampledChange = sample(event.changeDistribution);
+
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
+
       currentAmount = Number(previousYearAmounts[event.id]) + percentageChange;
     } else {
       const sampledChange = sample(event.changeDistribution);
       currentAmount =
         Number(previousYearAmounts[event.id]) + Number(sampledChange);
     }
+
     // Apply inflation adjustment
     if (event.inflationAdjusted) {
       currentAmount *= 1 + inflationRate;
@@ -84,14 +89,17 @@ export async function process_income_event(
     }
 
     if (!isUserAlive) {
-      const userPortion = (Number(event.userFraction) / 100) * currentAmount;
+      const userPortion = Number(event.userFraction) * currentAmount;
       currentAmount -= userPortion;
       currentAmount = Math.round(currentAmount * 100) / 100;
     }
     if (!isSpouseAlive) {
-      const spousePortion =
-        ((1 - Number(event.spousePercentage)) / 100) * currentAmount;
+      const spousePortion = (1 - Number(event.userFraction)) * currentAmount;
       currentAmount -= spousePortion;
+      console.log(
+        "Spouse is dead. Removed spouse portion. Adjusted amount to: ",
+        currentAmount
+      );
     }
 
     event.adjustedAmount = Math.round(currentAmount * 100) / 100; // Store adjusted amount in the event object
@@ -109,6 +117,8 @@ export async function process_income_event(
       runningTotals.curYearSS =
         Number(runningTotals.curYearSS) + Number(currentAmount);
     }
+
+    activeIncomeEvents.push(event);
 
     previousYearAmounts[event.id] = currentAmount;
   }
@@ -162,9 +172,7 @@ export async function getIncomeEvents(
       initialAmount: event.initial_amount,
       changeDistribution: event.change_distribution,
       inflationAdjusted: event.inflation_adjusted || false,
-      userPercentage: event.user_percentage || 0,
-      spousePercentage: event.spouse_percentage || 0,
-      isSocialSecurity: event.is_social_security || false,
+      isSocialSecurity: event.social_security || false,
       changeAmtOrPct: event.change_amt_or_pct || "percent",
       userFraction: event.user_fraction || 1,
       start: event.start,

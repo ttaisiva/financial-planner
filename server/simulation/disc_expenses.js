@@ -18,14 +18,13 @@ import { logExpense } from "../logging.js";
 export async function payDiscExpenses(
   scenarioId,
   runningTotals,
+  financialGoal,
   currentSimulationYear,
   inflationRate,
   date,
   isSpouseAlive,
   evtlog
 ) {
-  //pay prev year taxes here ...
-
   const discretionaryExpenses = await getDiscretionaryExpenses(scenarioId);
   const activeEvents = await filterActiveDiscretionaryEvents(
     discretionaryExpenses,
@@ -81,7 +80,12 @@ export async function payDiscExpenses(
       expenseAmount -= spousePortion;
     }
 
-    if (runningTotals.cashInvestment >= expenseAmount) {
+    // Check if the expense is within the financial goal
+    const totalAssetsAfterExpense = calculateTotalAssets(runningTotals);
+    if (
+      runningTotals.cashInvestment >= expenseAmount
+      // && totalAssetsAfterExpense < financialGoal
+    ) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
       if (!evtlog) throw new Error("evtlog is undefined in payDiscExpenses");
@@ -108,6 +112,11 @@ export async function payDiscExpenses(
         )
       );
       for (const investment of strategyInvestments) {
+        // if (remainingWithdrawal > financialGoal){
+        //   // only withdraw the amount while financial goal is valid
+        //   remainingWithdrawal -= financialGoal;
+        // }
+
         if (remainingWithdrawal <= 0) break;
 
         const withdrawalAmount = Math.min(
@@ -294,4 +303,12 @@ export async function getExpenseWithdrawalStrategy(scenarioId) {
     investmentId: row.investment_id,
     strategyOrder: row.strategy_order,
   }));
+}
+
+function calculateTotalAssets(runningTotals) {
+  const totalInvestments = runningTotals.investments.reduce(
+    (sum, investment) => sum + Number(investment.value),
+    0
+  );
+  return runningTotals.cashInvestment + totalInvestments;
 }
