@@ -66,12 +66,18 @@ export function sample(item) {
 
     case "normal":
       // Sample from a normal distribution
-      result = generateNormalRandom(Number(item.mean), Number(item.stdev));
+      result = sample_normal_distribution(
+        Number(item.mean),
+        Number(item.stdev)
+      );
       break;
 
     case "uniform":
       // Sample from a uniform distribution
-      result = generateUniformRandom(Number(item.lower), Number(item.upper));
+      result = sample_uniform_distribution(
+        Number(item.upper),
+        Number(item.lower)
+      );
       break;
 
     default:
@@ -90,7 +96,7 @@ export function sample_normal_distribution(mean, stdev) {
 
   const z =
     Math.sqrt(-2.0 * Math.log(u1 || 1e-10)) * Math.cos(2.0 * Math.PI * u2);
-  return mean + z * stdev;
+  return Math.round(mean + z * stdev * 100) / 100;
 }
 
 /**
