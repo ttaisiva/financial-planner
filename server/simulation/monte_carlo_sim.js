@@ -123,6 +123,7 @@ export async function simulation(
     const inflationRate = await run_preliminaries(scenarioId);
 
     const currentSimulationYear = date + year; //actual year being simulated
+    
 
     if (year === 0) {
       // Populate the object with initial amounts based on event IDs
@@ -201,8 +202,9 @@ export async function simulation(
       incomeEvents,
       runningTotals,
       taxData,
+      currentSimulationYear,
+      logs.evtlog
     );
-    logTaxes(logs.evtlog, currentSimulationYear, taxes);
     if (taxes) {
       runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
     }
@@ -250,6 +252,7 @@ export async function simulation(
       logs.evtlog
     );
 
+    
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
