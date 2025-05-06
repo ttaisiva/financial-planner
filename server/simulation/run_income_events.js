@@ -102,7 +102,7 @@ export async function process_income_event(
     runningTotals.curYearIncome = (
       Number(runningTotals.curYearIncome) + Number(currentAmount)
     ).toFixed(2);
-    logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
+    logIncome(evtlog, currentSimulationYear, event.name, Number(currentAmount));
       
 
     activeIncomeEvents.push(event);
