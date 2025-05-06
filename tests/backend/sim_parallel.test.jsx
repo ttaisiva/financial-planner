@@ -22,7 +22,7 @@ describe("managerSimulation parallelism", () => {
     originalSim.mockRestore(); // Restore the real function after the test
   });
 
-  it("runs simulations in parallel (using worker threads)", async () => {
+  it("Runs simulations in parallel (using worker threads)", async () => {
     const start = Date.now();
 
     const numSimulations = 6; // More than NUM_WORKERS (4)

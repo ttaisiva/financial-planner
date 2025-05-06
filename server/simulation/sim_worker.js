@@ -10,7 +10,6 @@ parentPort.on("message", async (data) => {
     // Run the monte carlo simulation simulation
     const result = await simulation(date, numSimulations, userId, scenarioId, dimParamsTemp);
 
-    //console.log("worker computed result: ", result);
 
     // Send the result back to the main thread
     parentPort.postMessage({ success: true, result });

@@ -1,4 +1,6 @@
 import React from "react";
+import annotationPlugin from "chartjs-plugin-annotation";
+
 import { Line, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -15,7 +17,7 @@ import {
 import Plot from "react-plotly.js";
 
 // Register required Chart.js components
-ChartJS.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, annotationPlugin, Title, Tooltip, Legend, Filler);
 
 /**
  * Line chart to display success probabilities over time.
@@ -78,7 +80,11 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
   allSimulationResults.forEach((simulation) => {
     simulation.forEach((yearlyResult) => {
       const year = yearlyResult.year; 
-      const cashInvestment = yearlyResult.cashInvestment;  
+      const totalInvestment = yearlyResult.investments.reduce(
+        (sum, investment) => sum + Number(investment.value),
+        0
+      );
+       
 
       // initialize the year in the yearlySuccess object if it doesn't exist
       if (!yearlySuccess[year]) {
@@ -88,7 +94,7 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
       // Increment the total count for the year
       yearlySuccess[year].totalCount += 1;
       //console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
-      if (cashInvestment >= financialGoal) { // compare with financial goal
+      if (totalInvestment >= financialGoal) { // compare with financial goal
         yearlySuccess[year].successCount += 1;
       }
     });
@@ -116,8 +122,16 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
           if (!yearlyData[year]) {
             yearlyData[year] = [];
           }
+          if (selectedOption === "allInvestments") {
+            // Calculate the total value of all investments for the year
+            const totalInvestment = yearlyResult.investments.reduce(
+              (sum, investment) => sum + Number(investment.value),
+              0
+            );
+            yearlyData[year].push(totalInvestment);
 
-          if (selectedOption !== "discExpenses"){
+          }
+          else if (selectedOption !== "discExpenses"){
             console.log("NOT DISCRETIONARY EXPENSES: ", yearlyResult[selectedOption]);
             const value = yearlyResult[selectedOption]; // e.g., cashInvestment, curYearIncome, etc.
 
@@ -137,7 +151,8 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
             const desired = yearlyResult.expenses 
               .filter((expense) => expense.discretionary === 1)
               .reduce((sum, expense) => Number(sum) + Number(expense.adjustedAmount), 0) || 1; // Sum initial amounts of discretionary expenses
-            const percentage = (incurred / desired) * 100; // Calculate percentage
+            
+              const percentage = (incurred / desired) * 100; // Calculate percentage
             console.log(`Year: ${year}, Incurred: ${incurred}, Desired: ${desired}, Percentage: ${percentage}`);
             yearlyData[year].push(percentage);
           }
@@ -273,8 +288,39 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
         plugins: {
           legend: {
             display: false
-          }
-        }
+          },
+          ...(label === "allInvestments" && financialGoal
+            ? {
+                annotation: {
+                  annotations: {
+                    financialGoalLine: {
+                      type: "line",
+                      yMin: financialGoal,
+                      yMax: financialGoal,
+                      borderColor: "blue",
+                      borderWidth: 2,
+                      borderDash: [6, 6], // Dashed line
+                      label: {
+                        display: true,
+                        content: "Financial Goal",
+                        enabled: true,
+                        position: {
+                          x: "start",   // or "center" / "end"
+                          y: "center",  // try changing y to "start" if needed
+                        },
+                        backgroundColor: "rgba(0, 0, 255, 0.1)",
+                        color: "blue",
+                        font: {
+                          size: 12,
+                          weight: "bold",
+                        },
+                      },
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
       };
 
 
@@ -355,6 +401,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
       });
     });
 
+    console.log("Processed", processed)
     return processed;
   };
 

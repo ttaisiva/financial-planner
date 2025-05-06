@@ -110,7 +110,6 @@ export function generateNormalRandom(mean, stdev) {
   const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   const raw = z0 * stdev + mean;
   const result = Math.max(0, Math.round(raw)); // ensures it's not negative
-  console.log("result: ", result);
   return result;
 }
 
@@ -280,6 +279,5 @@ export const getEventYears = async (events) => {
     endYears[event.id] = endYear; // Store the end year of this event for future checks
   }
 
-  console.log("Event years (start and end) for all events:", eventYears);
   return eventYears;
 };

@@ -56,7 +56,7 @@ function processQueue() {
       reject(new Error(message.error));
     }
     // LOG THIS
-    console.log(`Worker ${workerIndex} completed a simulation, with results:`, message.result);
+    // console.log(`Worker ${workerIndex} completed a simulation, with results:`, message.result);
     processQueue(); // Process the next task in the queue
   });
 
@@ -80,7 +80,6 @@ function processQueue() {
  * @returns {Promise} A promise that resolves with the results of all simulations.
  */
 export async function managerSimulation(date, numSimulations, userId, scenarioId, dimParams) {
-  console.log("RUNNING Monte Carlo simulation WITH parallelism.");
 
   const tasks = []; // Store all the tasks/simulations
 
@@ -123,7 +122,6 @@ export async function managerSimulation(date, numSimulations, userId, scenarioId
 
   // Aggregate results and calculate statistics
   const financialGoal = await getFinancialGoal(scenarioId); // Fetch the financial goal
-  console.log("Financial goal fetched:", financialGoal);
   const stats = calculateStats(allSimulationResults, financialGoal);
   return stats;
 }

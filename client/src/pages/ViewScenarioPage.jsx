@@ -575,12 +575,13 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
           <option value="curYearEarlyWithdrawals">Current Year Early Withdrawals</option>
           <option value="expenses">Expenses (including tax)</option>
           <option value="discExpenses">% of Total Discretionary Expenses</option>
+          <option value="allInvestments">All Investments</option>
         </select>
 
         <ShadedLineChart
            label={selectedOption}
            allSimulationResults={allSimulationResults.flat(1)}
-           financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
+           financialGoal={financialGoal}
          />
       </div>  
 

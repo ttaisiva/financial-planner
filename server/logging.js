@@ -32,42 +32,57 @@ export async function initLogs(userId) {
 
   return { csvlog, evtlog, csvStream };
 }
-export function logResults(csvlog, csvStream, investments, year) {
-  // Copilot prompt: this function is called repeatedly so i
-  // want to make sure the title row doesn't get written multiple times,
-  // but that it does get modified if new investments are added
 
-  // Check if the title row needs to be updated or written
-  if (
-    !csvlog.titleRow ||
-    investments.some(
-      (investment) =>
-        !csvlog.titleRow.includes(
-          investment.type + " (" + investment.taxStatus + ")"
-        )
-    )
-  ) {
-    const titleRow = [
-      "Year",
-      ...investments.map(
-        (investment) => investment.type + " (" + investment.taxStatus + ")"
-      ),
-    ];
-    csvStream.write(titleRow);
-    csvlog.titleRow = titleRow; // Cache the title row in the write stream object
+async function logEvent(evtlog, event) {
+  const eventString = `Year: ${event.year}
+    Event: ${event.type}
+    $${event.amount.toFixed(2)}\n\n`;
+  evtlog.write(eventString); // Write the event to the log file
+}
+
+export function logResults(csvlog, csvStream, investments, year) {
+
+  // Initialize allInvestments if not present
+  if (!csvlog.allInvestments) {
+    csvlog.allInvestments = [];
   }
-  // Write the data row
-  const dataRow = [year, ...investments.map((investment) => investment.value)];
+
+  // Update allInvestments with any new ones
+  for (const inv of investments) {
+    const label = inv.type + " (" + inv.taxStatus + ")";
+    if (!csvlog.allInvestments.includes(label)) {
+      csvlog.allInvestments.push(label);
+      csvlog.headerWritten = false; // Reset header flag if new investment added
+    }
+  }
+
+  // Only write the title row once
+  if (!csvlog.headerWritten) {
+    const titleRow = ["Year", ...csvlog.allInvestments];
+    csvStream.write(titleRow);
+    csvlog.headerWritten = true;
+  }
+
+  // Create a map from label to value
+  const investmentMap = Object.fromEntries(
+    investments.map((inv) => [
+      inv.type + " (" + inv.taxStatus + ")",
+      Math.round(inv.value * 100) / 100,
+    ])
+  );
+
+  // Write data row with all known investments (fill in blanks if missing)
+  const dataRow = [
+    year,
+    ...csvlog.allInvestments.map((label) =>
+      investmentMap[label] !== undefined ? investmentMap[label] : ""
+    ),
+  ];
   csvStream.write(dataRow);
 }
 
-export async function logEvent(evtlog, event) {
-  console.log("event amount in logEvent", event.amount);
-  const eventString = `Year: ${event.year}
-    Event: ${event.type}
-    $${event.amount}\n`;
-  evtlog.write(eventString); // Write the event to the log file
-}
+
+
 
 // event logging below
 
@@ -79,6 +94,43 @@ export function logIncome(evtlog, year, name, currentAmount) {
   };
   logEvent(evtlog, event);
 }
+
+export function logExpense(evtlog, year, name, amount, investment) {
+  const event = {
+    year: year,
+    type: `Expense "${name}" deducted from investment "${investment}"`,
+    amount: amount,
+  };
+  logEvent(evtlog, event);
+}
+
+export function logTaxes(evtlog, year, type, amount) {
+  const event = {
+    year: year,
+    type: `${type} taxes paid.`,
+    amount: amount,
+  };
+  logEvent(evtlog, event);
+}
+
+export function logInvest(evtlog, year, name, amount, investment) {
+  const event = {
+    year: year,
+    type: `Invest event "${name}" adding to investment "${investment}"`,
+    amount: amount,
+  };
+  logEvent(evtlog, event);
+}
+
+export function logRebalance(evtlog, year, name, amount, investmentId) {
+  const event = {
+    year: year,
+    type: `Rebalance "${name}" applied to investment "${investmentId}"`,
+    amount: amount,
+  };
+  logEvent(evtlog, event);
+}
+
 
 export function logRMD(evtlog, year, inv, transferAmount) {
   const event = {
@@ -98,7 +150,7 @@ export function logRothConversion(
 ) {
   const event = {
     year: year,
-    type: `Roth conversion from pre-tax investment "${pretax.type}" to after-tax investment "${aftertax.type}"`,
+    type: `Roth conversion from pre-tax investment "${pretax}" to after-tax investment "${aftertax}"`,
     amount: conversionAmt,
   };
   console.log("event amount in logRothConversion", event.amount);
