@@ -2,12 +2,22 @@ import React from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useState, useEffect } from "react";
-import { loadAnimation, fetchEventNames , fetchEventTypes, fetchInvest1d} from "../utils";
+import {
+  loadAnimation,
+  fetchEventNames,
+  fetchEventTypes,
+  fetchInvest1d,
+} from "../utils";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import yaml, { load } from "js-yaml";
-import { LineChart, ShadedLineChart, StackedBarChart, calculateSuccessProbability } from "../utilsPlots";
+import {
+  LineChart,
+  ShadedLineChart,
+  StackedBarChart,
+  calculateSuccessProbability,
+} from "../utilsPlots";
 import { Exploration1D, Exploration2D } from "../components/Explorations";
 
 //this is for simulation results
@@ -46,8 +56,8 @@ export const ViewScenarioPage = () => {
 
   useEffect(() => {
     const loadEventTypes = async () => {
-      if (scenarioId) { 
-        const types = await fetchEventTypes(scenarioId); 
+      if (scenarioId) {
+        const types = await fetchEventTypes(scenarioId);
         setEventTypes(types);
       }
     };
@@ -99,27 +109,27 @@ export const ViewScenarioPage = () => {
       method: "GET",
       credentials: "include",
     })
-    .then(res => res.json())
-    .then(data => {
-      /*
+      .then((res) => res.json())
+      .then((data) => {
+        /*
         CHATGPT: send the javascript object to the client and have the client turn it into a yaml file for download
       */
-      const yamlContent = yaml.dump(data);
+        const yamlContent = yaml.dump(data);
 
-      // Create a Blob from the YAML content
-      const blob = new Blob([yamlContent], { type: 'text/yaml' });
+        // Create a Blob from the YAML content
+        const blob = new Blob([yamlContent], { type: "text/yaml" });
 
-      // Create an anchor element to trigger the download
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'scenario.yaml'; // Name of the downloaded file
-      a.click();
+        // Create an anchor element to trigger the download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "scenario.yaml"; // Name of the downloaded file
+        a.click();
 
-      window.URL.revokeObjectURL(url);
-    })
-    .catch((error) => console.error("Error:", error));
-  }
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((error) => console.error("Error:", error));
+  };
 
   /**
    * CHATGPT
@@ -128,36 +138,36 @@ export const ViewScenarioPage = () => {
    */
   function ShareForm() {
     const [sharedUsers, setSharedUsers] = useState([
-      { email: '', access: 'read' },
+      { email: "", access: "read" },
     ]);
-  
+
     const handleEmailChange = (index, event) => {
       const updatedUsers = [...sharedUsers];
       updatedUsers[index].email = event.target.value;
       setSharedUsers(updatedUsers);
     };
-  
+
     const handleAccessChange = (index, event) => {
       const updatedUsers = [...sharedUsers];
       updatedUsers[index].access = event.target.value;
       setSharedUsers(updatedUsers);
     };
-  
+
     const handleAddUser = () => {
-      setSharedUsers([...sharedUsers, { email: '', access: 'read' }]);
+      setSharedUsers([...sharedUsers, { email: "", access: "read" }]);
     };
-  
+
     const handleRemoveUser = (index) => {
       const updatedUsers = sharedUsers.filter((_, i) => i !== index);
       setSharedUsers(updatedUsers);
     };
-  
+
     const handleSubmit = (event) => {
       event.preventDefault();
       const cleanedUsers = sharedUsers
-        .map(u => ({ email: u.email.trim(), access: u.access }))
-        .filter(u => u.email !== '');
-      console.log('Users to share with:', cleanedUsers);
+        .map((u) => ({ email: u.email.trim(), access: u.access }))
+        .filter((u) => u.email !== "");
+      console.log("Users to share with:", cleanedUsers);
 
       fetch(`http://localhost:3000/api/share-scenario?id=${scenarioId}`, {
         method: "POST",
@@ -165,18 +175,17 @@ export const ViewScenarioPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ users: cleanedUsers }) // Should just be an array of Strings (emails)
-      })
-      .catch(error => console.error('Error:', error));
+        body: JSON.stringify({ users: cleanedUsers }), // Should just be an array of Strings (emails)
+      }).catch((error) => console.error("Error:", error));
 
       // Toggle Share
       togglePopup();
     };
-  
+
     return (
       <form onSubmit={handleSubmit}>
         {sharedUsers.map((user, index) => (
-          <div key={index} style={{ marginBottom: '10px' }}>
+          <div key={index} style={{ marginBottom: "10px" }}>
             <input
               type="email"
               value={user.email}
@@ -187,7 +196,7 @@ export const ViewScenarioPage = () => {
             <select
               value={user.access}
               onChange={(e) => handleAccessChange(index, e)}
-              style={{ marginLeft: '8px' }}
+              style={{ marginLeft: "8px" }}
             >
               <option value="read">Read Access</option>
               <option value="write">Write Access</option>
@@ -196,7 +205,7 @@ export const ViewScenarioPage = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveUser(index)}
-                style={{ marginLeft: '8px' }}
+                style={{ marginLeft: "8px" }}
               >
                 Remove
               </button>
@@ -206,7 +215,8 @@ export const ViewScenarioPage = () => {
         <button type="button" onClick={handleAddUser}>
           Add another user
         </button>
-        <br /><br />
+        <br />
+        <br />
         <button type="submit">Share</button>
       </form>
     );
@@ -231,13 +241,16 @@ export const ViewScenarioPage = () => {
   return (
     <div className="viewscenario-container">
       <Header />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <h1 style={{ marginRight: "10px" }}> Your Scenario </h1>
         {/* Add Scenario Popups */}
-        <Popup
-          togglePopup={togglePopup}
-          isActive={showPopup}
-        />
+        <Popup togglePopup={togglePopup} isActive={showPopup} />
         <button onClick={togglePopup} className="share-popup">
           {/*<img src="client\public\plus.png" className="icon"></img>
           <img src="client\public\plus_white.png" className="icon-hover"></img>*/}
@@ -268,10 +281,26 @@ export const ViewScenarioPage = () => {
         </button>
       </div>
 
-      {simulationResults && <DisplaySimulationResults simulationResults={simulationResults} /> }
+      {simulationResults && (
+        <DisplaySimulationResults simulationResults={simulationResults} />
+      )}
       {simulationResults && <h2> Scenario Parameter Exploration</h2>}
-      {simulationResults && <Exploration1D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents}/>}
-      {simulationResults && <Exploration2D eventNames={eventNames} eventTypes={eventTypes} investEvents={investEvents} scenarioId={scenarioId}/>}
+      {simulationResults && (
+        <Exploration1D
+          eventNames={eventNames}
+          eventTypes={eventTypes}
+          investEvents={investEvents}
+          scenarioId={scenarioId}
+        />
+      )}
+      {simulationResults && (
+        <Exploration2D
+          eventNames={eventNames}
+          eventTypes={eventTypes}
+          investEvents={investEvents}
+          scenarioId={scenarioId}
+        />
+      )}
       <button onClick={exportScenario}>Export Scenario</button>
       <Footer />
     </div>
@@ -309,7 +338,6 @@ export const ViewSingleScenario = ({
         console.log("Scenario data:", data);
         setScenario(data);
 
-        
         if (data.userId) {
           setUserId(data.userId);
           console.log("User ID from scenario:", data.userId);
@@ -335,9 +363,9 @@ export const ViewSingleScenario = ({
 
   const formatDistribution = (dist) => {
     if (!dist) return "N/A";
-  
+
     const { type, mean, stdev, value, lower, upper, eventSeries } = dist;
-  
+
     switch (type) {
       case "fixed":
         return `Fixed Value: ${value}`;
@@ -356,7 +384,7 @@ export const ViewSingleScenario = ({
 
   const formatAssetAllocation = (allocation) => {
     if (!allocation || typeof allocation !== "object") return "N/A";
-  
+
     return Object.entries(allocation)
       .map(([key, value]) => `${key}: ${(value * 100).toFixed(2)}%`)
       .join(", ");
@@ -380,13 +408,14 @@ export const ViewSingleScenario = ({
                 :
               </strong>{" "}
               {(key.includes("distribution") ||
-              ["start", "duration"].includes(key.toLowerCase())) &&
-            typeof value === "object"
-              ? formatDistribution(value) // Apply formatDistribution for specific keys
-              : ["asset_allocation", "asset_allocation2"].includes(key.toLowerCase()) &&
-                typeof value === "object"
-              ? formatAssetAllocation(value) // Apply formatAssetAllocation for asset allocation keys
-              : value.toString()}
+                ["start", "duration"].includes(key.toLowerCase())) &&
+              typeof value === "object"
+                ? formatDistribution(value) // Apply formatDistribution for specific keys
+                : ["asset_allocation", "asset_allocation2"].includes(
+                    key.toLowerCase()
+                  ) && typeof value === "object"
+                ? formatAssetAllocation(value) // Apply formatAssetAllocation for asset allocation keys
+                : value.toString()}
             </p>
           ))}
       </div>
@@ -399,43 +428,53 @@ export const ViewSingleScenario = ({
         <div className="row">
           <div className="item">
             <h3>Scenario Details</h3>
-            {scenario && scenario.scenarioDetails &&
+            {scenario &&
+              scenario.scenarioDetails &&
               renderAttributes({
                 scenario_name: scenario.scenarioDetails[0].name,
                 filing_status: scenario.scenarioDetails[0].marital_status,
                 state_of_residence: scenario.scenarioDetails[0].residence_state,
-              })
-              }
+              })}
           </div>
 
           <div className="item">
             <h3>Financial Details</h3>
-            {scenario && scenario.scenarioDetails &&
+            {scenario &&
+              scenario.scenarioDetails &&
               renderAttributes({
                 financial_goal: scenario.scenarioDetails[0].financial_goal,
-                inflation_assumption: formatDistribution(scenario.scenarioDetails[0].inflation_assumption)
+                inflation_assumption: formatDistribution(
+                  scenario.scenarioDetails[0].inflation_assumption
+                ),
               })}
           </div>
 
           <div className="item">
             <h3>Personal Details</h3>
-            {scenario && scenario.scenarioDetails &&
+            {scenario &&
+              scenario.scenarioDetails &&
               renderAttributes({
                 user_birth_year: scenario.scenarioDetails[0].birth_years[0],
-                life_expectancy: formatDistribution(scenario.scenarioDetails[0].life_expectancy[0]),
+                life_expectancy: formatDistribution(
+                  scenario.scenarioDetails[0].life_expectancy[0]
+                ),
               })}
           </div>
 
-          {scenario  && scenario.scenarioDetails?.[0]?.birth_years?.length > 1  && (
-            <div className="item">
-              <h3>Spouse Details</h3>
-              {scenario &&
-                renderAttributes({
-                  spouse_birth_year: scenario.scenarioDetails[0].birth_years[1],
-                  spouse_life_expectancy: formatDistribution(scenario.scenarioDetails[0].life_expectancy[1]),
-                })}
-            </div>
-          )}
+          {scenario &&
+            scenario.scenarioDetails?.[0]?.birth_years?.length > 1 && (
+              <div className="item">
+                <h3>Spouse Details</h3>
+                {scenario &&
+                  renderAttributes({
+                    spouse_birth_year:
+                      scenario.scenarioDetails[0].birth_years[1],
+                    spouse_life_expectancy: formatDistribution(
+                      scenario.scenarioDetails[0].life_expectancy[1]
+                    ),
+                  })}
+              </div>
+            )}
         </div>
       </div>
 
@@ -456,7 +495,6 @@ export const ViewSingleScenario = ({
           </>
         )}
       </div>
-
 
       <div>
         {scenario.investment_types?.length > 0 && (
@@ -518,108 +556,152 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
   const [aggregationThreshold, setAggregationThreshold] = useState(0); // Default threshold
   const [useMedian, setUseMedian] = useState(true); // Default to median
 
-
-  const { median, mean, min, max, financialGoal, totalSimulations, allSimulationResults } = simulationResults;
+  const {
+    median,
+    mean,
+    min,
+    max,
+    financialGoal,
+    totalSimulations,
+    allSimulationResults,
+  } = simulationResults;
   console.log("Now allSimulationResults:", allSimulationResults); // Log all simulation results
-  const successProbabilities = calculateSuccessProbability(allSimulationResults.flat(1), Number(financialGoal));
-  console.log("Success Probabilities:", successProbabilities); 
-
+  const successProbabilities = calculateSuccessProbability(
+    allSimulationResults.flat(1),
+    Number(financialGoal)
+  );
+  console.log("Success Probabilities:", successProbabilities);
 
   return (
     <div>
       <h2>Simulation Results</h2>
       <div className="summary">
-        <p><strong>Total Simulations:</strong> {totalSimulations}</p>
-        <p><strong>Median:</strong> ${median.toFixed(2)}</p>
-        <p><strong>Mean:</strong> ${mean.toFixed(2)}</p>
-        <p><strong>Min:</strong> ${min.toFixed(2)}</p>
-        <p><strong>Max:</strong> ${max.toFixed(2)}</p>
-        <p><strong>Financial Goal: </strong> ${Number(financialGoal).toFixed(2)}</p>
+        <p>
+          <strong>Total Simulations:</strong> {totalSimulations}
+        </p>
+        <p>
+          <strong>Median:</strong> ${median.toFixed(2)}
+        </p>
+        <p>
+          <strong>Mean:</strong> ${mean.toFixed(2)}
+        </p>
+        <p>
+          <strong>Min:</strong> ${min.toFixed(2)}
+        </p>
+        <p>
+          <strong>Max:</strong> ${max.toFixed(2)}
+        </p>
+        <p>
+          <strong>Financial Goal: </strong> ${Number(financialGoal).toFixed(2)}
+        </p>
       </div>
 
       <div className="simulation-details">
         {allSimulationResults.flat(1).map((simulation, simIndex) => (
-          <div key={simIndex} className="simulation" >
+          <div key={simIndex} className="simulation">
             <h3>Simulation {simIndex + 1}</h3>
             <div className="simulation-row">
-            {simulation.map((yearlyResult, yearIndex) => (
-              <div key={yearIndex} className="simulationitem">
-                <h4>Year: {yearlyResult.year}</h4>
-                <p><strong>Cash Investment:</strong> ${Number(yearlyResult.cashInvestment).toFixed(2)}</p>
-                <p><strong>Current Year Income:</strong> ${Number(yearlyResult.curYearIncome).toFixed(2)}</p>
-                <p><strong>Current Year Social Security:</strong> ${Number(yearlyResult.curYearSS).toFixed(2)}</p>
-                <p><strong>Current Year Gains:</strong> ${Number(yearlyResult.curYearGains).toFixed(2)}</p>
-                <p><strong>Current Year Early Withdrawals:</strong> ${Number(yearlyResult.curYearEarlyWithdrawals).toFixed(2)}</p>
-              </div>
-            ))}
+              {simulation.map((yearlyResult, yearIndex) => (
+                <div key={yearIndex} className="simulationitem">
+                  <h4>Year: {yearlyResult.year}</h4>
+                  <p>
+                    <strong>Cash Investment:</strong> $
+                    {Number(yearlyResult.cashInvestment).toFixed(2)}
+                  </p>
+                  <p>
+                    <strong>Current Year Income:</strong> $
+                    {Number(yearlyResult.curYearIncome).toFixed(2)}
+                  </p>
+                  <p>
+                    <strong>Current Year Social Security:</strong> $
+                    {Number(yearlyResult.curYearSS).toFixed(2)}
+                  </p>
+                  <p>
+                    <strong>Current Year Gains:</strong> $
+                    {Number(yearlyResult.curYearGains).toFixed(2)}
+                  </p>
+                  <p>
+                    <strong>Current Year Early Withdrawals:</strong> $
+                    {Number(yearlyResult.curYearEarlyWithdrawals).toFixed(2)}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
 
       {/* Charts 4.1*/}
-      
+
       <div className="line-chart-container">
         <h3>Success Probability Over Time</h3>
         <LineChart successProbabilities={successProbabilities} />
       </div>
-      
+
       {/* Charts 4.2*/}
-      <div className="shaded-line-chart-container"> 
+      <div className="shaded-line-chart-container">
         <h3>Shaded Success Probability Over Time</h3>
         <p> Select a quantity to view as a shaded line chart</p>
 
-        <select value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)} >
+        <select
+          value={selectedOption}
+          onChange={(e) => setSelectedOption(e.target.value)}
+        >
           <option value="cashInvestment">Cash Investment</option>
           <option value="curYearIncome">Current Year Income</option>
-          <option value="curYearEarlyWithdrawals">Current Year Early Withdrawals</option>
+          <option value="curYearEarlyWithdrawals">
+            Current Year Early Withdrawals
+          </option>
           <option value="expenses">Expenses (including tax)</option>
-          <option value="discExpenses">% of Total Discretionary Expenses</option>
+          <option value="discExpenses">
+            % of Total Discretionary Expenses
+          </option>
           <option value="allInvestments">All Investments</option>
         </select>
 
         <ShadedLineChart
-           label={selectedOption}
-           allSimulationResults={allSimulationResults.flat(1)}
-           financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
-         />
-      </div>  
+          label={selectedOption}
+          allSimulationResults={allSimulationResults.flat(1)}
+          financialGoal={
+            selectedOption === "cashInvestments" ? financialGoal : null
+          }
+        />
+      </div>
 
       {/* Charts 4.3*/}
       <div>
-          <h3>Stacked Bar Chart</h3>
-          <select value={breakdownType} onChange={(e) => setBreakdownType(e.target.value)} >
-            <option value="investments">Investments</option>
-            <option value="income">Income</option>
-            <option value="expenses">Expenses</option>
-          </select>
+        <h3>Stacked Bar Chart</h3>
+        <select
+          value={breakdownType}
+          onChange={(e) => setBreakdownType(e.target.value)}
+        >
+          <option value="investments">Investments</option>
+          <option value="income">Income</option>
+          <option value="expenses">Expenses</option>
+        </select>
 
-          <label>Aggregation Threshold:</label>
-          <input
-              type="number"
-              id="aggregationThreshold"
-              value={aggregationThreshold}
-              onChange={(e) => setAggregationThreshold(Number(e.target.value))}
-              min="0"
-            />
-          <label htmlFor="useMedian">Use Median:</label>
-          <input
-              type="checkbox"
-              id="useMedian"
-              checked={useMedian}
-              onChange={(e) => setUseMedian(e.target.checked)}
-          />
-          <StackedBarChart
-            allSimulationResults={allSimulationResults.flat(1)}
-            breakdownType= {breakdownType} // "investments", "income", or "expenses"
-            aggregationThreshold={aggregationThreshold} // Threshold for aggregation
-            useMedian={useMedian} // true for median, false for average
-          />
-
+        <label>Aggregation Threshold:</label>
+        <input
+          type="number"
+          id="aggregationThreshold"
+          value={aggregationThreshold}
+          onChange={(e) => setAggregationThreshold(Number(e.target.value))}
+          min="0"
+        />
+        <label htmlFor="useMedian">Use Median:</label>
+        <input
+          type="checkbox"
+          id="useMedian"
+          checked={useMedian}
+          onChange={(e) => setUseMedian(e.target.checked)}
+        />
+        <StackedBarChart
+          allSimulationResults={allSimulationResults.flat(1)}
+          breakdownType={breakdownType} // "investments", "income", or "expenses"
+          aggregationThreshold={aggregationThreshold} // Threshold for aggregation
+          useMedian={useMedian} // true for median, false for average
+        />
       </div>
-     
-
-    
     </div>
   );
 };

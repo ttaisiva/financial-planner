@@ -5,6 +5,7 @@ export const Exploration1D = ({
   eventNames,
   eventTypes,
   investEvents,
+  scenarioId,
 }) => {
   const [selectedInvestEvent, setSelectedInvestEvent] = useState("");
   const [selectedEvent, setSelectedEvent] = useState("");
