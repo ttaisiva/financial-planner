@@ -90,7 +90,7 @@ export async function payNonDiscExpenses(
         evtlog,
         currentSimulationYear,
         expense.name,
-        expenseAmount,
+        Number(expenseAmount),
         "cash"
       );
     } else {

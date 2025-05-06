@@ -1,4 +1,6 @@
 import React from "react";
+import annotationPlugin from "chartjs-plugin-annotation";
+
 import { Line, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -12,9 +14,10 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+import Plot from "react-plotly.js";
 
 // Register required Chart.js components
-ChartJS.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, annotationPlugin, Title, Tooltip, Legend, Filler);
 
 /**
  * Line chart to display success probabilities over time.
@@ -148,7 +151,8 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
             const desired = yearlyResult.expenses 
               .filter((expense) => expense.discretionary === 1)
               .reduce((sum, expense) => Number(sum) + Number(expense.adjustedAmount), 0) || 1; // Sum initial amounts of discretionary expenses
-            const percentage = (incurred / desired) * 100; // Calculate percentage
+            
+              const percentage = (incurred / desired) * 100; // Calculate percentage
             console.log(`Year: ${year}, Incurred: ${incurred}, Desired: ${desired}, Percentage: ${percentage}`);
             yearlyData[year].push(percentage);
           }
@@ -284,8 +288,39 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
         plugins: {
           legend: {
             display: false
-          }
-        }
+          },
+          ...(label === "allInvestments" && financialGoal
+            ? {
+                annotation: {
+                  annotations: {
+                    financialGoalLine: {
+                      type: "line",
+                      yMin: financialGoal,
+                      yMax: financialGoal,
+                      borderColor: "blue",
+                      borderWidth: 2,
+                      borderDash: [6, 6], // Dashed line
+                      label: {
+                        display: true,
+                        content: "Financial Goal",
+                        enabled: true,
+                        position: {
+                          x: "start",   // or "center" / "end"
+                          y: "center",  // try changing y to "start" if needed
+                        },
+                        backgroundColor: "rgba(0, 0, 255, 0.1)",
+                        color: "blue",
+                        font: {
+                          size: 12,
+                          weight: "bold",
+                        },
+                      },
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
       };
 
 
@@ -470,4 +505,76 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     </div>
   );
 
+}
+
+/**
+ * Contour Plot
+ * @param {Array} x - Array of x-axis values.
+ * @param {Array} y - Array of y-axis values.
+ * @param {Array} z - 2D array of z-axis values (corresponding to x and y).
+ * @param {string} title - Title of the plot.
+ * @param {string} xLabel - Label for the x-axis.
+ * @param {string} yLabel - Label for the y-axis.
+ */
+export function ContourPlot({ x, y, z, title, xLabel, yLabel }) {
+  return (
+    <div className="chart-container">
+      <Plot
+        data={[
+          {
+            z: z,
+            x: x,
+            y: y,
+            type: "contour",
+            colorscale: "Viridis",
+          },
+        ]}
+        layout={{
+          title: title,
+          xaxis: { title: xLabel },
+          yaxis: { title: yLabel },
+          autosize: true,
+        }}
+        style={{ width: "100%", height: "500px" }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Surface Plot
+ * @param {Array} x - Array of x-axis values.
+ * @param {Array} y - Array of y-axis values.
+ * @param {Array} z - 2D array of z-axis values (corresponding to x and y).
+ * @param {string} title - Title of the plot.
+ * @param {string} xLabel - Label for the x-axis.
+ * @param {string} yLabel - Label for the y-axis.
+ * @param {string} zLabel - Label for the z-axis.
+ */
+export function SurfacePlot({ x, y, z, title, xLabel, yLabel, zLabel }) {
+  return (
+    <div className="chart-container">
+      <Plot
+        data={[
+          {
+            z: z,
+            x: x,
+            y: y,
+            type: "surface",
+            colorscale: "Viridis",
+          },
+        ]}
+        layout={{
+          title: title,
+          scene: {
+            xaxis: { title: xLabel },
+            yaxis: { title: yLabel },
+            zaxis: { title: zLabel },
+          },
+          autosize: true,
+        }}
+        style={{ width: "100%", height: "500px" }}
+      />
+    </div>
+  );
 }
