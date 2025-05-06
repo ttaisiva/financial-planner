@@ -268,8 +268,6 @@ export async function simulation(
       ),
     });
 
- 
-
     logResults(
       logs.csvlog,
       logs.csvStream,
@@ -281,7 +279,6 @@ export async function simulation(
     runningTotals.expenses = []; // Reset expenses for the next year
     runningTotals.incomes = []; // Reset incomes for the next year
     runningTotals.taxes = []; // Reset taxes for the next year
-  
   }
   logs.csvlog.end(); // close the csv log file
 
@@ -683,7 +680,7 @@ function updateEventFields(dimParams, events) {
     if (events.incomeEvents) {
       for (const incomeEvent of events.incomeEvents) {
         if (incomeEvent.name === eventName) {
-          event = incomeEvent
+          event = incomeEvent;
           break;
         }
       }

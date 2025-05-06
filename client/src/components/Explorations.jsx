@@ -1,10 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SurfacePlot, ContourPlot } from "../utilsPlots";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export const Exploration1D = ({
-  runSimulations,
+  simulationResults,
   eventNames,
-  eventTypes,
   investEvents,
   scenarioId,
 }) => {
@@ -15,29 +36,25 @@ export const Exploration1D = ({
   const [upperBound, setUpperBound] = useState(0);
   const [stepSize, setStepSize] = useState(1);
   const [enableRothOptimizer, setEnableRothOptimizer] = useState(false);
-  const [simulationResults, setSimulationResults] = useState(null); // State to store simulation results
+  const [simulationResults1D, setSimulationResults1D] = useState(null); // State to store simulation results
+  const [selectedQuantity, setSelectedQuantity] = useState("median");
 
-  const handleRun = () => {
-    if (parameter && selectedEvent && lowerBound < upperBound && stepSize > 0) {
-      const values = [];
-      for (let value = lowerBound; value <= upperBound; value += stepSize) {
-        values.push(value);
-      }
-      runSimulations({ selectedEvent, parameter, values, enableRothOptimizer });
-    } else {
-      alert("Please provide valid inputs.");
-    }
-  };
+  const {
+    median,
+    mean,
+    min,
+    max,
+    financialGoal,
+    totalSimulations,
+    allSimulationResults,
+  } = simulationResults;
 
   const handleRun1DSimulations = async () => {
     console.log("Running 1D simulations...");
+    console.log("Lower Bound:", lowerBound);
+    console.log("Upper Bound:", upperBound);
+    console.log("Step Size:", stepSize);
     if (parameter && selectedEvent && lowerBound < upperBound && stepSize > 0) {
-      // Generate values for the parameter
-      const paramValues = [];
-      for (let value = lowerBound; value <= upperBound; value += stepSize) {
-        paramValues.push(value);
-      }
-
       try {
         // Send parameter values to the backend
         const response = await fetch(
@@ -51,7 +68,9 @@ export const Exploration1D = ({
             body: JSON.stringify({
               selectedEvent,
               parameter,
-              values: paramValues,
+              lowerBound,
+              upperBound,
+              stepSize,
               enableRothOptimizer,
             }),
           }
@@ -64,14 +83,87 @@ export const Exploration1D = ({
         const result = await response.json();
         console.log("1D Simulation Results:", result);
 
-        // Handle the result (e.g., update chart data)
-        // setChartData(result);
+        // Update simulation results state
+        setSimulationResults1D(result);
       } catch (error) {
         console.error("Error running 1D simulations:", error);
       }
     } else {
       alert("Please provide valid inputs.");
     }
+  };
+
+  // Calculate probability of success over time
+  const calculateProbabilityOfSuccess = () => {
+    if (!simulationResults1D || !financialGoal) return [];
+
+    const probabilities = [];
+    const totalSimulations =
+      simulationResults1D[0].result.allSimulationResults.length;
+
+    console.log("Total Simulations:", totalSimulations);
+
+    for (
+      let yearIndex = 0;
+      yearIndex < simulationResults1D[0].result.allSimulationResults[0].length;
+      yearIndex++
+    ) {
+      let successfulSimulations = 0;
+
+      for (const simulation of simulationResults1D[0].result
+        .allSimulationResults) {
+        const isSuccessful = simulation
+          .slice(0, yearIndex + 1) // Check all years up to the current year
+          .every((value) => value >= financialGoal); // Ensure financial goal is met
+
+        if (isSuccessful) {
+          successfulSimulations++;
+        }
+      }
+
+      probabilities.push((successfulSimulations / totalSimulations) * 100); // Convert to percentage
+    }
+
+    return probabilities;
+  };
+
+  const probabilityOfSuccess = calculateProbabilityOfSuccess();
+
+  console.log("Probability of Success:", probabilityOfSuccess);
+
+  // Prepare data for the chart
+  const chartData = simulationResults1D
+    ? {
+        labels: simulationResults1D.map((res) => res.parameterValue), // X-axis: parameter values
+        datasets: [
+          {
+            label:
+              selectedQuantity === "median"
+                ? "Median Total Investments"
+                : "Probability of Success", // Y-axis label
+            data:
+              selectedQuantity === "median"
+                ? simulationResults1D.map((res) => res.result.median) // Median values
+                : probabilityOfSuccess, // Probability of success values
+            borderColor: "rgba(75, 192, 192, 1)", // Line color
+            backgroundColor: "rgba(75, 192, 192, 0.2)", // Fill color
+            borderWidth: 2,
+          },
+        ],
+      }
+    : null;
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: "1D Simulation Results",
+      },
+    },
   };
 
   return (
@@ -93,6 +185,7 @@ export const Exploration1D = ({
           ))}
         </select>
       </label>
+      <br />
 
       {/* Dropdown for selecting a parameter */}
       <label>
@@ -107,6 +200,7 @@ export const Exploration1D = ({
           <option value="initialAmount">Initial Amount</option>
         </select>
       </label>
+      <br />
 
       {/* Numeric inputs for bounds and step size */}
       {parameter && (
@@ -139,30 +233,6 @@ export const Exploration1D = ({
       )}
       <br />
 
-      {/* Dropdown for selecting an investment event */}
-      <label>
-        Select Asset Allocation for invest event:
-        <select
-          value={selectedInvestEvent}
-          onChange={(e) => setSelectedInvestEvent(e.target.value)}
-        >
-          <option value="">No Asset Allocation selected</option>
-          {investEvents.map((event) => (
-            <option key={event.id} value={event.name}>
-              {event.name} (
-              {Object.entries(event.allocations)
-                .map(
-                  ([assetName, percentage]) =>
-                    `${assetName}: ${percentage * 100}%`
-                )
-                .join(", ")}
-              )
-            </option>
-          ))}
-        </select>
-      </label>
-      <br />
-
       {/* Checkbox for enabling/disabling Roth optimizer */}
       <label>
         Enable Roth Optimizer:
@@ -176,6 +246,38 @@ export const Exploration1D = ({
 
       {/* Run Simulations Button */}
       <button onClick={handleRun1DSimulations}>Run Simulations</button>
+      <br />
+
+      {/* Render Chart */}
+      {simulationResults1D && (
+        <div>
+          {/* Dropdown for selecting the quantity to display */}
+          <label>
+            Select Quantity to Display:
+            <select
+              value={selectedQuantity}
+              onChange={(e) => setSelectedQuantity(e.target.value)}
+            >
+              <option value="median">Median Total Investments</option>
+              <option value="probabilityOfSuccess">
+                Probability of Success
+              </option>
+            </select>
+          </label>
+          <br />
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: "20px",
+            }}
+          >
+            <Line data={chartData} options={chartOptions} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -264,7 +366,6 @@ export const Exploration2D = ({
       console.log("Lower Bound 2:", lowerBound2);
       console.log("Upper Bound 2:", upperBound2);
       console.log("Step Size 2:", stepSize2);
-      
 
       try {
         // Send combinations to the backend

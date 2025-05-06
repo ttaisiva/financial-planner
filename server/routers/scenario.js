@@ -303,7 +303,6 @@ router.post("/run-1d-simulation", async (req, res) => {
     const scenarioId = req.query.id;
 
     console.log("1D Simulation request received:", {
-      scenarioId,
       selectedEvent,
       parameter,
       lowerBound,

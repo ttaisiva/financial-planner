@@ -287,6 +287,7 @@ export const ViewScenarioPage = () => {
       {simulationResults && <h2> Scenario Parameter Exploration</h2>}
       {simulationResults && (
         <Exploration1D
+          simulationResults={simulationResults}
           eventNames={eventNames}
           eventTypes={eventTypes}
           investEvents={investEvents}

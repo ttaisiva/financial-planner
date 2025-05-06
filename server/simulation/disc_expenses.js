@@ -5,7 +5,6 @@ import { pool } from "../utils.js";
 import { calculateAdjustedExpense } from "./nondisc_expenses.js";
 import { logExpense } from "../logging.js";
 
-
 /**
  * Pays discretionary expenses based on the spending strategy and available cash.
  * @param {number} scenarioId - The ID of the scenario.
@@ -73,7 +72,7 @@ export async function payDiscExpenses(
       currentSimulationYear,
       inflationRate
     );
-    console.log("Expense cal: ", Number(expenseAmount));
+    // console.log("Expense cal: ", Number(expenseAmount));
 
     // Adjust for spouse death
     if (!isSpouseAlive) {
@@ -84,10 +83,10 @@ export async function payDiscExpenses(
 
     // Check if the expense is within the financial goal
     const totalAssetsAfterExpense = calculateTotalAssets(runningTotals);
-    console.log(" totalAssetsAfterExpense: ", totalAssetsAfterExpense);
+    // console.log(" totalAssetsAfterExpense: ", totalAssetsAfterExpense);
     if (
-      runningTotals.cashInvestment >= expenseAmount
-       && totalAssetsAfterExpense >=  financialGoal
+      runningTotals.cashInvestment >= expenseAmount &&
+      totalAssetsAfterExpense >= financialGoal
     ) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
@@ -116,7 +115,7 @@ export async function payDiscExpenses(
         )
       );
       for (const investment of strategyInvestments) {
-        if (remainingWithdrawal > financialGoal){
+        if (remainingWithdrawal > financialGoal) {
           // only withdraw the amount while financial goal is valid
           remainingWithdrawal -= financialGoal;
         }
