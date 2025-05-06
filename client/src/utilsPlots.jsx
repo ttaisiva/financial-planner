@@ -77,7 +77,11 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
   allSimulationResults.forEach((simulation) => {
     simulation.forEach((yearlyResult) => {
       const year = yearlyResult.year; 
-      const cashInvestment = yearlyResult.cashInvestment;  
+      const totalInvestment = yearlyResult.investments.reduce(
+        (sum, investment) => sum + Number(investment.value),
+        0
+      );
+       
 
       // initialize the year in the yearlySuccess object if it doesn't exist
       if (!yearlySuccess[year]) {
@@ -87,7 +91,7 @@ export function calculateSuccessProbability(allSimulationResults, financialGoal)
       // Increment the total count for the year
       yearlySuccess[year].totalCount += 1;
       //console.log(`Year: ${year}, Cash Investment: ${cashInvestment}, Financial Goal: ${financialGoal}`);
-      if (cashInvestment >= financialGoal) { // compare with financial goal
+      if (totalInvestment >= financialGoal) { // compare with financial goal
         yearlySuccess[year].successCount += 1;
       }
     });
