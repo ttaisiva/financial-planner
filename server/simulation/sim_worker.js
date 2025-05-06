@@ -3,13 +3,14 @@ import { parentPort } from "worker_threads";
 
 // Script to listen for messages/tasks from the main thread
 parentPort.on("message", async (data) => {
-  const { date, numSimulations, userId, scenarioId } = data;
+  const { date, numSimulations, userId, scenarioId, dimParams } = data;
+  const dimParamsTemp = dimParams || null;
 
   try {
     // Run the monte carlo simulation simulation
-    const result = await simulation(date, numSimulations, userId, scenarioId);
+    const result = await simulation(date, numSimulations, userId, scenarioId, dimParamsTemp);
 
-    console.log("worker computed result: ", result);
+    //console.log("worker computed result: ", result);
 
     // Send the result back to the main thread
     parentPort.postMessage({ success: true, result });

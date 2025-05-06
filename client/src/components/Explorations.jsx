@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { SurfacePlot, ContourPlot } from "../utilsPlots";
 
 export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEvents }) => {
   const [selectedInvestEvent, setSelectedInvestEvent] = useState("");
@@ -8,6 +9,7 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
   const [upperBound, setUpperBound] = useState(0);
   const [stepSize, setStepSize] = useState(1);
   const [enableRothOptimizer, setEnableRothOptimizer] = useState(false);
+  const [simulationResults, setSimulationResults] = useState(null); // State to store simulation results
 
   const handleRun = () => {
     if (parameter && selectedEvent && lowerBound < upperBound && stepSize > 0) {
@@ -128,6 +130,7 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
   const [upperBound2, setUpperBound2] = useState(0);
   const [stepSize2, setStepSize2] = useState(1);
   const [enableRothOptimizer, setEnableRothOptimizer] = useState(false); // State for Roth optimizer
+  const [simulationResults, setSimulationResults] = useState(null); // State to store simulation results
 
   const parameterOptions = [
     { value: "startYear", label: "Start Year" },
@@ -181,6 +184,20 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
         }
       }
 
+      console.log("Combinations:", combinations);
+      console.log("Selected Event:", selectedEvent);
+      console.log("Selected Invest Event:", selectedInvestEvent); // Log selected asset allocation
+      console.log("Enable Roth Optimizer:", enableRothOptimizer); // Log Roth optimizer state
+      console.log("Parameter 1:", parameter1);
+      console.log("Parameter 2:", parameter2);
+      console.log("Lower Bound 1:", lowerBound1);
+      console.log("Upper Bound 1:", upperBound1);
+      console.log("Step Size 1:", stepSize1);
+      console.log("Lower Bound 2:", lowerBound2);
+      console.log("Upper Bound 2:", upperBound2);
+      console.log("Step Size 2:", stepSize2);
+      
+
       try {
         // Send combinations to the backend
         const response = await fetch(`http://localhost:3000/api/run-2d-simulation?id=${scenarioId}`, {
@@ -202,7 +219,9 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
         if (response.ok) {
           const results = await response.json();
           console.log("2D Simulation Results:", results);
-          // Handle results (e.g., pass them to a visualization component)
+
+          // Store the simulation results and make the plots visible
+          setSimulationResults({ results, param1Values, param2Values });
         } else {
           console.error("Failed to run 2D simulations");
         }
@@ -212,6 +231,39 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
     } else {
       alert("Please provide valid inputs for both parameters.");
     }
+  };
+
+  const render2DResults = (simulationResults) => {
+    if (!simulationResults) return null;
+
+    const { results, param1Values, param2Values } = simulationResults;
+
+    return (
+      <div>
+        <h3>2D Simulation Results</h3>
+        <div className="plot-container">
+          <SurfacePlot
+            x={param1Values}
+            y={param2Values}
+            z={results}
+            title="Surface Plot"
+            xLabel="Parameter 1"
+            yLabel="Parameter 2"
+            zLabel="Simulation Result"
+          />
+        </div>
+        <div className="plot-container">
+          <ContourPlot
+            x={param1Values}
+            y={param2Values}
+            z={results}
+            title="Contour Plot"
+            xLabel="Parameter 1"
+            yLabel="Parameter 2"
+          />
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -354,6 +406,9 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
       <br />
       {/* Run Simulations Button */}
       <button onClick={handleRun2DSimulations}>Run Simulations</button>
+
+      {/* Render 2D Results */}
+      {render2DResults(simulationResults)}
     </div>
   );
 };

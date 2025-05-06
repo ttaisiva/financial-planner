@@ -110,7 +110,7 @@ export function generateNormalRandom(mean, stdev) {
   const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   const raw = z0 * stdev + mean;
   const result = Math.max(0, Math.round(raw)); // ensures it's not negative
-  console.log("result: ", result);
+  //console.log("result: ", result);
   return result;
 }
 

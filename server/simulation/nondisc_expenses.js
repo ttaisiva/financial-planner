@@ -29,22 +29,19 @@ export async function payNonDiscExpenses(
   isSpouseAlive,
   taxes
 ) {
-  console.log(
-    `Paying non-discretionary expenses for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
-  );
 
   // Fetch non-discretionary expenses
   const nonDiscretionaryExpenses = await getNonDiscretionaryExpenses(
     scenarioId
   );
-  // console.log("Non-discretionary expenses fetched:", nonDiscretionaryExpenses);
+  // //console.log("Non-discretionary expenses fetched:", nonDiscretionaryExpenses);
 
   // Filter active non-discretionary events
   const activeEvents = await filterActiveNonDiscretionaryEvents(
     nonDiscretionaryExpenses,
     currentSimulationYear
   );
-  // console.log("Active non-discretionary events:", activeEvents);
+  // //console.log("Active non-discretionary events:", activeEvents);
   // Adjust expenses for annual change and inflation
   const adjustedExpenses = activeEvents.map((event) => {
     let adjustedAmount = calculateAdjustedExpense(
@@ -53,18 +50,18 @@ export async function payNonDiscExpenses(
       inflationRate
     );
 
-    console.log("adjusted amount: ", adjustedAmount);
+    //console.log("adjusted amount: ", adjustedAmount);
 
     // Adjust for spouse death
     if (!isSpouseAlive) {
-      console.log("user fraction: ", event.userFraction);
+      //console.log("user fraction: ", event.userFraction);
       const spousePortion = (adjustedAmount * (1 - event.userFraction)).toFixed(
         2
       );
       adjustedAmount -= spousePortion;
-      console.log(
-        `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${adjustedAmount}`
-      );
+      //console.log(
+      //  `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${adjustedAmount}`
+      //);
     }
 
     return {
@@ -72,7 +69,7 @@ export async function payNonDiscExpenses(
       adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
     };
   });
-  console.log("Adjusted non-discretionary expenses:", adjustedExpenses);
+  //console.log("Adjusted non-discretionary expenses:", adjustedExpenses);
   runningTotals.expenses.push(...adjustedExpenses);
 
   // Calculate total non-discretionary expenses
@@ -84,15 +81,11 @@ export async function payNonDiscExpenses(
     );
     return (sum + expenseAmount).toFixed(2);
   }, 0);
-  console.log(
-    "Total non-discretionary expenses for the year:",
-    totalNonDiscExpenses
-  );
 
-  console.log("nondisc taxes", taxes);
+  //console.log("nondisc taxes", taxes);
 
   let remainingWithdrawal = totalNonDiscExpenses + taxes;
-  console.log("Remaining withdrawal:", remainingWithdrawal);
+  //console.log("Remaining withdrawal:", remainingWithdrawal);
 
   // Iterate over non-discretionary expenses and pay them
   for (const expense of activeEvents) {
@@ -102,42 +95,28 @@ export async function payNonDiscExpenses(
       inflationRate
     );
 
-    console.log(
-      `Attempting to pay non-discretionary expense: ${expense.name}, amount: ${expenseAmount}`
-    );
 
-    console.log("cashInvestment", runningTotals.cashInvestment);
+    //console.log("cashInvestment", runningTotals.cashInvestment);
 
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
-      console.log(
-        `Paid ${expense.name} using cash. Remaining cash: ${runningTotals.cashInvestment}`
-      );
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
       remainingWithdrawal =
         Number(expenseAmount) - Number(runningTotals.cashInvestment);
-      console.log(
-        `Insufficient cash for ${expense.name}. Remaining withdrawal needed: ${remainingWithdrawal}`
-      );
 
       // Perform withdrawals from investments
       const expenseWithdrawalStrategy = await getExpenseWithdrawalStrategy(
         scenarioId
       );
-      console.log(
-        "Expense withdrawal strategy fetched:",
-        expenseWithdrawalStrategy
-      );
-      console.log("investments", runningTotals.investments);
 
       let strategyInvestments = runningTotals.investments.filter((investment) =>
         expenseWithdrawalStrategy.some(
           (strategy) => strategy.investmentId === investment.id
         )
       );
-      console.log("strategy investments", strategyInvestments);
+      //console.log("strategy investments", strategyInvestments);
 
       for (const investment of strategyInvestments) {
         if (remainingWithdrawal <= 0) break;
@@ -150,12 +129,9 @@ export async function payNonDiscExpenses(
         // Calculate capital gain or loss
         let capitalGain = 0;
         if (investment.taxStatus === "non-retirement") {
-          console.log(
-            `Withdrawing from non-retirement account: ${investment.id}`
-          );
           const purchasePrice = runningTotals.purchasePrices;
-          console.log("purchase price", purchasePrice);
-          console.log("investment id", investment.id);
+          //console.log("purchase price", purchasePrice);
+          //console.log("investment id", investment.id);
           const purchasePriceID =
             runningTotals.purchasePrices[String(investment.id)];
           const currentValueBeforeSale = investment.value;
@@ -164,23 +140,17 @@ export async function payNonDiscExpenses(
             capitalGain = withdrawalAmount - purchasePriceID;
           } else {
             const fractionSold = withdrawalAmount / currentValueBeforeSale;
-            console.log(`Fraction sold: ${fractionSold}`);
+            //console.log(`Fraction sold: ${fractionSold}`);
             capitalGain =
               (currentValueBeforeSale - purchasePriceID) * fractionSold;
           }
 
           runningTotals.curYearGains += capitalGain;
-          console.log(
-            `Updated curYearGains after withdrawal: ${runningTotals.curYearGains}`
-          );
         }
 
         // Update income for pre-tax retirement accounts
         if (investment.taxStatus === "pre-tax") {
           runningTotals.curYearIncome += withdrawalAmount;
-          console.log(
-            `Updated curYearIncome for pre-tax account. New value: ${runningTotals.curYearIncome}`
-          );
         }
 
         // Update early withdrawals for pre-tax or after-tax retirement accounts if under 59
@@ -190,9 +160,6 @@ export async function payNonDiscExpenses(
         }
 
         remainingWithdrawal -= withdrawalAmount;
-        console.log(
-          `Withdrew ${withdrawalAmount} from investment ${investment.id}. Remaining withdrawal: ${remainingWithdrawal}`
-        );
       }
 
       if (remainingWithdrawal > 0) {
@@ -204,9 +171,6 @@ export async function payNonDiscExpenses(
 
       // Deduct the expense amount from cash
       runningTotals.cashInvestment = 0;
-      console.log(
-        `Paid ${expense.name} using cash and withdrawals. Remaining cash: ${runningTotals.cashInvestment}`
-      );
     }
   }
 }
@@ -217,9 +181,6 @@ export async function payNonDiscExpenses(
  * @returns {Array} List of non-discretionary expenses.
  */
 async function getNonDiscretionaryExpenses(scenarioId) {
-  console.log(
-    `Fetching non-discretionary expenses for scenario ID: ${scenarioId}`
-  );
   const [rows] = await pool.execute(
     `SELECT 
             id,
@@ -236,7 +197,6 @@ async function getNonDiscretionaryExpenses(scenarioId) {
          WHERE scenario_id = ? AND type = 'expense' AND discretionary = 0`,
     [scenarioId]
   );
-  console.log("Non-discretionary expenses fetched:", rows);
   return rows.map((row) => ({
     ...row,
     changeDistribution: row.changeDistribution,
@@ -258,9 +218,9 @@ async function filterActiveNonDiscretionaryEvents(
 
   for (const event of nonDiscretionaryEvents) {
     const startYear = await getEventStartYear(event);
-    console.log("start year", startYear);
+    //console.log("start year", startYear);
     const duration = await getEventDuration(event);
-    console.log("duration", duration);
+    //console.log("duration", duration);
     const endYear = startYear + duration;
 
     if (currentSimulationYear >= startYear && currentSimulationYear < endYear) {
@@ -284,7 +244,7 @@ export function calculateAdjustedExpense(
   inflationRate
 ) {
   const startingYear = getEventStartYear(event);
-  console.log("starting year", startingYear);
+  //console.log("starting year", startingYear);
   const yearsSinceStart = currentSimulationYear - startingYear;
   if (yearsSinceStart < 0) return 0;
 

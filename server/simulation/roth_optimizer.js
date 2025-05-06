@@ -10,7 +10,7 @@ export async function runRothOptimizer(
   evtlog,
   runningTotals
 ) {
-  console.log(`Running Roth optimizer for scenario ID: ${scenarioId}`);
+  //console.log(`Running Roth optimizer for scenario ID: ${scenarioId}`);
   // step 1: determine user tax bracket and conversion amount:
   let conversionAmt = await getMaxConversionAmt(scenarioId, incomeEvents);
 
@@ -72,7 +72,7 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
     totalIncome += incomeEvents[i].currentAmount;
   }
   const filingStatus = await getFilingStatus(scenarioId);
-  console.log(filingStatus);
+  //console.log(filingStatus);
   const taxBrackets = await getTaxBrackets(filingStatus);
 
   let userMax;
@@ -88,10 +88,6 @@ async function getMaxConversionAmt(scenarioId, incomeEvents) {
       break;
     }
   }
-  console.log(`Total income for the year is $${totalIncome}, can convert up
-        to $${
-          userMax - totalIncome
-        } until the next tax bracket at $${userMax}`);
   return userMax - totalIncome;
 }
 
