@@ -1,13 +1,23 @@
+import dotenv from "dotenv";
+import path from "path";
 import mysql from "mysql2/promise";
+import {
+  sample_normal_distribution,
+  sample_uniform_distribution,
+} from "./simulation/preliminaries.js";
+dotenv.config({ path: path.resolve("../.env") });
+dotenv.config();
 
 /**
  * How to use:
- *    const connection = await pool.getConnection();
+ *    await pool.query
+ *    OR
+ *    await pool.execute
+ *    OR
+ *    const connection = await pool.getConnection()
  *
- * How to close:
- *    connection.release();
- *
- * Always release() the connection after using.
+ * If using getConnection(), make sure to to release it after using it: connection.release()
+ * Otherwise, the pool handles releasing automatically
  *
  * TP: ChatGPT, prompt: "now i am getting this error: Failed to insert user scenario info: Error: Can't add new command when connection is in closed state"
  */
@@ -16,7 +26,7 @@ export const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  // port: process.env.DB_PORT,
+  port: Number(process.env.DB_PORT),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -104,6 +114,174 @@ export function generateNormalRandom(mean, stdev) {
   const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   const raw = z0 * stdev + mean;
   const result = Math.max(0, Math.round(raw)); // ensures it's not negative
-  console.log("result: ", result);
   return result;
 }
+
+/**
+ * Gets the start year for each event in events
+ *
+ * TP: ChatGpt, prompt - "in the startYear object, make it so that it stores a start and end for each event.
+ * if the event type = "fixed" the value (start year) will be the event value is the start year, and currentsimulationyear is the end year.
+ * if event type = "uniform", the event.lower will be the start year and event.upper will be the end year
+ * if event type = "startWith" it will take the start year from the event it references by name"
+ *
+ * @param {*} events
+ * @returns Object {eventId: {startYear: int, endYear: int}}
+ */
+export const getEventYears = async (events) => {
+  const eventYears = {}; // Renamed from startYears
+  const endYears = {}; // To keep track of the latest end year for each event.
+
+  for (const event of events) {
+    const startObj =
+      typeof event.start === "string" ? JSON.parse(event.start) : event.start;
+    const durationObj =
+      typeof event.duration === "string"
+        ? JSON.parse(event.duration)
+        : event.duration;
+
+    let startYear, endYear;
+
+    // Determine start year based on event type
+    switch (startObj.type) {
+      case "fixed":
+        startYear = Number(startObj.value);
+        break;
+
+      case "normal":
+        startYear = Math.round(
+          sample_normal_distribution(startObj.mean, startObj.stdev)
+        );
+        break;
+
+      case "uniform":
+        startYear = sample_uniform_distribution(startObj.upper, startObj.lower);
+        break;
+
+      case "startWith":
+        const referencedEvent = events.find(
+          (e) => e.name === startObj.eventSeries
+        );
+
+        if (referencedEvent) {
+          const referencedStartObj =
+            typeof referencedEvent.start === "string"
+              ? JSON.parse(referencedEvent.start)
+              : referencedEvent.start;
+
+          if (referencedStartObj.type === "fixed") {
+            // the startYear for startWith event is the same as the referenced event's start year
+            startYear = Number(referencedStartObj.value);
+          } else {
+            console.error(
+              `Referenced event ${startObj.eventSeries} does not have a valid fixed start year.`
+            );
+            continue;
+          }
+        } else {
+          console.error(`Referenced event ${startObj.eventSeries} not found.`);
+          continue;
+        }
+        break;
+
+      case "startAfter":
+        const referencedEventAfter = events.find(
+          (e) => e.name === startObj.eventSeries
+        );
+
+        if (referencedEventAfter) {
+          const referencedEndYear = endYears[referencedEventAfter.id];
+
+          if (referencedEndYear) {
+            // Start the current event after the referenced event's end year
+            startYear = referencedEndYear + 1;
+          } else {
+            console.error(
+              `Referenced event ${startObj.eventSeries} does not have a valid end year.`
+            );
+            continue;
+          }
+        } else {
+          console.error(`Referenced event ${startObj.eventSeries} not found.`);
+          continue;
+        }
+        break;
+
+      default:
+        console.error(`Unknown event type: ${startObj.type}`);
+        continue;
+    }
+
+    if (event.type === "invest") {
+      // Ensure no overlapping invest events
+      for (const [otherEventId, otherEventData] of Object.entries(eventYears)) {
+        if (
+          (startYear >= otherEventData.startYear &&
+            startYear <= otherEventData.endYear) || // Overlapping check
+          (startYear + 1 >= otherEventData.startYear &&
+            startYear + 1 <= otherEventData.endYear)
+        ) {
+          // If overlap, adjust startYear to be after the other event's endYear
+          startYear = otherEventData.endYear + 1;
+          console.log(
+            `Adjusted start year for event ${event.id} to avoid overlap.`
+          );
+        }
+      }
+    }
+
+    if (event.type === "rebalance") {
+      // Ensure no overlapping rebalance events for the same tax status
+      const taxStatus = event.taxStatus; // Assuming event has a taxStatus property
+      for (const [otherEventId, otherEventData] of Object.entries(eventYears)) {
+        if (
+          otherEventData.type === "rebalance" && // Check only rebalance events
+          otherEventData.taxStatus === taxStatus && // Same tax status
+          ((startYear >= otherEventData.startYear &&
+            startYear <= otherEventData.endYear) || // Overlapping check
+            (startYear + 1 >= otherEventData.startYear &&
+              startYear + 1 <= otherEventData.endYear))
+        ) {
+          // If overlap, log an error and adjust startYear to avoid overlap
+          console.error(
+            `Overlap detected for rebalance events with tax status "${taxStatus}". Adjusting start year for event ${event.id}.`
+          );
+          startYear = otherEventData.endYear + 1;
+        }
+      }
+    }
+
+    // Calculate end year based on duration
+    switch (durationObj.type) {
+      case "fixed":
+        endYear = startYear + Number(durationObj.value);
+        break;
+
+      case "normal":
+        const normalDuration = generateNormalRandom(
+          durationObj.mean,
+          durationObj.stdev
+        );
+        endYear = startYear + Math.round(normalDuration); // Round to the nearest year
+        break;
+
+      case "uniform":
+        const uniformDuration = generateUniformRandom(
+          durationObj.lower,
+          durationObj.upper
+        );
+        endYear = startYear + Math.round(uniformDuration); // Round to the nearest year
+        break;
+
+      default:
+        console.error(`Unknown duration type: ${durationObj.type}`);
+        continue;
+    }
+
+    // Store the start and end year for the event
+    eventYears[event.id] = { startYear, endYear };
+    endYears[event.id] = endYear; // Store the end year of this event for future checks
+  }
+
+  return eventYears;
+};

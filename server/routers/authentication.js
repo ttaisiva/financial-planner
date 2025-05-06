@@ -3,8 +3,9 @@ let router = express.Router();
 import { OAuth2Client } from "google-auth-library";
 const client = new OAuth2Client();
 
-import { connectToDatabase } from "../server.js";
+// import { connectToDatabase } from "../server.js";
 import { createTablesIfNotExist } from "../db_tables.js";
+import { pool } from "../utils.js";
 
 // Provided by Google Identity Documentation
 async function verify(req) {
@@ -20,7 +21,7 @@ async function verify(req) {
   return ticket;
 }
 
-async function createAccount(connection, payload, names) {
+async function createAccount(payload, names) {
   const newUser = {
     id: payload["sub"],
     name: names.first,
@@ -28,11 +29,11 @@ async function createAccount(connection, payload, names) {
     email: payload["email"],
   };
   try {
-    //await createTablesIfNotExist(connection);
+    await createTablesIfNotExist();
     const sql =
       "INSERT INTO users (id, name, lastName, email) VALUES (?, ?, ?, ?)";
     const values = [newUser.id, newUser.name, newUser.lastName, newUser.email];
-    await connection.execute(sql, values);
+    await pool.execute(sql, values);
   } catch (err) {
     console.error("Error creating account:", err);
   }
@@ -41,15 +42,12 @@ async function createAccount(connection, payload, names) {
 router.post("/google/", async (req, res) => {
   const ticket = await verify(req).catch(console.error);
 
-
   // Once token is verified; Will create a session for user if account exists; create account then create session otherwise
-  const connection = await connectToDatabase();
   // Logic for checking if account exists; Done using id (unique Google ID)
   const sql = "SELECT id FROM users WHERE id=?";
   const params = [ticket.payload["sub"]];
-  const [rows] = await connection.execute(sql, params);
+  const [rows] = await pool.execute(sql, params);
   if (rows.length == 0) {
-    await connection.end();
     const userData = {
       name: ticket.payload["given_name"],
       lastName: ticket.payload["family_name"],
@@ -57,7 +55,6 @@ router.post("/google/", async (req, res) => {
     };
     res.status(201).json({ status: 201, userdata: userData });
   } else {
-    await connection.end();
     req.session.user = {
       id: ticket.payload["sub"],
       email: ticket.payload["email"],
@@ -66,69 +63,62 @@ router.post("/google/", async (req, res) => {
   }
 });
 
-
 router.get("/logout/", async (req, res) => {
-    console.log("Logout", req.session.user);
-    if (req.session.user) {
-        req.session.destroy((err) => {
-            if(err) {
-                console.error(err);
-                res.status(500).send('Error logging out');
-            } else {
-                res.send('Logged out');
-            }
-        })
-    }
-    else {
-        res.send("")
-    }
-})
+  console.log("Logout", req.session.user);
+  if (req.session.user) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error logging out");
+      } else {
+        res.send("Logged out");
+      }
+    });
+  } else {
+    res.send("");
+  }
+});
 
 router.post("/createAccount/", async (req, res) => {
   const ticket = await verify(req).catch(console.error);
   const names = { first: req.body.name, last: req.body.lastName };
 
-  const connection = await connectToDatabase();
   // Logic for checking if account exists; Done using id (unique Google ID)
   const sql = "SELECT id FROM users WHERE id=?";
   const params = [ticket.payload["sub"]];
-  const [rows] = await connection.execute(sql, params);
+  const [rows] = await pool.execute(sql, params);
   console.log(rows.length == 0, rows);
   if (rows.length == 0) {
     // Valid account creation
-    createAccount(connection, ticket.payload, names);
-    await connection.end();
+    createAccount(ticket.payload, names);
     req.session.user = {
       id: ticket.payload["sub"],
       email: ticket.payload["email"],
     };
     res.status(200).send();
   } else {
-    await connection.end();
     res.status(500).send();
   }
 });
 
 router.get("/isAuth/", async (req, res) => {
-    console.log("isAuth", req.session.user);
-    if (req.session.user == null) {
-        res.json({ name: "Guest", lastName: "", email: "" });
-    }
-    else {
-        console.log("isAuth", req.session.user['id']);
-        const connection = await connectToDatabase();
-        const sql = "SELECT * FROM users WHERE id=?";
-        const params = [req.session.user['id']];
-        const [rows] = await connection.execute(sql, params);
-        console.log("rows", rows);
-        const data = {
-            name: rows[0].name,
-            lastName: rows[0].lastName,
-            email: rows[0].email
-        }
-        res.json(data);
-    }
-})
+  console.log("isAuth", req.session.user);
+  if (req.session.user == null) {
+    res.json({ name: "Guest", lastName: "", email: "" });
+  } else {
+    console.log("isAuth", req.session.user["id"]);
+    const sql = "SELECT * FROM users WHERE id=?";
+    const params = [req.session.user["id"]];
+    const [rows] = await pool.execute(sql, params);
+    console.log("rows", rows);
+    const data = {
+      name: rows[0].name,
+      lastName: rows[0].lastName,
+      email: rows[0].email,
+    };
+    res.json(data);
+  }
+});
 
 async function authorize(req) {
   // Checks permissions

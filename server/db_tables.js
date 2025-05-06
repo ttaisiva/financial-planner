@@ -1,4 +1,4 @@
-import { connection } from "./server.js";
+import { pool } from "./utils.js";
 export async function createTablesIfNotExist() {
   const createTaxBracketsTable = `
     CREATE TABLE IF NOT EXISTS tax_brackets (
@@ -70,7 +70,7 @@ export async function createTablesIfNotExist() {
        PRIMARY KEY(id));
   `;
 
-  // User scenario info table has user_id which is foreign key to reference the user that owns the scenario
+  // Scenarios table has user_id which is foreign key to reference the user that owns the scenario
   const createScenariosTable = `
   CREATE TABLE IF NOT EXISTS scenarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -86,6 +86,19 @@ export async function createTablesIfNotExist() {
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
   `;
+
+  // Shared contains a list of user_ids paired with scenario ids and owner id to indicate that a user has shared access to another user's scenario
+  const sharedTable = `
+  CREATE TABLE IF NOT EXISTS shared (
+    owner_id VARCHAR(255) NOT NULL,
+    scenario_id INT NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    read_or_write ENUM('read', 'write'),
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  )
+  `
 
   // Create investment type table has scenario ID which references the scenario that the investment type is attached to
   const createInvestmentTypesTable = `
@@ -161,15 +174,17 @@ export async function createTablesIfNotExist() {
   `;
 
   // Create tables
-  await connection.execute(createTaxBracketsTable);
-  await connection.execute(createStateTaxBracketsTable);
-  await connection.execute(createStandardDeductionsTable);
-  await connection.execute(createCapitalGainsTaxTable);
-  await connection.execute(createRMDsTable);
-  await connection.execute(createUsersTable);
-  await connection.execute(createScenariosTable);
-  await connection.execute(createInvestmentsTable);
-  await connection.execute(createInvestmentTypesTable);
-  await connection.execute(createEventsTable);
-  await connection.execute(createStrategyTable);
+  
+  await pool.execute(createTaxBracketsTable);
+  await pool.execute(createStateTaxBracketsTable);
+  await pool.execute(createStandardDeductionsTable);
+  await pool.execute(createCapitalGainsTaxTable);
+  await pool.execute(createRMDsTable);
+  await pool.execute(createUsersTable);
+  await pool.execute(createScenariosTable);
+  await pool.execute(sharedTable);
+  await pool.execute(createInvestmentsTable);
+  await pool.execute(createInvestmentTypesTable);
+  await pool.execute(createEventsTable);
+  await pool.execute(createStrategyTable);
 }

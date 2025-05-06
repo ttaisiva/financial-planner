@@ -49,7 +49,7 @@ Input the following lines in the `.env` file:
 Edit with variables for assignment. Don't actually push variables.
 ```
 
-## 5. Run
+## 5. Run Application
 
 To run the client, run this command:
 
@@ -61,4 +61,22 @@ To run the server, run this command:
 
 ```
 nodemon server/server.js
+```
+
+## 6. Run Tests
+
+To run tests, run this command:
+
+```
+npm run test
+```
+
+To view the coverage of the tests along with running them, run either of the following commamds:
+
+```
+npm run test:coverage
+```
+
+```
+npx vitest run --coverage
 ```

@@ -179,21 +179,23 @@ const ExpenseWithdrawSettings = ({
         </p>
         {/* Drag and drop mechanism? */}
         <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext
-            key={expAccounts.map((a) => a.id).join(",")}
-            items={expAccounts.map((account) => account.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <ul>
-              {expAccounts.map((account) => (
-                <SortableInvestment
-                  key={account.id}
-                  id={account.id}
-                  account={account}
-                />
-              ))}
-            </ul>
-          </SortableContext>
+          {Array.isArray(expAccounts) && (
+            <SortableContext
+              key={expAccounts.map((a) => a.id).join(",")}
+              items={expAccounts.map((account) => account.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <ul>
+                {expAccounts.map((account) => (
+                  <SortableInvestment
+                    key={account.id}
+                    id={account.id}
+                    account={account}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          )}
         </DndContext>
       </div>
     </>
@@ -265,21 +267,23 @@ const RMDSettings = ({
           </p>
           {/* Drag and drop mechanism */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext
-              key={rmdAccounts.map((a) => a.id).join(",")}
-              items={rmdAccounts.map((account) => account.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <ul>
-                {rmdAccounts.map((account) => (
-                  <SortableInvestment
-                    key={account.id}
-                    id={account.id}
-                    account={account}
-                  />
-                ))}
-              </ul>
-            </SortableContext>
+            {Array.isArray(rmdAccounts) && (
+              <SortableContext
+                key={rmdAccounts.map((a) => a.id).join(",")}
+                items={rmdAccounts.map((account) => account.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul>
+                  {rmdAccounts.map((account) => (
+                    <SortableInvestment
+                      key={account.id}
+                      id={account.id}
+                      account={account}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            )}
           </DndContext>
         </div>
       )}
@@ -395,21 +399,23 @@ const RothConversionSettings = ({
           </p>
           {/* Drag and drop mechanism? */}
           <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext
-              key={rothAccounts.map((a) => a.id).join(",")}
-              items={rothAccounts.map((account) => account.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <ul>
-                {rothAccounts.map((account) => (
-                  <SortableInvestment
-                    key={account.id}
-                    id={account.id}
-                    account={account}
-                  />
-                ))}
-              </ul>
-            </SortableContext>
+            {Array.isArray(rothAccounts) && (
+              <SortableContext
+                key={rothAccounts.map((a) => a.id).join(",")}
+                items={rothAccounts.map((account) => account.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul>
+                  {rothAccounts.map((account) => (
+                    <SortableInvestment
+                      key={account.id}
+                      id={account.id}
+                      account={account}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            )}
           </DndContext>
         </div>
       )}
@@ -461,21 +467,23 @@ const SpendingSettings = ({ expenses, setExpenses, showEventsForm }) => {
       </p>
       {/* Drag and drop mechanism */}
       <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext
-          key={expenses.map((a) => a.id).join(",")}
-          items={expenses.map((expense) => expense.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <ul>
-            {expenses.map((expense) => (
-              <SortableExpense
-                key={expense.id}
-                id={expense.id}
-                expense={expense}
-              />
-            ))}
-          </ul>
-        </SortableContext>
+        {Array.isArray(expenses) && (
+          <SortableContext
+            key={expenses.map((a) => a.id).join(",")}
+            items={expenses.map((expense) => expense.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul>
+              {expenses.map((expense) => (
+                <SortableExpense
+                  key={expense.id}
+                  id={expense.id}
+                  expense={expense}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        )}
       </DndContext>
     </div>
   );
