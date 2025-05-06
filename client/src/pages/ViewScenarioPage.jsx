@@ -581,7 +581,7 @@ export const DisplaySimulationResults = ({ simulationResults }) => {
         <ShadedLineChart
            label={selectedOption}
            allSimulationResults={allSimulationResults.flat(1)}
-           financialGoal={selectedOption === "cashInvestments" ? financialGoal : null}
+           financialGoal={financialGoal}
          />
       </div>  
 

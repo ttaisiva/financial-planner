@@ -5,6 +5,7 @@ import { pool } from "../utils.js";
 import { calculateAdjustedExpense } from "./nondisc_expenses.js";
 import { logExpense } from "../logging.js";
 
+
 /**
  * Pays discretionary expenses based on the spending strategy and available cash.
  * @param {number} scenarioId - The ID of the scenario.
@@ -72,6 +73,7 @@ export async function payDiscExpenses(
       currentSimulationYear,
       inflationRate
     );
+    console.log("Expense cal: ", Number(expenseAmount));
 
     // Adjust for spouse death
     if (!isSpouseAlive) {
@@ -82,9 +84,10 @@ export async function payDiscExpenses(
 
     // Check if the expense is within the financial goal
     const totalAssetsAfterExpense = calculateTotalAssets(runningTotals);
+    console.log(" totalAssetsAfterExpense: ", totalAssetsAfterExpense);
     if (
       runningTotals.cashInvestment >= expenseAmount
-      // && totalAssetsAfterExpense < financialGoal
+       && totalAssetsAfterExpense >=  financialGoal
     ) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
@@ -93,9 +96,10 @@ export async function payDiscExpenses(
         evtlog,
         currentSimulationYear,
         expense.name,
-        expenseAmount,
+        Number(expenseAmount),
         "cash"
       );
+      //console.log("Expense AMT", Number(expenseAmount));
       actualDiscExpensesAmt += Number(expenseAmount); //this is for tracking if we paid the full amount of the disc expense or we still have money leftover
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
@@ -112,10 +116,10 @@ export async function payDiscExpenses(
         )
       );
       for (const investment of strategyInvestments) {
-        // if (remainingWithdrawal > financialGoal){
-        //   // only withdraw the amount while financial goal is valid
-        //   remainingWithdrawal -= financialGoal;
-        // }
+        if (remainingWithdrawal > financialGoal){
+          // only withdraw the amount while financial goal is valid
+          remainingWithdrawal -= financialGoal;
+        }
 
         if (remainingWithdrawal <= 0) break;
 
@@ -242,23 +246,28 @@ export function calculateExpenseAmount(
 ) {
   let amount = expense.initialAmount;
 
-  // Apply annual change
-  if (expense.changeAmtOrPct === "percent") {
-    const sampledChange = sample(expense.changeDistribution);
-    amount *= 1 + sampledChange;
-  } else if (expense.changeAmtOrPct === "amount") {
-    const sampledChange = sample(expense.changeDistribution);
-    amount += sampledChange;
+  // Calculate the number of years since the expense started
+  const startingYear = getEventStartYear(expense);
+  const yearsSinceStart = currentSimulationYear - startingYear;
+
+  // Apply annual changes for each year since the start
+  for (let i = 0; i < yearsSinceStart; i++) {
+    if (expense.changeAmtOrPct === "percent") {
+      const sampledChange = sample(expense.changeDistribution);
+      amount *= 1 + sampledChange;
+    } else if (expense.changeAmtOrPct === "amount") {
+      const sampledChange = sample(expense.changeDistribution);
+      amount += sampledChange;
+    }
+
+    // Apply inflation adjustment for each year
+    if (expense.inflationAdjusted) {
+      amount *= 1 + inflationRate;
+    }
   }
 
-  // Apply inflation adjustment
-  if (expense.inflationAdjusted) {
-    amount *= 1 + inflationRate;
-  }
-
-  return Number(amount);
+  return Number(amount).toFixed(2); // Round to 2 decimal places for precision
 }
-
 /**
  * Filters discretionary events to include only those that are currently active.
  * Waits for the start year and duration values before processing each event.
