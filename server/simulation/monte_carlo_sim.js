@@ -114,7 +114,7 @@ export async function simulation(
   // **Update Event Fields Based on dimParams**
   updateEventFields(dimParams, {
     incomeEvents,
-    investEventYears,
+    investEvents,
     rebalanceEvents,
   });
   for (let year = 0; year < totalYears; year++) {
@@ -251,7 +251,6 @@ export async function simulation(
       runningTotals,
       logs.evtlog
     );
-
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
@@ -312,10 +311,10 @@ export async function getTotalYears(date, scenarioId) {
  * Placeholder for calculating statistics from the simulation results.
  */
 export function calculateStats(simulationResults, financialGoal) {
-  console.log(
-    "Calculating statistics from simulation results",
-    simulationResults
-  );
+  // console.log(
+  //   "Calculating statistics from simulation results",
+  //   simulationResults
+  // );
 
   // Flatten the yearly results into a single array of cash investments
 
@@ -409,7 +408,7 @@ export async function getUserLifeExpectancy(scenarioId) {
     const [results] = await pool.execute(query, [scenarioId]);
     return sample(results[0].life_expectancy[0]);
   } catch (error) {
-    console.error("Error fetching user life expectancy:", error);
+    //console.error("Error fetching user life expectancy:", error);
     throw error; // Re-throw the error for the caller to handle
   }
 }
@@ -671,34 +670,52 @@ export const getExpenseEvents = async (scenarioId) => {
  * @param {Object} events - Object containing different event types (incomeEvents, investEventYears, rebalanceEvents).
  */
 function updateEventFields(dimParams, events) {
+  console.log("Updating event fields based on dimParams:", dimParams);
+  console.log("Events object:", events); // Log the events object
+
   if (!dimParams || dimParams.length === 0) return;
 
-  const is2D = dimParams[0].hasOwnProperty("param2"); // Check if param2 exists in the first entry
-
   for (const param of dimParams) {
-    const eventId = param.event; // Get the event ID from dimParams
+    const eventName = param.event; // Get the event ID from dimParams
 
     // Determine the event type and find the corresponding event
     let event = null;
     if (events.incomeEvents) {
-      event = events.incomeEvents.find((e) => e.id === eventId);
+      for (const incomeEvent of events.incomeEvents) {
+        if (incomeEvent.name === eventName) {
+          event = incomeEvent
+          break;
+        }
+      }
     }
     if (!event && events.investEventYears) {
-      event = events.investEventYears.find((e) => e.id === eventId);
+      for (const investEvent of events.investEventYears) {
+        if (investEvent.name === eventName) {
+          event = investEvent;
+          break;
+        }
+      }
     }
     if (!event && events.rebalanceEvents) {
-      event = events.rebalanceEvents.find((e) => e.id === eventId);
+      for (const rebalanceEvent of events.rebalanceEvents) {
+        if (rebalanceEvent.name === eventName) {
+          event = rebalanceEvent;
+          break;
+        }
+      }
     }
 
+    console.log("Event found:", event); // Log the found event
     if (event) {
-      if (is2D) {
-        // **2D Exploration: Update two fields**
-        updateEventField(event, Object.keys(param)[0], param.param1);
-        updateEventField(event, Object.keys(param)[1], param.param2);
-      } else {
-        // **1D Exploration: Update one field**
-        updateEventField(event, Object.keys(param)[0], param.param1);
+      for (const [key, value] of Object.entries(param)) {
+        if (key !== "event") {
+          updateEventField(event, key, value);
+        }
       }
+
+      console.log("Updated event:", event); // Log the updated event
+    } else {
+      console.warn(`Event with name "${eventName}" not found.`);
     }
   }
 }
@@ -710,7 +727,7 @@ function updateEventFields(dimParams, events) {
  * @param {any} value - The value to set for the field.
  */
 function updateEventField(event, field, value) {
-  if (!value) return;
+  if (value === undefined || value === null) return;
 
   switch (field) {
     case "startYear":
@@ -732,6 +749,10 @@ function updateEventField(event, field, value) {
         // Automatically calculate the percentage for the second investment
         event.assetAllocations[1].percentage = 100 - value;
       }
+      break;
+
+    case "enableRothOptimizer":
+      event.enableRothOptimizer = Boolean(value); // Update Roth optimizer flag
       break;
 
     default:

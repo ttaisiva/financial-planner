@@ -14,6 +14,7 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+import Plot from "react-plotly.js";
 
 // Register required Chart.js components
 ChartJS.register(LineElement, BarElement, CategoryScale, LinearScale, PointElement, annotationPlugin, Title, Tooltip, Legend, Filler);
@@ -504,4 +505,76 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
     </div>
   );
 
+}
+
+/**
+ * Contour Plot
+ * @param {Array} x - Array of x-axis values.
+ * @param {Array} y - Array of y-axis values.
+ * @param {Array} z - 2D array of z-axis values (corresponding to x and y).
+ * @param {string} title - Title of the plot.
+ * @param {string} xLabel - Label for the x-axis.
+ * @param {string} yLabel - Label for the y-axis.
+ */
+export function ContourPlot({ x, y, z, title, xLabel, yLabel }) {
+  return (
+    <div className="chart-container">
+      <Plot
+        data={[
+          {
+            z: z,
+            x: x,
+            y: y,
+            type: "contour",
+            colorscale: "Viridis",
+          },
+        ]}
+        layout={{
+          title: title,
+          xaxis: { title: xLabel },
+          yaxis: { title: yLabel },
+          autosize: true,
+        }}
+        style={{ width: "100%", height: "500px" }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Surface Plot
+ * @param {Array} x - Array of x-axis values.
+ * @param {Array} y - Array of y-axis values.
+ * @param {Array} z - 2D array of z-axis values (corresponding to x and y).
+ * @param {string} title - Title of the plot.
+ * @param {string} xLabel - Label for the x-axis.
+ * @param {string} yLabel - Label for the y-axis.
+ * @param {string} zLabel - Label for the z-axis.
+ */
+export function SurfacePlot({ x, y, z, title, xLabel, yLabel, zLabel }) {
+  return (
+    <div className="chart-container">
+      <Plot
+        data={[
+          {
+            z: z,
+            x: x,
+            y: y,
+            type: "surface",
+            colorscale: "Viridis",
+          },
+        ]}
+        layout={{
+          title: title,
+          scene: {
+            xaxis: { title: xLabel },
+            yaxis: { title: yLabel },
+            zaxis: { title: zLabel },
+          },
+          autosize: true,
+        }}
+        style={{ width: "100%", height: "500px" }}
+      />
+    </div>
+  );
 }
