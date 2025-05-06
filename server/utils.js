@@ -1,6 +1,10 @@
 import dotenv from "dotenv";
 import path from "path";
 import mysql from "mysql2/promise";
+import {
+  sample_normal_distribution,
+  sample_uniform_distribution,
+} from "./simulation/preliminaries.js";
 dotenv.config({ path: path.resolve("../.env") });
 dotenv.config();
 
@@ -146,12 +150,12 @@ export const getEventYears = async (events) => {
 
       case "normal":
         startYear = Math.round(
-          generateNormalRandom(startObj.mean, startObj.stdev)
+          sample_normal_distribution(startObj.mean, startObj.stdev)
         );
         break;
 
       case "uniform":
-        startYear = generateUniformRandom(startObj.lower, startObj.upper);
+        startYear = sample_uniform_distribution(startObj.upper, startObj.lower);
         break;
 
       case "startWith":
