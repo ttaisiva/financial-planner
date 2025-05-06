@@ -358,6 +358,7 @@ export function StackedBarChart({ allSimulationResults, breakdownType, aggregati
       });
     });
 
+    console.log("Processed", processed)
     return processed;
   };
 

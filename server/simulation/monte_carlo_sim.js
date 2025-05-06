@@ -223,6 +223,7 @@ export async function simulation(
     await payDiscExpenses(
       scenarioId,
       runningTotals,
+      financialGoal,
       currentSimulationYear,
       inflationRate,
       date,
