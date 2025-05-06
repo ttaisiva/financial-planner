@@ -22,9 +22,9 @@ export async function payDiscExpenses(
   date,
   isSpouseAlive
 ) {
-  // console.log(
-  //   `Paying discretionary expenses for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
-  // );
+  console.log(
+    `Paying discretionary expenses for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
+  );
 
   //pay prev year taxes here ...
 
@@ -48,7 +48,7 @@ export async function payDiscExpenses(
       adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
     };
   });
-  //console.log("Adjusted discretionary expenses:", adjustedExpenses);
+  console.log("Adjusted discretionary expenses:", adjustedExpenses);
   runningTotals.expenses.push(...adjustedExpenses);
 
   const totalDiscExpenses = activeEvents.reduce((sum, expense) => {
@@ -59,10 +59,12 @@ export async function payDiscExpenses(
     );
     return sum + expenseAmount;
   }, 0);
+  console.log("Total discretionary expenses for the year:", totalDiscExpenses);
 
   let remainingWithdrawal = totalDiscExpenses; // + taxes @Violet please add the taxes here so do let remainingWithdrawal = totalDiscExpenses + taxes
   //need to filter to only include the expenses that are currently active
   const spendingStrategy = await getSpendingStrategy(scenarioId);
+  console.log("Spending strategy fetched:", spendingStrategy);
 
   // Step 2: Sort discretionary expenses based on the spending strategy
   const sortedExpenses = spendingStrategy
@@ -71,6 +73,10 @@ export async function payDiscExpenses(
     )
     .filter(Boolean);
 
+  console.log(
+    "Sorted discretionary expenses based on spending strategy:",
+    sortedExpenses
+  );
 
   // Step 3: Iterate over discretionary expenses and pay them if cash is available
   let actualDiscExpensesAmt = 0;
@@ -81,34 +87,56 @@ export async function payDiscExpenses(
       inflationRate
     );
 
+    console.log(
+      `Processing expense: ${expense.name}, initial amount: ${expenseAmount}`
+    );
+
     // Adjust for spouse death
     if (!isSpouseAlive) {
+      console.log("expense amount: ", expenseAmount);
+      console.log("user fraction: ", expense.userFraction);
       const spousePortion = (
         expenseAmount *
         (1 - expense.userFraction)
       ).toFixed(2);
       expenseAmount -= spousePortion;
+      console.log(
+        `Spouse is not alive. Omitted spouse portion: ${spousePortion}. Adjusted expense amount: ${expenseAmount}`
+      );
     }
 
+    console.log("cashInvestment", runningTotals.cashInvestment);
 
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
+      console.log(
+        `Paid ${expense.name} using cash. Remaining cash: ${runningTotals.cashInvestment}`
+      );
       actualDiscExpensesAmt += Number(expenseAmount); //this is for tracking if we paid the full amount of the disc expense or we still have money leftover
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
       remainingWithdrawal =
         expenseAmount - Number(runningTotals.cashInvestment);
+      console.log(
+        `Insufficient cash for ${expense.name}. Remaining withdrawal needed: ${remainingWithdrawal}`
+      );
 
       // Perform withdrawals from investments
       const expenseWithdrawalStrategy = await getExpenseWithdrawalStrategy(
         scenarioId
       );
+      console.log(
+        "Expense withdrawal strategy fetched:",
+        expenseWithdrawalStrategy
+      );
+      console.log("investments", runningTotals.investments);
       let strategyInvestments = runningTotals.investments.filter((investment) =>
         expenseWithdrawalStrategy.some(
           (strategy) => strategy.investmentId === investment.id
         )
       );
+      console.log("strategy investments", strategyInvestments);
       for (const investment of strategyInvestments) {
         if (remainingWithdrawal <= 0) break;
 
@@ -120,7 +148,12 @@ export async function payDiscExpenses(
         // Calculate capital gain or loss
         let capitalGain = 0;
         if (investment.taxStatus === "non-retirement") {
+          console.log(
+            `Withdrawing from non-retirement account: ${investment.id}`
+          );
           const purchasePrice = runningTotals.purchasePrices;
+          console.log("purchase price", purchasePrice);
+          console.log("investment id", investment.id);
           const purchasePriceID =
             runningTotals.purchasePrices[String(investment.id)]; // Assuming purchasePrice is an object with investment IDs as keys
           const currentValueBeforeSale = investment.value;
@@ -129,16 +162,23 @@ export async function payDiscExpenses(
             capitalGain = withdrawalAmount - purchasePriceID;
           } else {
             const fractionSold = withdrawalAmount / currentValueBeforeSale;
+            console.log(`Fraction sold: ${fractionSold}`);
             capitalGain =
               (currentValueBeforeSale - purchasePriceID) * fractionSold;
           }
 
           runningTotals.curYearGains += capitalGain;
+          console.log(
+            `Updated curYearGains after withdrawal: ${runningTotals.curYearGains}`
+          );
         }
 
         // Update income for pre-tax retirement accounts
         if (investment.taxStatus === "pre-tax") {
           runningTotals.curYearIncome += withdrawalAmount;
+          console.log(
+            `Updated curYearIncome for pre-tax account. New value: ${runningTotals.curYearIncome}`
+          );
         }
 
         // Update early withdrawals for pre-tax or after-tax retirement accounts if under 59
@@ -148,6 +188,9 @@ export async function payDiscExpenses(
         }
 
         remainingWithdrawal -= withdrawalAmount;
+        console.log(
+          `Withdrew ${withdrawalAmount} from investment ${investment.id}. Remaining withdrawal: ${remainingWithdrawal}`
+        );
       }
 
       if (remainingWithdrawal > 0) {
@@ -165,9 +208,17 @@ export async function payDiscExpenses(
 
       // Deduct the expense amount from cash
       runningTotals.cashInvestment = 0;
+      console.log(
+        `Paid ${expense.name} using cash and withdrawals. Remaining cash: ${runningTotals.cashInvestment}`
+      );
     }
   }
   runningTotals.actualDiscExpenses = Number(actualDiscExpensesAmt); // Track the total discretionary expenses paid
+  console.log(
+    `Total discretionary expenses paid: ${Number(
+      runningTotals.actualDiscExpenses
+    )}`
+  );
 }
 
 /**
@@ -176,6 +227,7 @@ export async function payDiscExpenses(
  * @returns {Array} List of discretionary expenses.
  */
 async function getDiscretionaryExpenses(scenarioId) {
+  console.log(`Fetching discretionary expenses for scenario ID: ${scenarioId}`);
   const [rows] = await pool.execute(
     `SELECT 
             id,
@@ -192,6 +244,7 @@ async function getDiscretionaryExpenses(scenarioId) {
          WHERE scenario_id = ? AND type = 'expense' AND discretionary = 1`,
     [scenarioId]
   );
+  console.log("Discretionary expenses fetched:", rows);
   return rows.map((row) => ({
     ...row,
     changeDistribution: row.changeDistribution,
@@ -205,6 +258,7 @@ async function getDiscretionaryExpenses(scenarioId) {
  * @returns {Array} Ordered list of discretionary expense names.
  */
 async function getSpendingStrategy(scenarioId) {
+  console.log(`Fetching spending strategy for scenario ID: ${scenarioId}`);
   const [rows] = await pool.execute(
     `SELECT expense_id, strategy_order
          FROM strategy
@@ -212,6 +266,8 @@ async function getSpendingStrategy(scenarioId) {
          ORDER BY strategy_order ASC`,
     [scenarioId]
   );
+
+  console.log("Spending strategy fetched:", rows);
 
   return rows;
 }
@@ -242,6 +298,7 @@ export function calculateExpenseAmount(
 
   if (expense.inflationAdjusted) {
     amount *= 1 + inflationRate;
+    console.log(`Applied inflation adjustment. New adjustedAmount: ${amount}`);
   }
 
   return Number(amount);
@@ -263,7 +320,9 @@ async function filterActiveDiscretionaryEvents(
   for (const event of discretionaryEvents) {
     // Wait for the start year and duration values
     const startYear = await getEventStartYear(event);
+    console.log("start year", startYear);
     const duration = await getEventDuration(event);
+    console.log("duration", duration);
     const endYear = startYear + duration;
 
     // Check if the current year is within the event's active period
@@ -281,6 +340,9 @@ async function filterActiveDiscretionaryEvents(
  * @returns {Promise<Array>} Ordered list of investments for expense withdrawal.
  */
 export async function getExpenseWithdrawalStrategy(scenarioId) {
+  console.log(
+    `Fetching expense withdrawal strategy for scenario ID: ${scenarioId}`
+  );
 
   // Fetch the withdrawal strategy from the database
   const [rows] = await pool.execute(
@@ -291,6 +353,7 @@ export async function getExpenseWithdrawalStrategy(scenarioId) {
     [scenarioId]
   );
 
+  console.log("Expense withdrawal strategy fetched:", rows);
 
   // Return the ordered list of investment IDs and their strategy order
   return rows.map((row) => ({

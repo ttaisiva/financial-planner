@@ -56,7 +56,7 @@ function processQueue() {
       reject(new Error(message.error));
     }
     // LOG THIS
-    //console.log(`Worker ${workerIndex} completed a simulation, with results:`, message.result);
+    console.log(`Worker ${workerIndex} completed a simulation, with results:`, message.result);
     processQueue(); // Process the next task in the queue
   });
 
@@ -80,7 +80,7 @@ function processQueue() {
  * @returns {Promise} A promise that resolves with the results of all simulations.
  */
 export async function managerSimulation(date, numSimulations, userId, scenarioId, dimParams) {
-  //console.log("RUNNING Monte Carlo simulation WITH parallelism.");
+  console.log("RUNNING Monte Carlo simulation WITH parallelism.");
 
   // Question: should we do 1 worker per one simulation?
   const tasks = []; // Store all the tasks/simulations
@@ -96,18 +96,18 @@ export async function managerSimulation(date, numSimulations, userId, scenarioId
     };
 
     // Each of the promises/results are collected in task array
-    //console.log(`Adding task ${i + 1} to the queue.`);
+    console.log(`Adding task ${i + 1} to the queue.`);
     tasks.push(addTaskToQueue(taskData));
   }
-  //console.log(`Total tasks to run: ${tasks.length}`);
+  console.log(`Total tasks to run: ${tasks.length}`);
   // Once all individual tasks/simulations are resolved, Promise.all aggregates all results
   const allSimulationResults = await Promise.all(tasks);
-  //console.log("All simulations completed. Number of results:", allSimulationResults.length);
+  console.log("All simulations completed. Number of results:", allSimulationResults.length);
 
 
   // Aggregate results and calculate statistics
   const financialGoal = await getFinancialGoal(scenarioId); // Fetch the financial goal
-  //console.log("Financial goal fetched:", financialGoal);
+  console.log("Financial goal fetched:", financialGoal);
   const stats = calculateStats(allSimulationResults, financialGoal);
   return stats;
 }

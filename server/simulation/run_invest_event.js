@@ -71,7 +71,7 @@ export async function runInvestEvent(
         });
       }
     } else {
-      //console.log("No excess cash available to allocate to investments");
+      console.log("No excess cash available to allocate to investments");
     }
   }
 }
@@ -232,7 +232,7 @@ async function applyGlideAssetAllocation({
   const yearDuration = currentYear - simulationStartYear;
   const adjustedLimit =
     afterTaxContributionLimit * Math.pow(1 + inflationRate, yearDuration);
-  //console.log("AFTER TAX LIMIT: ", adjustedLimit);
+  console.log("AFTER TAX LIMIT: ", adjustedLimit);
 
   let remainingToAllocate = amountToAllocate;
   const uncappedAllocations = {};
@@ -336,7 +336,7 @@ async function applyFixedAssetAllocation({
   const yearDuration = currentYear - simulationStartYear;
   const adjustedLimit =
     afterTaxContributionLimit * Math.pow(1 + inflationRate, yearDuration);
-  //console.log("Inflation-adjusted after-tax limit: ", adjustedLimit);
+  console.log("Inflation-adjusted after-tax limit: ", adjustedLimit);
 
   let remainingToAllocate = amountToAllocate;
   const uncappedAllocations = {};
