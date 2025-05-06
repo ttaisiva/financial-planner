@@ -58,7 +58,7 @@ export async function runInvestEvent(
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
           runningTotals,
-          evtlog: evtlog
+          evtlog: evtlog,
         });
       } else {
         applyFixedAssetAllocation({
@@ -71,7 +71,7 @@ export async function runInvestEvent(
           baseRetirementLimit: afterTaxContributionLimit,
           simulationStartYear: date,
           runningTotals,
-          evtlog: evtlog
+          evtlog: evtlog,
         });
       }
     }
@@ -119,7 +119,6 @@ export const getInvestEvents = async (scenarioId) => {
     "SELECT * FROM events WHERE scenario_id = ? AND type = 'invest'",
     [scenarioId]
   );
-
 
   return rows;
 };
@@ -173,7 +172,7 @@ async function applyGlideAssetAllocation({
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
   runningTotals,
-  evtlog
+  evtlog,
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -233,7 +232,7 @@ async function applyGlideAssetAllocation({
       const availableRoom = Math.max(adjustedLimit, 0); // Expandable: subtract already contributed this year
       const cappedAmount = Math.min(proposedAmount, availableRoom);
 
-      const newValue = (currentValue + cappedAmount).toFixed(2);
+      const newValue = Math.round((currentValue + cappedAmount) * 100) / 100;
       target.value = newValue;
       remainingToAllocate -= cappedAmount;
       logInvest(evtlog, currentYear, event.name, cappedAmount, target.type);
@@ -269,7 +268,7 @@ async function applyGlideAssetAllocation({
     const weight = percent / totalUncappedWeight;
     const reallocAmount = remainingToAllocate * weight;
 
-    const newValue = (currentValue + reallocAmount).toFixed(2);
+    const newValue = Math.round((currentValue + reallocAmount) * 100) / 100;
     target.value = newValue;
     logInvest(evtlog, currentYear, event.name, reallocAmount, target.type);
 
@@ -294,7 +293,7 @@ async function applyFixedAssetAllocation({
   afterTaxContributionLimit = 6500,
   simulationStartYear = 2023,
   runningTotals,
-  evtlog
+  evtlog,
 }) {
   const event = await getEventById(eventId);
   if (!event) {
@@ -333,11 +332,10 @@ async function applyFixedAssetAllocation({
       const availableRoom = Math.max(adjustedLimit, 0);
       const cappedAmount = Math.min(proposedAmount, availableRoom);
 
-      const newValue = (currentValue + cappedAmount).toFixed(2);
+      const newValue = Math.round((currentValue + cappedAmount) * 100) / 100;
       target.value = newValue;
       remainingToAllocate -= cappedAmount;
       logInvest(evtlog, currentYear, event.name, cappedAmount, target.type);
-
 
       // Update the matching purchase price
       if (runningTotals.purchasePrices.hasOwnProperty(target.id)) {
@@ -370,7 +368,7 @@ async function applyFixedAssetAllocation({
     const weight = percent / totalUncappedWeight;
     const reallocAmount = remainingToAllocate * weight;
 
-    const newValue = (currentValue + reallocAmount).toFixed(2);
+    const newValue = Math.round((currentValue + reallocAmount) * 100) / 100;
     target.value = newValue;
     logInvest(evtlog, currentYear, event.name, reallocAmount, target.type);
 

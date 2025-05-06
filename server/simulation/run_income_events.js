@@ -50,17 +50,20 @@ export async function process_income_event(
       `No income events found for scenario ID ${scenarioId}. Skipping income event processing.`
     );
     return; // Return early if no income events found
-  
   }
 
   let activeIncomeEvents = [];
   for (const event of incomeEvents) {
-
-    if (!isActiveIncomeEvent(event.id, currentSimulationYear, incomeEventsStart, incomeEventsDuration)) {
+    if (
+      !isActiveIncomeEvent(
+        event.id,
+        currentSimulationYear,
+        incomeEventsStart,
+        incomeEventsDuration
+      )
+    ) {
       continue; // Skip inactive events
     }
-
-
 
     let currentAmount = 0;
     let prevAmount = previousYearAmounts[event.id] || 0;
@@ -68,24 +71,22 @@ export async function process_income_event(
       const sampledChange = sample(event.changeDistribution);
       const percentageChange = (prevAmount * sampledChange) / 100; // Calculate percentage change
       currentAmount = Number(previousYearAmounts[event.id]) + percentageChange;
-      
     } else {
       const sampledChange = sample(event.changeDistribution);
       currentAmount =
         Number(previousYearAmounts[event.id]) + Number(sampledChange);
-      
     }
     // Apply inflation adjustment
     if (event.inflationAdjusted) {
       currentAmount *= 1 + inflationRate;
-      currentAmount = currentAmount.toFixed(2);
+      currentAmount = Math.round(currentAmount * 100) / 100;
       event.adjustedAmount = currentAmount;
     }
 
     if (!isUserAlive) {
       const userPortion = (Number(event.userFraction) / 100) * currentAmount;
       currentAmount -= userPortion;
-      currentAmount = currentAmount.toFixed(2);
+      currentAmount = Math.round(currentAmount * 100) / 100;
     }
     if (!isSpouseAlive) {
       const spousePortion =
@@ -93,20 +94,16 @@ export async function process_income_event(
       currentAmount -= spousePortion;
     }
 
-    event.adjustedAmount = Number(currentAmount).toFixed(2); // Store adjusted amount in the event object
+    event.adjustedAmount = Math.round(currentAmount * 100) / 100; // Store adjusted amount in the event object
 
-    // Add to cash investment and income totals 
-    runningTotals.cashInvestment = (
-      Number(runningTotals.cashInvestment) + Number(currentAmount)
-    ).toFixed(2);
-    runningTotals.curYearIncome = (
-      Number(runningTotals.curYearIncome) + Number(currentAmount)
-    ).toFixed(2);
+    // Add to cash investment and income totals
+    runningTotals.cashInvestment =
+      Number(runningTotals.cashInvestment) + Number(currentAmount);
+    runningTotals.curYearIncome =
+      Number(runningTotals.curYearIncome) + Number(currentAmount);
     logIncome(evtlog, currentSimulationYear, event.name, currentAmount);
-      
 
     activeIncomeEvents.push(event);
-
 
     if (event.isSocialSecurity) {
       runningTotals.curYearSS =
@@ -115,11 +112,9 @@ export async function process_income_event(
 
     previousYearAmounts[event.id] = currentAmount;
   }
-  
+
   runningTotals.incomes = activeIncomeEvents; // Store active income events in running totals
-
 }
-
 
 /**
  * Fetches and calculates necessary data for an income event from the database.
@@ -134,7 +129,6 @@ export async function getIncomeEvents(
   incomeEventsDuration,
   currentSimulationYear
 ) {
-
   const [rows] = await pool.execute(
     `SELECT 
             id,
@@ -278,10 +272,14 @@ export function getEventDuration(event) {
  * @param {Object} incomeEventsDuration - An object mapping event IDs to their durations.
  * @returns {boolean} True if the event is active, false otherwise.
  */
-function isActiveIncomeEvent(eventId, currentSimulationYear, incomeEventsStart, incomeEventsDuration) {
+function isActiveIncomeEvent(
+  eventId,
+  currentSimulationYear,
+  incomeEventsStart,
+  incomeEventsDuration
+) {
   const startYear = incomeEventsStart[eventId];
   const duration = incomeEventsDuration[eventId];
-
 
   // Check if the event starts in the future
   if (startYear > currentSimulationYear) {
@@ -296,5 +294,3 @@ function isActiveIncomeEvent(eventId, currentSimulationYear, incomeEventsStart, 
   console.log(`Event ID: ${eventId} is active.`);
   return true;
 }
-
-

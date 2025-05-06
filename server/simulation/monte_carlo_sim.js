@@ -37,7 +37,9 @@ export async function simulation(
   scenarioId,
   dimParams
 ) {
-  console.log(`Running ${numSimulations} simulation for scenario ${scenarioId}`);
+  console.log(
+    `Running ${numSimulations} simulation for scenario ${scenarioId}`
+  );
   const logs = await initLogs(userId); // open log files for writing
   if (!logs.evtlog) throw new Error("evtlog is undefined after initialization");
 
@@ -55,7 +57,6 @@ export async function simulation(
   let spouseLifeExpect = await getSpouseLifeExpectancy(scenarioId);
 
   let spouseDeathYear = spouseBirthYear + spouseLifeExpect;
-
 
   let isUserAlive = true;
   let isSpouseAlive = true;
@@ -188,7 +189,6 @@ export async function simulation(
 
       // if spouse is dead, change marital status to single
       if (!isSpouseAlive) {
-
         // Change tax filing status to single
         runningTotals.maritalStatus = "single";
       }
@@ -200,11 +200,11 @@ export async function simulation(
       scenarioId,
       incomeEvents,
       runningTotals,
-      taxData,
+      taxData
     );
     logTaxes(logs.evtlog, currentSimulationYear, taxes);
     if (taxes) {
-      runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
+      runningTotals.taxes.push(Math.round(taxes * 100) / 100); // Store taxes for the year
     }
 
     await payNonDiscExpenses(
@@ -250,6 +250,12 @@ export async function simulation(
       logs.evtlog
     );
 
+    // console.log("investments: ", runningTotals.investments);
+    console.log(
+      `${currentSimulationYear} Year Capital Gains: ${runningTotals.curYearGains}`
+    );
+    console.log("purchase prices end:", runningTotals.purchasePrices);
+
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
@@ -266,7 +272,6 @@ export async function simulation(
         JSON.stringify(runningTotals.actualDiscExpenses)
       ),
     });
-
 
     logResults(
       logs.csvlog,
@@ -285,7 +290,6 @@ export async function simulation(
   simulationResults.push(yearlyResults);
 
   logs.evtlog.end(); // close the event log file
-
 
   return simulationResults;
 }
@@ -329,7 +333,6 @@ export function calculateStats(simulationResults, financialGoal) {
       return val;
     })
     .filter((val) => !isNaN(val));
-
 
   // Calculate mean
   const total = allCashInvestments.reduce(
@@ -513,7 +516,7 @@ async function getPurchasePrices(scenarioId) {
   );
 
   const investmentMap = rows.reduce((acc, row) => {
-    acc[row.id] = row.value;
+    acc[row.id] = Number(row.value);
     return acc;
   }, {});
 

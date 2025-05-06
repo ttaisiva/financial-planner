@@ -21,8 +21,6 @@ export async function runRebalanceEvents(
   runningTotals,
   evtlog
 ) {
-  const purchasePrices = runningTotals.purchasePrices;
-
   for (const rebalanceEvent of rebalanceEvents) {
     const eventYears = rebalanceEventYears[rebalanceEvent.id];
     if (!eventYears) continue;
@@ -43,28 +41,55 @@ export async function runRebalanceEvents(
       totalPortfolioValue += Number(investment?.value || 0);
     }
 
-
-    // Step 2: Calculate target values based on allocation
-    const targetValues = {};
+    // Step 2: Process sales of investments
     for (const investmentId in assetAllocation) {
-      targetValues[investmentId] =
-        totalPortfolioValue * assetAllocation[investmentId];
-    }
-
-    // Step 3: Update investments to match target values
-    for (const investmentId in targetValues) {
-      const targetValue = targetValues[investmentId];
-
-      // Find the matching investment in the array
       const investment = runningTotals.investments.find(
         (inv) => inv.id === investmentId
       );
 
-      if (investment) {
-        // Update the value of the matching investment
-        investment.value = targetValue;
-      } else {
-        console.error(`Investment with ID "${investmentId}" not found.`);
+      if (!investment) continue;
+
+      console.log(
+        `Investment ID: ${investmentId}, purchase price: ${runningTotals.purchasePrices[investmentId]}`
+      );
+
+      const targetValue =
+        Math.round(totalPortfolioValue * assetAllocation[investmentId] * 100) /
+        100;
+
+      if (investment.value > targetValue) {
+        // Calculate the amount to sell
+        const amountToSell = investment.value - targetValue;
+
+        // Calculate capital gains if the tax status is not "pre-tax non-retirement"
+        if (investment.taxStatus !== "pre-tax non-retirement") {
+          runningTotals.curYearGains =
+            Math.round((runningTotals.curYearGains + amountToSell) * 100) / 100;
+        }
+
+        // Update the investment value after the sale
+        investment.value = Number(investment.value) - amountToSell;
+      } else if (investment.value < targetValue) {
+        // Calculate the amount to buy
+        const amountToBuy =
+          Math.round((targetValue - investment.value) * 100) / 100;
+
+        console.log(
+          `Investment ID: ${investmentId}, amount to buy: ${amountToBuy}`
+        );
+        // Update the investment value after the purchase
+        investment.value = Number(investment.value) + amountToBuy;
+
+        // Update purchase prices
+        const purchasePrice = Number(
+          runningTotals.purchasePrices[investmentId]
+        );
+
+        const newPurchasePrice =
+          Math.round((purchasePrice + amountToBuy) * 100) / 100;
+
+        console.log("new purchase price", newPurchasePrice);
+        runningTotals.purchasePrices[investmentId] = newPurchasePrice;
       }
     }
   }

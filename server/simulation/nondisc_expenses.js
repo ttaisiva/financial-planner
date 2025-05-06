@@ -31,12 +31,10 @@ export async function payNonDiscExpenses(
   taxes,
   evtlog
 ) {
-
   // Fetch non-discretionary expenses
   const nonDiscretionaryExpenses = await getNonDiscretionaryExpenses(
     scenarioId
   );
- 
 
   // Filter active non-discretionary events
   const activeEvents = await filterActiveNonDiscretionaryEvents(
@@ -51,18 +49,16 @@ export async function payNonDiscExpenses(
       inflationRate
     );
 
-
     // Adjust for spouse death
     if (!isSpouseAlive) {
-      const spousePortion = (adjustedAmount * (1 - event.userFraction)).toFixed(
-        2
-      );
+      const spousePortion =
+        Math.round(adjustedAmount * (1 - event.userFraction) * 100) / 100;
       adjustedAmount -= spousePortion;
     }
 
     return {
       ...event,
-      adjustedAmount: adjustedAmount.toFixed(2), // Store the adjusted amount
+      adjustedAmount: Math.round(adjustedAmount * 100) / 100, // Store the adjusted amount
     };
   });
   runningTotals.expenses.push(...adjustedExpenses);
@@ -74,11 +70,9 @@ export async function payNonDiscExpenses(
       currentSimulationYear,
       inflationRate
     );
-    return (sum + expenseAmount).toFixed(2);
+    return Math.round((sum + expenseAmount) * 100) / 100;
   }, 0);
 
-
-  
   let remainingWithdrawal = totalNonDiscExpenses + taxes;
 
   // Iterate over non-discretionary expenses and pay them
@@ -92,7 +86,13 @@ export async function payNonDiscExpenses(
     if (runningTotals.cashInvestment >= expenseAmount) {
       // Pay the expense using cash
       runningTotals.cashInvestment -= expenseAmount;
-      logExpense(evtlog, currentSimulationYear, expense.name, expenseAmount, "cash");
+      logExpense(
+        evtlog,
+        currentSimulationYear,
+        expense.name,
+        expenseAmount,
+        "cash"
+      );
     } else {
       // Not enough cash, calculate the remaining amount to withdraw
       remainingWithdrawal =
@@ -124,8 +124,14 @@ export async function payNonDiscExpenses(
             runningTotals.purchasePrices[String(investment.id)];
           const currentValueBeforeSale = investment.value;
           investment.value -= withdrawalAmount;
-          logExpense(evtlog, currentSimulationYear, expense.name, withdrawalAmount, investment.type);
-          
+          logExpense(
+            evtlog,
+            currentSimulationYear,
+            expense.name,
+            withdrawalAmount,
+            investment.type
+          );
+
           if (investment.value === 0) {
             capitalGain = withdrawalAmount - purchasePriceID;
           } else {
