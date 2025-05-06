@@ -119,8 +119,16 @@ export function ShadedLineChart({ label, allSimulationResults, financialGoal }) 
           if (!yearlyData[year]) {
             yearlyData[year] = [];
           }
+          if (selectedOption === "allInvestments") {
+            // Calculate the total value of all investments for the year
+            const totalInvestment = yearlyResult.investments.reduce(
+              (sum, investment) => sum + Number(investment.value),
+              0
+            );
+            yearlyData[year].push(totalInvestment);
 
-          if (selectedOption !== "discExpenses"){
+          }
+          else if (selectedOption !== "discExpenses"){
             console.log("NOT DISCRETIONARY EXPENSES: ", yearlyResult[selectedOption]);
             const value = yearlyResult[selectedOption]; // e.g., cashInvestment, curYearIncome, etc.
 
