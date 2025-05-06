@@ -23,6 +23,65 @@ ChartJS.register(
   Legend
 );
 
+/**
+ * Compiles 2D arrays for final probabilities of success and final median total investments.
+ * @param {Object} simulationResults - The simulation results object.
+ * @param {number} financialGoal - The financial goal to calculate probabilities of success.
+ * @returns {Object} An object containing 2D arrays for probabilities and median investments.
+ */
+function compile2DResults(simulationResults, financialGoal) {
+  const { results, param1Values, param2Values } = simulationResults;
+
+  // Initialize 2D arrays for probabilities and median investments
+  const probabilities2D = [];
+  const medianInvestments2D = [];
+
+  // Loop through param1Values (x-axis)
+  for (let i = 0; i < param1Values.length; i++) {
+    const probabilitiesRow = [];
+    const medianInvestmentsRow = [];
+
+    // Loop through param2Values (y-axis)
+    for (let j = 0; j < param2Values.length; j++) {
+      // Calculate the index in the allSimulationResults array
+      const simulationIndex = i * param2Values.length + j;
+
+      // Get all simulations for this parameter combination
+      const simulations = results.allSimulationResults[simulationIndex]?.[0];
+
+      if (simulations) {
+        // Calculate the probability of success
+        const successCount = simulations.filter(
+          (simulation) => simulation.cashInvestment >= financialGoal
+        ).length;
+        const probability = (successCount / simulations.length) * 100;
+
+        // Calculate the median total investments
+        const totalInvestments = simulations.map(
+          (simulation) => simulation.cashInvestment
+        );
+        totalInvestments.sort((a, b) => a - b);
+        const medianInvestment =
+          totalInvestments[Math.floor(totalInvestments.length / 2)];
+
+        // Add the values to the respective rows
+        probabilitiesRow.push(probability);
+        medianInvestmentsRow.push(medianInvestment);
+      } else {
+        // If no simulations exist, push null
+        probabilitiesRow.push(null);
+        medianInvestmentsRow.push(null);
+      }
+    }
+
+    // Add the rows to the 2D arrays
+    probabilities2D.push(probabilitiesRow);
+    medianInvestments2D.push(medianInvestmentsRow);
+  }
+
+  return { probabilities2D, medianInvestments2D };
+}
+
 export const Exploration1D = ({
   simulationResults,
   eventNames,
@@ -301,6 +360,7 @@ export const Exploration2D = ({
   const [stepSize2, setStepSize2] = useState(1);
   const [enableRothOptimizer, setEnableRothOptimizer] = useState(false); // State for Roth optimizer
   const [simulationResults, setSimulationResults] = useState(null); // State to store simulation results
+  const [selectedMetric, setSelectedMetric] = useState("probabilities"); // State for selected metric
 
   const parameterOptions = [
     { value: "startYear", label: "Start Year" },
@@ -407,28 +467,42 @@ export const Exploration2D = ({
 
   const render2DResults = (simulationResults) => {
     if (!simulationResults) return null;
+    console.log("2D Simulation Results:", simulationResults);
 
-    const { results, param1Values, param2Values } = simulationResults;
+    const { probabilities2D, medianInvestments2D } = compile2DResults(
+      simulationResults,
+      simulationResults.financialGoal
+    );
+
+    // Allow the user to select which metric to use as the z-axis
+    const zResults =
+      selectedMetric === "probabilities"
+        ? probabilities2D
+        : medianInvestments2D;
 
     return (
       <div>
         <h3>2D Simulation Results</h3>
         <div className="plot-container">
           <SurfacePlot
-            x={param1Values}
-            y={param2Values}
-            z={results}
+            x={simulationResults.param1Values}
+            y={simulationResults.param2Values}
+            z={zResults}
             title="Surface Plot"
             xLabel="Parameter 1"
             yLabel="Parameter 2"
-            zLabel="Simulation Result"
+            zLabel={
+              selectedMetric === "probabilities"
+                ? "Probability of Success (%)"
+                : "Median Investments"
+            }
           />
         </div>
         <div className="plot-container">
           <ContourPlot
-            x={param1Values}
-            y={param2Values}
-            z={results}
+            x={simulationResults.param1Values}
+            y={simulationResults.param2Values}
+            z={zResults}
             title="Contour Plot"
             xLabel="Parameter 1"
             yLabel="Parameter 2"
@@ -585,6 +659,20 @@ export const Exploration2D = ({
         />
       </label>
       <br />
+
+      {/* Dropdown for selecting metric */}
+      <label>
+        Select Metric:
+        <select
+          value={selectedMetric}
+          onChange={(e) => setSelectedMetric(e.target.value)}
+        >
+          <option value="probabilities">Probability of Success</option>
+          <option value="medianInvestments">Median Investments</option>
+        </select>
+      </label>
+      <br />
+
       {/* Run Simulations Button */}
       <button onClick={handleRun2DSimulations}>Run Simulations</button>
 
