@@ -82,28 +82,44 @@ function processQueue() {
 export async function managerSimulation(date, numSimulations, userId, scenarioId, dimParams) {
   console.log("RUNNING Monte Carlo simulation WITH parallelism.");
 
-  // Question: should we do 1 worker per one simulation?
   const tasks = []; // Store all the tasks/simulations
 
-  // dimParams will be undefined if this is not an exploration simulation
-  for (let i = 0; i < numSimulations; i++) {
-    const taskData = {
-      date,
-      numSimulations: 1, // Each task runs one simulation
-      userId,
-      scenarioId,
-      dimParams,
-    };
+  if (dimParams && dimParams.length > 0) {
+    // If dimParams is not empty, create a task for each combination
+    console.log("dimParams detected. Adding tasks for each parameter combination.");
+    dimParams.forEach((param, index) => {
+      const taskData = {
+        date,
+        numSimulations: 1, // Each task runs one simulation
+        userId,
+        scenarioId,
+        dimParams: [param], // Pass the individual parameter combination
+      };
 
-    // Each of the promises/results are collected in task array
-    console.log(`Adding task ${i + 1} to the queue.`);
-    tasks.push(addTaskToQueue(taskData));
+      console.log(`Adding task for parameter combination ${index + 1}:`, param);
+      tasks.push(addTaskToQueue(taskData));
+    });
+  } else {
+    // Regular simulation logic when dimParams is empty
+    console.log("No dimParams detected. Proceeding with regular simulations.");
+    for (let i = 0; i < numSimulations; i++) {
+      const taskData = {
+        date,
+        numSimulations: 1, // Each task runs one simulation
+        userId,
+        scenarioId,
+        dimParams, // Pass undefined or empty dimParams
+      };
+
+      console.log(`Adding task ${i + 1} to the queue.`);
+      tasks.push(addTaskToQueue(taskData));
+    }
   }
+
   console.log(`Total tasks to run: ${tasks.length}`);
   // Once all individual tasks/simulations are resolved, Promise.all aggregates all results
   const allSimulationResults = await Promise.all(tasks);
   console.log("All simulations completed. Number of results:", allSimulationResults.length);
-
 
   // Aggregate results and calculate statistics
   const financialGoal = await getFinancialGoal(scenarioId); // Fetch the financial goal

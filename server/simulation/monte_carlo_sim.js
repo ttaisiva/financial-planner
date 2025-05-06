@@ -69,6 +69,22 @@ export async function simulation(
   const incomeEvents = await getIncomeEvents(scenarioId, []);
   const expenseEvents = await getExpenseEvents(scenarioId);
 
+  // populate years and durations for invest events
+  let investEvents = await getInvestEvents(scenarioId);
+  let investEventYears = await getEventYears(investEvents);
+
+  // populate years and durations for rebalance events
+  let rebalanceEvents = await getRebalanceEvents(scenarioId);
+  let rebalanceEventYears = await getEventYears(rebalanceEvents);
+
+  // **Update Event Fields Based on dimParams**
+  updateEventFields(dimParams, {
+    expenseEvents,
+    incomeEvents,
+    investEvents,
+    rebalanceEvents,
+  });
+
   const runningTotals = {
     cashInvestment: cashInvestment,
     curYearIncome: 0,
@@ -97,24 +113,9 @@ export async function simulation(
 
   let afterTaxContributionLimit = await getAfterTaxLimit(scenarioId);
 
-  // populate years and durations for invest events
-  let investEvents = await getInvestEvents(scenarioId);
-  let investEventYears = await getEventYears(investEvents);
-
-  // populate years and durations for rebalance events
-  let rebalanceEvents = await getRebalanceEvents(scenarioId);
-  let rebalanceEventYears = await getEventYears(rebalanceEvents);
-
   // log investments before any changes
 
   logResults(logs.csvlog, logs.csvStream, runningTotals.investments, date - 1);
-
-  // **Update Event Fields Based on dimParams**
-  updateEventFields(dimParams, {
-    incomeEvents,
-    investEvents,
-    rebalanceEvents,
-  });
 
   for (let year = 0; year < totalYears; year++) {
     //years in which the simulation is  being run
@@ -787,16 +788,21 @@ function updateEventFields(dimParams, events) {
         }
       }
     }
+    if (!event && events.expenseEvents) {
+      for (const expenseEvent of events.expenseEvents) {
+        if (expenseEvent.name === eventName) {
+          event = expenseEvent;
+          break;
+        }
+      }
+    }
 
-    console.log("Event found:", event); // Log the found event
     if (event) {
       for (const [key, value] of Object.entries(param)) {
         if (key !== "event") {
           updateEventField(event, key, value);
         }
       }
-
-      console.log("Updated event:", event); // Log the updated event
     } else {
       console.warn(`Event with name "${eventName}" not found.`);
     }
