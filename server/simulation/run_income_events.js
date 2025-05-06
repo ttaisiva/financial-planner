@@ -96,10 +96,10 @@ export async function process_income_event(
     if (!isSpouseAlive) {
       const spousePortion = (1 - Number(event.userFraction)) * currentAmount;
       currentAmount -= spousePortion;
-      console.log(
-        "Spouse is dead. Removed spouse portion. Adjusted amount to: ",
-        currentAmount
-      );
+      // console.log(
+      //   "Spouse is dead. Removed spouse portion. Adjusted amount to: ",
+      //   currentAmount
+      // );
     }
 
     event.adjustedAmount = Math.round(currentAmount * 100) / 100; // Store adjusted amount in the event object
@@ -299,6 +299,6 @@ function isActiveIncomeEvent(
     return false;
   }
 
-  console.log(`Event ID: ${eventId} is active.`);
+  // console.log(`Event ID: ${eventId} is active.`);
   return true;
 }

@@ -49,10 +49,6 @@ export async function runRebalanceEvents(
 
       if (!investment) continue;
 
-      console.log(
-        `Investment ID: ${investmentId}, purchase price: ${runningTotals.purchasePrices[investmentId]}`
-      );
-
       const targetValue =
         Math.round(totalPortfolioValue * assetAllocation[investmentId] * 100) /
         100;
@@ -74,9 +70,6 @@ export async function runRebalanceEvents(
         const amountToBuy =
           Math.round((targetValue - investment.value) * 100) / 100;
 
-        console.log(
-          `Investment ID: ${investmentId}, amount to buy: ${amountToBuy}`
-        );
         // Update the investment value after the purchase
         investment.value = Number(investment.value) + amountToBuy;
 
@@ -88,7 +81,6 @@ export async function runRebalanceEvents(
         const newPurchasePrice =
           Math.round((purchasePrice + amountToBuy) * 100) / 100;
 
-        console.log("new purchase price", newPurchasePrice);
         runningTotals.purchasePrices[investmentId] = newPurchasePrice;
       }
     }

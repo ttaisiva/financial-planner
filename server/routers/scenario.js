@@ -289,6 +289,61 @@ router.post("/run-simulation", async (req, res) => {
   }
 });
 
+router.post("/run-1d-simulation", async (req, res) => {
+  try {
+    const { selectedEvent, parameter, values, enableRothOptimizer } = req.body;
+    const scenarioId = req.query.id;
+
+    console.log("1D Simulation request received:", {
+      scenarioId,
+      selectedEvent,
+      parameter,
+      values,
+      enableRothOptimizer,
+    });
+
+    // Check if the user is authenticated
+    if (!req.session.user) {
+      return res.status(401).json({ error: "User is not authenticated" });
+    }
+
+    const userId = req.session.user.id; // Get the authenticated user's ID
+
+    // Initialize results array
+    const simulationResults = [];
+
+    // Re-seed the PRNG for consistent results
+    const seed = "fixed-seed"; // Use a fixed seed for reproducibility
+    Math.seedrandom(seed);
+
+    // Perform simulations for each parameter value
+    for (const value of values) {
+      console.log(`Running simulation for parameter value: ${value}`);
+
+      // Call the Monte Carlo simulation manager function
+      const result = await managerSimulation(
+        new Date().getFullYear(), // Current year
+        1000, // Number of simulations (can be adjusted)
+        userId,
+        scenarioId,
+        [{ parameter, value }], // Pass the parameter and its value
+        pool,
+        enableRothOptimizer
+      );
+
+      // Store the result for this parameter value
+      simulationResults.push({ parameterValue: value, result });
+    }
+
+    // Send the results back to the client
+    console.log("1D Simulations completed successfully.");
+    res.json(simulationResults);
+  } catch (error) {
+    console.error("Error running 1D simulations:", error);
+    res.status(500).send("Failed to run 1D simulations");
+  }
+});
+
 router.post("/run-2d-simulation", async (req, res) => {
   const { parameter1, parameter2, combinations, enableRothOptimizer } =
     req.body;

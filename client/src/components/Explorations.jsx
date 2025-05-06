@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 
-export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEvents }) => {
+export const Exploration1D = ({
+  runSimulations,
+  eventNames,
+  eventTypes,
+  investEvents,
+}) => {
   const [selectedInvestEvent, setSelectedInvestEvent] = useState("");
   const [selectedEvent, setSelectedEvent] = useState("");
   const [parameter, setParameter] = useState("");
@@ -21,6 +26,51 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
     }
   };
 
+  const handleRun1DSimulations = async () => {
+    console.log("Running 1D simulations...");
+    if (parameter && selectedEvent && lowerBound < upperBound && stepSize > 0) {
+      // Generate values for the parameter
+      const paramValues = [];
+      for (let value = lowerBound; value <= upperBound; value += stepSize) {
+        paramValues.push(value);
+      }
+
+      try {
+        // Send parameter values to the backend
+        const response = await fetch(
+          `http://localhost:3000/api/run-1d-simulation?id=${scenarioId}`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              selectedEvent,
+              parameter,
+              values: paramValues,
+              enableRothOptimizer,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to run 1D simulations");
+        }
+
+        const result = await response.json();
+        console.log("1D Simulation Results:", result);
+
+        // Handle the result (e.g., update chart data)
+        // setChartData(result);
+      } catch (error) {
+        console.error("Error running 1D simulations:", error);
+      }
+    } else {
+      alert("Please provide valid inputs.");
+    }
+  };
+
   return (
     <div>
       <h3>1D Scenario Parameter Exploration</h3>
@@ -28,7 +78,10 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
       {/* Dropdown for selecting an event */}
       <label>
         Select Event:
-        <select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)}>
+        <select
+          value={selectedEvent}
+          onChange={(e) => setSelectedEvent(e.target.value)}
+        >
           <option value="">Select Event</option>
           {eventNames.map((eventName, index) => (
             <option key={index} value={eventName}>
@@ -41,7 +94,10 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
       {/* Dropdown for selecting a parameter */}
       <label>
         Select Parameter:
-        <select value={parameter} onChange={(e) => setParameter(e.target.value)}>
+        <select
+          value={parameter}
+          onChange={(e) => setParameter(e.target.value)}
+        >
           <option value="">Select Parameter</option>
           <option value="startYear">Start Year</option>
           <option value="duration">Duration</option>
@@ -79,24 +135,30 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
         </>
       )}
       <br />
-      
+
       {/* Dropdown for selecting an investment event */}
       <label>
         Select Asset Allocation for invest event:
-        <select value={selectedInvestEvent} onChange={(e) => setSelectedInvestEvent(e.target.value)}>
+        <select
+          value={selectedInvestEvent}
+          onChange={(e) => setSelectedInvestEvent(e.target.value)}
+        >
           <option value="">No Asset Allocation selected</option>
           {investEvents.map((event) => (
             <option key={event.id} value={event.name}>
               {event.name} (
               {Object.entries(event.allocations)
-                .map(([assetName, percentage]) => `${assetName}: ${percentage * 100}%`)
+                .map(
+                  ([assetName, percentage]) =>
+                    `${assetName}: ${percentage * 100}%`
+                )
                 .join(", ")}
               )
             </option>
           ))}
         </select>
       </label>
-      <br /> 
+      <br />
 
       {/* Checkbox for enabling/disabling Roth optimizer */}
       <label>
@@ -110,13 +172,18 @@ export const Exploration1D = ({ runSimulations, eventNames, eventTypes, investEv
       <br />
 
       {/* Run Simulations Button */}
-      <button onClick={handleRun}>Run Simulations</button>
-      
+      <button onClick={handleRun1DSimulations}>Run Simulations</button>
     </div>
   );
 };
 
-export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEvents, scenarioId }) => {
+export const Exploration2D = ({
+  runSimulations,
+  eventNames,
+  eventTypes,
+  investEvents,
+  scenarioId,
+}) => {
   const [selectedEvent, setSelectedEvent] = useState("");
   const [selectedInvestEvent, setSelectedInvestEvent] = useState(""); // State for selected asset allocation
   const [parameter1, setParameter1] = useState(""); // State for the first parameter
@@ -183,21 +250,24 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
 
       try {
         // Send combinations to the backend
-        const response = await fetch(`http://localhost:3000/api/run-2d-simulation?id=${scenarioId}`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            selectedEvent,
-            selectedInvestEvent, // Include selected asset allocation
-            parameter1,
-            parameter2,
-            combinations,
-            enableRothOptimizer, // Include Roth optimizer state
-          }),
-        });
+        const response = await fetch(
+          `http://localhost:3000/api/run-2d-simulation?id=${scenarioId}`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              selectedEvent,
+              selectedInvestEvent, // Include selected asset allocation
+              parameter1,
+              parameter2,
+              combinations,
+              enableRothOptimizer, // Include Roth optimizer state
+            }),
+          }
+        );
 
         if (response.ok) {
           const results = await response.json();
@@ -221,7 +291,10 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
       {/* Dropdown for selecting an event */}
       <label>
         Select Event:
-        <select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)}>
+        <select
+          value={selectedEvent}
+          onChange={(e) => setSelectedEvent(e.target.value)}
+        >
           <option value="">Select Event</option>
           {eventNames.map((eventName, index) => (
             <option key={index} value={eventName}>
@@ -327,13 +400,19 @@ export const Exploration2D = ({ runSimulations, eventNames, eventTypes, investEv
       {/* Dropdown for selecting an investment event */}
       <label>
         Select Asset Allocation for invest event:
-        <select value={selectedInvestEvent} onChange={(e) => setSelectedInvestEvent(e.target.value)}>
+        <select
+          value={selectedInvestEvent}
+          onChange={(e) => setSelectedInvestEvent(e.target.value)}
+        >
           <option value="">No Asset Allocation selected</option>
           {investEvents.map((event) => (
             <option key={event.id} value={event.name}>
               {event.name} (
               {Object.entries(event.allocations)
-                .map(([assetName, percentage]) => `${assetName}: ${percentage * 100}%`)
+                .map(
+                  ([assetName, percentage]) =>
+                    `${assetName}: ${percentage * 100}%`
+                )
                 .join(", ")}
               )
             </option>

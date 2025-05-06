@@ -36,7 +36,6 @@ export async function performRMDs(
   runningTotals,
   evtlog
 ) {
-
   // Step a: Get the user's birth year and calculate their age
   const userBirthYear = await getUserBirthYear(scenarioId);
   const userAge = currentSimulationYear - userBirthYear;
@@ -95,7 +94,7 @@ export async function performRMDs(
         taxStatus: "non-retirement",
         value: 0,
       };
-      console.log("in RMD: creating new target investment", targetInvestment);
+      // console.log("in RMD: creating new target investment", targetInvestment);
       runningTotals.investments.push(targetInvestment);
     }
 
