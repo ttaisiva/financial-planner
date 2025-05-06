@@ -23,13 +23,18 @@ export async function runRothOptimizer(
       logRothConversion(evtlog, year, pretax.type, "Roth Conversion", pretax.value);
       pretax.value = 0;
     }
-    const newInvestment = {
+    const existingInvestment = runningTotals.investments.find(investment => investment.id === "Roth Conversion after-tax");
+    if (existingInvestment) {
+      existingInvestment.value += pretaxTotal;
+    } else {
+      const newInvestment = {
       id: "Roth Conversion after-tax",
       type: "Roth Conversion",
       taxStatus: "after-tax",
       value: pretaxTotal,
-    };
-    runningTotals.investments.push(newInvestment);
+      };
+      runningTotals.investments.push(newInvestment);
+    }
     let resInvestment = runningTotals.investments;
     return { resInvestment, rothStrategy };
   }
