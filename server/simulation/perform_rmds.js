@@ -36,70 +36,44 @@ export async function performRMDs(
   runningTotals,
   evtlog
 ) {
-  console.log(
-    `Starting RMD process for scenario ID: ${scenarioId}, year: ${currentSimulationYear}`
-  );
 
   // Step a: Get the user's birth year and calculate their age
   const userBirthYear = await getUserBirthYear(scenarioId);
   const userAge = currentSimulationYear - userBirthYear;
-  console.log(`User birth year: ${userBirthYear}, current age: ${userAge}`);
 
-  // Check if the user is at least 74 and has pre-tax investments
   if (userAge < 73) {
-    console.log(`No RMD required for user age ${userAge}.`);
     return; // No RMD required
   }
 
-  console.log(`User is eligible for RMD. Fetching pre-tax investments...`);
-
-  // Step b: Fetch pre-tax investments
-  console.log("My investments", runningTotals.investments);
   const preTaxInvestments = await getPreTaxInvestments(
     runningTotals.investments
   );
-
-  console.log(`Found ${preTaxInvestments.length} pre-tax investments.`);
 
   if (preTaxInvestments.length === 0) {
     console.warn("No pre-tax investments found. Skipping RMD process.");
     return; // No pre-tax investments
   }
 
-  // Step c: Lookup distribution period (d) from the RMD table
-  console.log(`Fetching RMD distribution period for age ${userAge}...`);
   const rmdTable = await getRMDTable();
   const distributionPeriod = rmdTable[userAge];
   if (!distributionPeriod) {
     console.error(`No distribution period found for age ${userAge}.`);
     throw new Error(`No distribution period found for age ${userAge}`);
   }
-  console.log(`Distribution period for age ${userAge}: ${distributionPeriod}`);
 
-  // Step d: Calculate the sum of pre-tax investment values (s)
   const totalPreTaxValue = preTaxInvestments.reduce(
     (sum, inv) => sum + Number(inv.value),
     0
   );
-  console.log(`Total pre-tax investment value: ${totalPreTaxValue}`);
 
-  // Step e: Calculate the RMD (rmd = s / d)
   let rmd = totalPreTaxValue / Number(distributionPeriod);
-  rmd = Math.round(rmd * 100) / 100; // Round to 2 decimal places
-  console.log(`Calculated RMD: ${rmd}`);
+  rmd = Math.round(rmd * 100) / 100;
 
   // Step f: Add RMD to curYearIncome
   runningTotals.curYearIncome =
     Number(runningTotals.curYearIncome) + Number(rmd);
-  console.log(
-    `Updated curYearIncome after adding RMD: ${runningTotals.curYearIncome}`
-  );
 
-  // Step g: Transfer investments in-kind to non-retirement accounts
   let remainingRMD = Number(rmd);
-  console.log(`Starting in-kind transfer of investments to satisfy RMD...`);
-
-  // Transfer investments from pre-tax to non-retirement accounts
 
   for (const inv of preTaxInvestments) {
     if (remainingRMD <= 0) break;
@@ -107,37 +81,26 @@ export async function performRMDs(
     const transferAmount = Math.min(Number(inv.value), remainingRMD);
     remainingRMD -= transferAmount;
     logRMD(evtlog, currentSimulationYear, inv.id, transferAmount);
-    console.log(
-      `Transferring $${transferAmount} from investment ID ${inv.id}. Remaining RMD: ${remainingRMD}`
-    );
 
-    // Check if a non-retirement investment with the same type exists
     let targetInvestment = runningTotals.investments.find(
       (investment) =>
         investment.type === inv.type &&
         investment.taxStatus === "non-retirement"
     );
 
-    if (targetInvestment) {
-      console.log("Target investment found with: ", targetInvestment);
-    } else {
-      //if not found make one
-      console.log("Target investment not found. Creating new one.");
-      // Create a new non-retirement investment
+    if (!targetInvestment) {
       targetInvestment = {
         id: `${inv.type} non-retirement`,
-        investment_type: inv.type,
+        type: inv.type,
         taxStatus: "non-retirement",
         value: 0,
       };
-      runningTotals.investments.push(targetInvestment); // Add the new investment to the investments array
+      console.log("in RMD: creating new target investment", targetInvestment);
+      runningTotals.investments.push(targetInvestment);
     }
 
-    //update investment
     transfer(inv, targetInvestment, transferAmount);
   }
-
-  console.log("RMD process completed.");
 }
 
 /**
@@ -145,20 +108,17 @@ export async function performRMDs(
  * @returns {Object} An object where the keys are ages and the values are distribution periods.
  */
 export async function getRMDTable() {
-  console.log("Fetching RMD table from the database...");
   try {
     // Query the RMD table
     const [rows] = await pool.execute(
       `SELECT age, distribution_period FROM rmds ORDER BY age ASC`
     );
 
-    // Convert the rows into an object for easy lookup
     const rmdTable = {};
     rows.forEach((row) => {
       rmdTable[row.age] = row.distribution_period;
     });
 
-    console.log("RMD table fetched successfully.");
     return rmdTable;
   } catch (error) {
     console.error("Error fetching RMD table from the database:", error);

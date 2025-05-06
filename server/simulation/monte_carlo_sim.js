@@ -14,7 +14,7 @@ import { payDiscExpenses } from "./disc_expenses.js";
 import { getRothYears } from "./roth_optimizer.js";
 import { getRothStrategy } from "./roth_optimizer.js";
 import { getInvestEvents, runInvestEvent } from "./run_invest_event.js";
-import { initLogs } from "../logging.js";
+import { initLogs, logTaxes } from "../logging.js";
 import { logResults } from "../logging.js";
 import {
   generateNormalRandom,
@@ -37,7 +37,11 @@ export async function simulation(
   scenarioId,
   dimParams
 ) {
+  console.log(
+    `Running ${numSimulations} simulation for scenario ${scenarioId}`
+  );
   const logs = await initLogs(userId); // open log files for writing
+  if (!logs.evtlog) throw new Error("evtlog is undefined after initialization");
 
   const totalYears = await getTotalYears(date, scenarioId);
 
@@ -53,8 +57,6 @@ export async function simulation(
   let spouseLifeExpect = await getSpouseLifeExpectancy(scenarioId);
 
   let spouseDeathYear = spouseBirthYear + spouseLifeExpect;
-
-  //console.log("Spouse Life Expectancy Year:", spouseDeathYear);
 
   let isUserAlive = true;
   let isSpouseAlive = true;
@@ -115,7 +117,6 @@ export async function simulation(
     investEvents,
     rebalanceEvents,
   });
-
   for (let year = 0; year < totalYears; year++) {
     //years in which the simulation is  being run
 
@@ -123,7 +124,6 @@ export async function simulation(
     const inflationRate = await run_preliminaries(scenarioId);
 
     const currentSimulationYear = date + year; //actual year being simulated
-    // console.log("********CURRENT YEAR********", currentSimulationYear);
 
     if (year === 0) {
       // Populate the object with initial amounts based on event IDs
@@ -166,7 +166,7 @@ export async function simulation(
       const rothResult = await runRothOptimizer(
         scenarioId,
         rothStrategy,
-        incomeEvents,
+        runningTotals.curYearIncome,
         currentSimulationYear,
         logs.evtlog,
         runningTotals
@@ -189,7 +189,6 @@ export async function simulation(
 
       // if spouse is dead, change marital status to single
       if (!isSpouseAlive) {
-
         // Change tax filing status to single
         runningTotals.maritalStatus = "single";
       }
@@ -201,10 +200,12 @@ export async function simulation(
       scenarioId,
       incomeEvents,
       runningTotals,
-      taxData
+      taxData,
+      currentSimulationYear,
+      logs.evtlog
     );
     if (taxes) {
-      runningTotals.taxes.push(Number(taxes.toFixed(2))); // Store taxes for the year
+      runningTotals.taxes.push(Math.round(taxes * 100) / 100); // Store taxes for the year
     }
 
     await payNonDiscExpenses(
@@ -214,19 +215,22 @@ export async function simulation(
       inflationRate,
       date,
       isSpouseAlive,
-      taxes
+      taxes,
+      logs.evtlog
     );
 
     //Step 6: Pay discretionary expenses
     await payDiscExpenses(
       scenarioId,
       runningTotals,
+      financialGoal,
       currentSimulationYear,
       inflationRate,
-      date
+      date,
+      isSpouseAlive,
+      logs.evtlog
     );
 
-    // console.log("CASH BEFORE INVEST EVENTS: ", runningTotals.cashInvestment);
     // Step 7: Invest Events
     await runInvestEvent(
       currentSimulationYear,
@@ -235,31 +239,18 @@ export async function simulation(
       runningTotals,
       inflationRate,
       afterTaxContributionLimit,
-      date
+      date,
+      logs.evtlog
     );
-    // console.log("CASH AFTER INVEST EVENTS: ", runningTotals.cashInvestment);
-    // console.log(
-    //   "INVESTMENTS BEFORE REBALANCE EVENTS: ",
-    //   runningTotals.investments
-    // );
 
     // Step 8: Rebalance investments
     await runRebalanceEvents(
       currentSimulationYear,
       rebalanceEvents,
       rebalanceEventYears,
-      runningTotals
+      runningTotals,
+      logs.evtlog
     );
-
-    // console.log(
-    //   "INVESTMENTS AFTER REBALANCE EVENTS: ",
-    //   runningTotals.investments
-    // );
-
-    // console.log(
-    //   `Year ${currentSimulationYear} cash results: `,
-    //   runningTotals.cashInvestment
-    // );
     yearlyResults.push({
       year: currentSimulationYear,
       cashInvestment: runningTotals.cashInvestment,
@@ -277,19 +268,7 @@ export async function simulation(
       ),
     });
 
-    console.log("Logging yearlyResults for incomes, expenses, and taxes:");
-    yearlyResults.forEach((result) => {
-      // console.log(`Year ${result.year}:`);
-      // // Log incomes
-      // console.log("Incomes:");
-      // console.log(JSON.stringify(result.incomes, null, 2));
-      // // Log expenses
-      // console.log("Expenses:");
-      // console.log(JSON.stringify(result.expenses, null, 2));
-      // Log taxes
-      // console.log("Taxes:");
-      // console.log(JSON.stringify(result.taxes, null, 2));
-    });
+ 
 
     logResults(
       logs.csvlog,
@@ -302,14 +281,13 @@ export async function simulation(
     runningTotals.expenses = []; // Reset expenses for the next year
     runningTotals.incomes = []; // Reset incomes for the next year
     runningTotals.taxes = []; // Reset taxes for the next year
+  
   }
   logs.csvlog.end(); // close the csv log file
 
   simulationResults.push(yearlyResults);
 
   logs.evtlog.end(); // close the event log file
-
-  //console.log("Returning simulationResults: ", simulationResults);
 
   return simulationResults;
 }
@@ -321,14 +299,10 @@ export async function simulation(
  * @returns {number} The total number of years for the simulation.
  */
 export async function getTotalYears(date, scenarioId) {
-  //   console.log("Date: ", date);
   const userBirthYear = Number(await getUserBirthYear(scenarioId));
-  //   console.log("User birth year: ", userBirthYear);
   const userLifeExpectancy = Number(await getUserLifeExpectancy(scenarioId));
-  //   console.log("User life expectancy: ", userLifeExpectancy);
 
   const userLifespan = userBirthYear + userLifeExpectancy;
-  //   console.log("User lifespan: ", userLifespan);
 
   return userLifespan - date;
 }
@@ -358,32 +332,22 @@ export function calculateStats(simulationResults, financialGoal) {
     })
     .filter((val) => !isNaN(val));
 
-  //console.log("all Cash investments: ", allCashInvestments);
-
   // Calculate mean
   const total = allCashInvestments.reduce(
     (sum, value) => Number(sum) + Number(value),
     0
   );
-  // console.log("total: ", total);
   const mean = total / allCashInvestments.length;
-  // console.log("mean: ", mean);
 
-  // Calculate median
   const sorted = [...allCashInvestments].sort((a, b) => a - b);
-  //console.log("sorted: ", sorted);
   const mid = Math.floor(sorted.length / 2);
 
   const median =
     sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 
-  // Calculate other statistics (e.g., min, max)
   const min = Math.min(...allCashInvestments);
- // console.log("min: ", min);
   const max = Math.max(...allCashInvestments);
-  // console.log("max: ", max);
 
-  //console.log("Simulation Results to return: ", simulationResults);
   return {
     median,
     mean,
@@ -401,7 +365,6 @@ export function calculateStats(simulationResults, financialGoal) {
  * @returns
  */
 async function initInvestments(scenarioId) {
-  console.log("Fetching user-defined investments for the scenario.");
   const [rows] = await pool.execute(
     `SELECT 
             id,
@@ -413,7 +376,6 @@ async function initInvestments(scenarioId) {
          WHERE scenario_id = ?`,
     [scenarioId]
   );
-  //   console.log("Simulation investments initialized.", rows);
   return rows;
 }
 
@@ -426,7 +388,6 @@ export async function getUserBirthYear(scenarioId) {
   const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
   try {
     const [results] = await pool.execute(query, [scenarioId]);
-    //console.log("results user birth year", [results]);
     return results[0]?.birth_years[0] || 0; // Return the birth year or 0 if not found
   } catch (error) {
     console.error("Error fetching user birth year:", error);
@@ -445,7 +406,6 @@ export async function getUserLifeExpectancy(scenarioId) {
             FROM scenarios WHERE id = ?`;
   try {
     const [results] = await pool.execute(query, [scenarioId]);
-    //console.log("results user life expectancy: ", results);
     return sample(results[0].life_expectancy[0]);
   } catch (error) {
     //console.error("Error fetching user life expectancy:", error);
@@ -462,7 +422,6 @@ export async function getSpouseBirthYear(scenarioId) {
   const query = `SELECT birth_years FROM scenarios WHERE id = ?`;
   try {
     const [results] = await pool.execute(query, [scenarioId]);
-    // console.log("results user birth year", [results]);
     return results[0]?.birth_years[1] || 0; // Return the birth year or 0 if not found
   } catch (error) {
     console.error("Error fetching spouse birth year:", error);
@@ -483,16 +442,9 @@ export async function getSpouseLifeExpectancy(scenarioId) {
   try {
     const [checkResults] = await pool.execute(queryCheck, [scenarioId]);
     if (checkResults[0].marital_status === "individual") {
-     // console.log("marital status is individual, no spouse life expectancy");
       return 0; // No spouse life expectancy if marital status is individual
     }
-    // console.log("marital status is not individual, spouse life expectancy");
     const [results] = await pool.execute(query, [scenarioId]);
-    // console.log("results spouse life expectancy: ", results);
-    // console.log(
-    //   "spouse life expectancy from db: ",
-    //   results[0].life_expectancy[0]
-    // );
     return sample(results[0].life_expectancy[1]);
   } catch (error) {
     console.error("Error fetching spouse life expectancy:", error);
@@ -506,7 +458,6 @@ export async function getSpouseLifeExpectancy(scenarioId) {
  * @returns
  */
 export async function getFilingStatus(scenarioId) {
-  //console.log("Fetching filing status from the database...");
   const [rows] = await pool.execute(
     `SELECT 
         marital_status
@@ -542,8 +493,6 @@ async function getAfterTaxLimit(scenarioId) {
     [scenarioId]
   );
 
-  //   console.log("after tax cont limit:", rows[0].after_tax_contribution_limit);
-
   return rows[0].value;
 }
 
@@ -559,7 +508,7 @@ async function getPurchasePrices(scenarioId) {
   );
 
   const investmentMap = rows.reduce((acc, row) => {
-    acc[row.id] = row.value;
+    acc[row.id] = Number(row.value);
     return acc;
   }, {});
 
@@ -576,35 +525,15 @@ export async function populateYearsAndDuration(
   incomeEventsStart,
   incomeEventsDuration
 ) {
- // console.log("Populating start years and durations for income events...");
-
   for (const event of incomeEvents) {
-    // console.log("events: ", event);
-    // console.log("event ID: ", event.id);
-    // console.log("income events start: ", incomeEventsStart);
-
-    // Populate start year if not already calculated
     if (!incomeEventsStart[event.id]) {
       incomeEventsStart[event.id] = getEventStartYear(event);
-      // console.log(
-      //   `Calculated start year for event ID ${event.id}: ${
-      //     incomeEventsStart[event.id]
-      //   }`
-      // );
     }
 
-    // Populate duration if not already calculated
     if (!incomeEventsDuration[event.id]) {
       incomeEventsDuration[event.id] = getEventDuration(event);
-      console.log(
-        `Calculated duration for event ID ${event.id}: ${
-          incomeEventsDuration[event.id]
-        }`
-      );
     }
   }
-
-  console.log("Finished populating start years and durations.");
 }
 
 /**
@@ -614,16 +543,13 @@ export async function populateYearsAndDuration(
  * @returns All tax brackets in an Object
  */
 const getTaxData = async (scenarioID, year) => {
-  //console.log("scneerairo", scenarioID, year);
   // Get scenario
   const scnQuery = `
     SELECT * FROM scenarios
     WHERE id = ?
   `;
   const [scenario] = (await pool.execute(scnQuery, [scenarioID]))[0];
-  //console.log(scenario.marital_status);
 
-  // Get federal income tax brackets
   const fedQuery = `
     SELECT * FROM tax_brackets
     WHERE year = ? AND filing_status = ?
@@ -641,7 +567,6 @@ const getTaxData = async (scenarioID, year) => {
     fedTaxBrackets = fedTaxBrackets[0];
   }
 
-  // Get state income tax brackets
   const stateQuery = `
     SELECT * FROM state_tax_brackets
     WHERE year = ? AND filing_status = ? AND state = ?
@@ -663,7 +588,6 @@ const getTaxData = async (scenarioID, year) => {
     stateTaxBrackets = stateTaxBrackets[0];
   }
 
-  // Get capital gains tax brackets
   const cptQuery = `
     SELECT * FROM capital_gains_tax
     WHERE year = ? AND filing_status = ?
@@ -681,7 +605,6 @@ const getTaxData = async (scenarioID, year) => {
     capitalTaxBrackets = capitalTaxBrackets[0];
   }
 
-  //Get deductions
   const deductionQuery = `
     SELECT * FROM standard_deductions
     WHERE filing_status = ? AND year = ?
@@ -721,14 +644,10 @@ export async function getFinancialGoal(scenarioId) {
     );
 
     if (rows.length === 0) {
-      //console.log(`No financial goal found for scenario ID: ${scenarioId}`);
       return null; // Return null if no financial goal is found
     }
 
     const financialGoal = rows[0].financial_goal;
-    // console.log(
-    //   `Financial goal for scenario ID ${scenarioId}: $${financialGoal}`
-    // );
     return financialGoal;
   } catch (error) {
     console.error("Error fetching financial goal:", error);
@@ -741,8 +660,6 @@ export const getExpenseEvents = async (scenarioId) => {
     "SELECT * FROM events WHERE scenario_id = ? AND type = 'expense'",
     [scenarioId]
   );
-
-  // console.log("rows", rows);
 
   return rows;
 };

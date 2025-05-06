@@ -5,7 +5,7 @@ import {
   scrapeTaxBrackets,
 } from "../../server/taxes";
 import { pool } from "../../server/utils";
-import { describe, test, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll } from "vitest";
 
 /**
  * TP: ChatGPT, prompt - "i have functions that scrape data about tax brackets, standard deductions,
@@ -17,7 +17,7 @@ import { describe, test, expect, afterAll } from "vitest";
  * "how should this change if i am using a pool of connections"
  */
 describe("Scrape and store tax information from IRS website", () => {
-  test("Scrapes and stores tax bracket data, then rolls back", async () => {
+  it("Scrapes and stores tax bracket data, then rolls back", async () => {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
@@ -42,7 +42,7 @@ describe("Scrape and store tax information from IRS website", () => {
       connection.release(); // return to the pool
     }
   });
-  test("Scrapes and stores standard deductions data, then rolls back", async () => {
+  it("Scrapes and stores standard deductions data, then rolls back", async () => {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
@@ -67,7 +67,7 @@ describe("Scrape and store tax information from IRS website", () => {
       connection.release(); // return to the pool
     }
   });
-  test("Scrapes and stores capital gains tax rate data, then rolls back", async () => {
+  it("Scrapes and stores capital gains tax rate data, then rolls back", async () => {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
@@ -92,7 +92,7 @@ describe("Scrape and store tax information from IRS website", () => {
       connection.release(); // return to the pool
     }
   });
-  test("Scrapes and stores RMD data, then rolls back", async () => {
+  it("Scrapes and stores RMD data, then rolls back", async () => {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
