@@ -80,3 +80,6 @@ npm run test:coverage
 ```
 npx vitest run --coverage
 ```
+
+## Disclaimer
+This application is not a substitute for professional financial advice. Anyone who makes decisions based on its output does so at their own risk.
